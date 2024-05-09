@@ -1,6 +1,7 @@
 # Datapack-Compiler
 ## 프로젝트 설명
 이 프로젝트는 마인크래프트 컴파일러를 만드는 프로젝트입니다.   
+40행성(40planet)에 의해 제작되었으며, 출처만 표기한다면 자유로운 사용을 허가합니다.
 
 ## 문법
 ### 기본 문법
@@ -45,10 +46,17 @@ float[] array_2
 - entity - `""`
 - nbt - `{}`
 - 모든 배열 - `[]`
+	- 아직 발견된 버그는 없으나, 테스트가 부족합니다
 
 ### 지역변수
-지역변수는 현재 일부만 구현되어 불안정한 상태이다   
-웬만하면 변수 명을 전부 다르게 하는 것을 추천한다
+```
+int a
+if (조건) {
+	int a
+}
+```
+이때, if문 안의 a와 밖의 a는 서로 다른 변수이다.   
+또한, if문 안에서는 a가 선언 되었으므로 밖의 a에 접근하지 못한다다
 ### 줄바꿈
 `\n` 또는 `;`를 명령어의 끝으로 생각한다
 - 단, `[`, `{` 등의 몇몇 예외가 있다
@@ -137,7 +145,7 @@ if(a == 1){
 	a = a - 1
 ```
 ~~중괄호를 생략하면 다음 한 줄의 명령어만 실행하기 때문에 `else if` 구문도 지원한다~~
-else if를 사용하는 경우 버그가 발생할 수 있으니 되도록 중괄호를 쓰는 것을 권장합니다다
+else if를 사용하는 경우 버그가 발생할 수 있으니 되도록 중괄호를 쓰는 것을 권장한다
 ```
 int a = 0
 if(a == 1){
@@ -161,7 +169,7 @@ while(a < 10)
 	a = a + 1
 ```
 `break` 키워드를 통해 루프를 멈출 수 있다   
-`for`는 지원하지 않는다
+`continue`와 `for`는 지원하지 않는다
 
 ### 함수 선언
 `def [자료형] <함수명>( [매개변수] ){...}`의 형태로 적어 함수를 선언할 수 있다   
@@ -181,8 +189,12 @@ def int test(int a, float b){
 }
 ```
 함수 이름에 대문자를 사용하면 마인크래프트는 그 함수를 그냥 없는 것으로 생각한다
-~~멍청이이다~~
-그러니 함수명에 대문자를 쓰지 않도록 하자
+~~멍청이이다~~   
+그러니 함수명에 대문자를 쓰지 않도록 하자   
+   
+- `def tick`을 통해 tick이라는 이름의 함수를 선언한 경우, 이 함수는 매틱 실행된다
+- `def load`을 통해 load이라는 이름의 함수를 선언한 경우, 이 함수는 맵이 로딩될 때 1회 실행된다
+- 이렇게 실행되는 `load`와 `tick`은 인수를 받을 수 없다
 ### 함수 호출
 `함수명(인자)`와 같이 작성하여 함수를 호출 할 수 있다   
 이때, 매개변수와 인자의 자료형이 다르면 에러가 발생한다
@@ -201,6 +213,16 @@ def load(){
 /say a
 /gamemode creative @a
 ```
+   
+`^변수명&`처럼 적으면 매크로처럼 사용 가능하다
+```
+int a = 123
+/say ^a&
+```
+
+```
+[@] 123
+```
 
 ### 주석
 `#` 또는 `/#`을 사용해 주석을 달 수 있다
@@ -208,14 +230,139 @@ def load(){
 # 데이터팩에 적히지 않는 주석
 /# 데이터팩에 적히는 주석
 ```
-
+~~사실 `/#`이 필요할까 하긴 싶은데 일단 적어봤습니다~~
 ## 사용법
 ### 세팅
-1. `.planet` 확장자를 가진 코드와 실행파일을 같은 폴더에 놓는다   
-2. 실행파일을 실행시킨다   
-3. pack 폴더가 하나 나오는데, 이 폴더가 데이터팩이다. 그대로 끌어다가 datapacks 폴더에 넣으면 된다   
-(아니면 처음부터 datapacks 폴더에서 작업해도 상관 없다)
+1. **<작성 예정>**
 
 ### 기타
 - `def tick`을 통해 tick이라는 이름의 함수를 선언한 경우, 이 함수는 매틱 실행된다
 - `def load`을 통해 load이라는 이름의 함수를 선언한 경우, 이 함수는 맵이 로딩될 때 1회 실행된다
+
+## 내장함수
+### 함수명(자료형 인자, ...)
+`함수명`에 관한 설명   
+`자료형`이 `any`로 적혀있는 경우, 어떤 자료형이든 상관 없다는 얘기이다.   
+`...`이 있는 경우엔 인자가 몇개든 들어갈 수 있다는 것이다
+### print(any a1, any a2, ...)
+`a1 a2 ...`의 형태로 채팅창에 출력된다
+```
+int a = 123
+print(a)
+```
+
+```
+123
+```
+### random()
+0~1000 사이의 랜덤한 정수를 반환한다
+```
+ranadom()
+```
+### type(any a)
+`a`의 자료형을 문자열로 반환한다
+```
+float test
+print(type(test))
+```
+
+```
+float
+```
+### round(float|double a)
+`float` 또는 `double` 자료형을 반올림하여 `int`로 반환한다
+```
+print(round(1.2))
+```
+
+```
+1
+```
+### get_score(string player, string objective)
+`player`의 `objective` 점수를 가져온다   
+`/scoreboard players get {player} {objective}`와 같은 역할이다
+```
+/scorebaord objectives add test dummy
+/scoreboard players set asdf test 100
+print(get_score("asdf", "test"))
+```
+
+```
+100
+```
+### get_data(string from, string|entity name, string dir, string type)
+- `from`은 `entity`, `block`, `storage` 중 한가지여야 한다.
+- `name`은 블록의 좌표, 저장소의 이름, 엔티티 중 한가지여야 한다
+- `dir`은 가져오고자 하는 nbt의 경로를 뜻한다
+- `type`은 어떤 자료형으로 읽어오고자 하는지를 뜻한다
+`/data get {from} {name} {dir}`와 같은 역할이다
+```
+/data modify storage minecraft:test test_dir set value "it's test string!"
+print(get_data("storage", "minecraft:test", "test_dir", "string"))
+```
+
+```
+it's test string!
+```
+### int(any a)
+`a`를 `int` 자료형으로 변환해준다   
+`float` 또는 `double`의 경우엔 `round(a)`와 같다
+```
+print(int(1.2))
+print(int("3"))
+```
+
+```
+1
+3
+```
+### float(any a)
+`a`를 `float`로 변환해준다
+```
+print(float(1))
+```
+
+```
+1.0f
+```
+### doble(any a)
+`a`를 `double`로 변환해준다
+```
+print(double(1))
+```
+
+```
+1.0d
+```
+### bool(any a)
+`a`를 `bool`로 변환해준다
+```
+print(bool(100))
+```
+
+```
+1
+```
+### string(any a)
+`a`를 `string`으로 변환해준다
+```
+print(string(1 + 1))
+```
+
+```
+2
+```
+### entity(string a)
+`a`를 `entity`로 변환해준다   
+**아직 불완전하므로 `"@a"`와 같은 변수만 하는 것을 추천합니다**
+```
+string test = "@s"
+entity self = entity(test)
+def print_self(){
+    print(self)
+}
+```
+
+```
+<실행한 사람의 닉네임>
+```
