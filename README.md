@@ -1,6 +1,7 @@
 # Datapack-Compiler
 ## 프로젝트 설명
 이 프로젝트는 마인크래프트 컴파일러를 만드는 프로젝트입니다.   
+40행성(40planet)에 의해 제작되었으며, 출처만 표기한다면 자유로운 사용을 허가합니다.
 
 ## 문법
 ### 기본 문법
@@ -30,6 +31,7 @@ def test(){
 int a
 float b = 2.0
 entity c = @p[tag=player]
+entity d = @p[tag=^b&] # ^b&는 후술할 매크로 기능이다
 ```
 
 배열 선언은 아래와 같이 `<자료형>[] <변수명>`으로 선언한다
@@ -112,7 +114,7 @@ File FILENAME, line 2
 ```
 ### 조건문
 `if( <조건> ){ ~~~ }`와 같은 형식으로 작성한다   
-중괄호를 생략하는 경우, 조건 다음의 명령어 한 줄만 실행한다.
+~~중괄호를 생략하는 경우, 조건 다음의 명령어 한 줄만 실행한다.~~
 ```
 int a = 0;
 if(a == 0){
@@ -126,7 +128,7 @@ if(a == 0)
 	a = a + 1
 ```
 `if (...) {...} else {...}`과 같은 형태로 else를 사용할 수 있다   
-마찬가지로 중괄호를 생략하는 경우, 한 줄의 명령어만 실행된다
+~~마찬가지로 중괄호를 생략하는 경우, 한 줄의 명령어만 실행된다~~
 ```
 int a = 0
 if(a == 1){
@@ -230,16 +232,50 @@ int a = 123
 /# 데이터팩에 적히는 주석
 ```
 ~~사실 `/#`이 필요할까 하긴 싶은데 일단 적어봤습니다~~
+
+## import
+`import <파일명>`의 형태로 같은 디렉토리에 있는 `파일명.planet`을 가져올 수 있다.
+
+test.planet
+```
+def print_test(){
+	print("test")
+}
+```
+
+main.planet
+```
+import test
+test.print_test()
+```
+
+main.planet을 컴파일 했을 때
+```
+test
+```
+
+## execute
+1. `if score`를 제외하고는 거의 대부분 마크 문법 그대로 사용해도 된다.
+2. `@a[tag=player]`와 같이 선택인자가 들어가는 자리에는 entity 타입의 변수를 넣어도 된다
+```
+entity player = @a[tag=player]
+execute ( as player at @s ){...}
+```
+### if score
+`execute( if score <string name> <string objective> ... )`의 형태로 사용 가능하다
+
+### 주의할 점
+문자열을 거의 그대로 넣는 방식이므로 execute에서 버그가 나면 찾기 굉장히 힘들겁니다
+
 ## 사용법
 ### 세팅
-1. 파이썬을 설치한다. (3.12.1로 개발되었다)
-2. `interpreter.pyw`를 받아 실행한다
-3. `.planet`파일과 데이터팩이 생성될 폴더를 선택한다
-4. 데이터팩의 이름을 입력한다. 
+1. `compiler.exe`를 받아 실행한다
+2. `.planet`파일과 데이터팩이 생성될 폴더를 선택한다
+3. 데이터팩의 이름을 입력한다. 
 	1. 입력하지 않는다면 `pack`으로 간주한다.
 	2. 대문자를 입력하면 데이터팩이 올바르게 작동하지 않는다
-5. "변환하기" 버튼을 누른다
-6. 마크 안에서 `/reload`를 실행하여 데이터팩을 새로고침해준다
+4. "변환하기" 버튼을 누른다
+5. 마크 안에서 `/reload`를 실행하여 데이터팩을 새로고침해준다
 
 ### 기타
 - `def tick`을 통해 tick이라는 이름의 함수를 선언한 경우, 이 함수는 매틱 실행된다
@@ -295,6 +331,20 @@ print(get_score("asdf", "test"))
 
 ```
 100
+```
+### give_score(any var, string player, string objective)
+`player`의 `objective`에 `var`의 값을 스코어로 넣는다
+`/scoreboard players set {player} {objective} {var}`와 같은 역할이다
+`var`를 반환한다
+```
+int a = 10
+print(give_score(a, "test", "num"))
+/tellraw @a {"score":{"name":"test","objective":"num"}}
+```
+
+```
+10
+10
 ```
 ### get_data(string from, string|entity name, string dir, string type)
 - `from`은 `entity`, `block`, `storage` 중 한가지여야 한다.
