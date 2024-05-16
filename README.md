@@ -333,7 +333,7 @@ print(get_score("asdf", "test"))
 100
 ```
 ### set_score(any var, string player, string objective)
-`player`의 `objective`에 `var`의 값을 스코어로 넣는다
+`player`의 `objective`에 `var`의 값을 스코어로 넣는다   
 `/scoreboard players set {player} {objective} {var}`와 같은 역할이다
 `var`를 반환한다
 ```
@@ -350,7 +350,7 @@ print(set_score(a, "test", "num"))
 - `from`은 `entity`, `block`, `storage` 중 한가지여야 한다.
 - `name`은 블록의 좌표, 저장소의 이름, 엔티티 중 한가지여야 한다
 - `dir`은 가져오고자 하는 nbt의 경로를 뜻한다
-- `type`은 어떤 자료형으로 읽어오고자 하는지를 뜻한다
+- `type`은 어떤 자료형으로 읽어오고자 하는지를 뜻한다   
 `/data get {from} {name} {dir}`와 같은 역할이다
 ```
 /data modify storage minecraft:test test_dir set value "it's test string!"
@@ -364,7 +364,7 @@ it's test string!
 - `from`은 `entity`, `block`, `storage` 중 한가지여야 한다.
 - `name`은 블록의 좌표, 저장소의 이름, 엔티티 중 한가지여야 한다
 - `dir`은 가져오고자 하는 nbt의 경로를 뜻한다
-- `type`은 어떤 자료형으로 읽어오고자 하는지를 뜻한다
+- `type`은 어떤 자료형으로 읽어오고자 하는지를 뜻한다   
 `/data modify {from} {name} {dir} set value {var}`와 같은 역할이다
 ### int(any a)
 `a`를 `int` 자료형으로 변환해준다   
