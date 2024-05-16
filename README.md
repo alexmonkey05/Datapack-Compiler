@@ -1,7 +1,7 @@
 # Datapack-Compiler
 ## 프로젝트 설명
 이 프로젝트는 마인크래프트 컴파일러를 만드는 프로젝트입니다.   
-40행성(40planet)에 의해 제작되었으며, 출처만 표기한다면 자유로운 사용을 허가합니다.
+출처(링크)만 표기한다면 자유로운 사용을 허가합니다.
 
 ## 문법
 ### 기본 문법
@@ -332,13 +332,13 @@ print(get_score("asdf", "test"))
 ```
 100
 ```
-### give_score(any var, string player, string objective)
+### set_score(any var, string player, string objective)
 `player`의 `objective`에 `var`의 값을 스코어로 넣는다
 `/scoreboard players set {player} {objective} {var}`와 같은 역할이다
 `var`를 반환한다
 ```
 int a = 10
-print(give_score(a, "test", "num"))
+print(set_score(a, "test", "num"))
 /tellraw @a {"score":{"name":"test","objective":"num"}}
 ```
 
@@ -360,6 +360,12 @@ print(get_data("storage", "minecraft:test", "test_dir", "string"))
 ```
 it's test string!
 ```
+### set_data(string from, string|entity name, string dir, any var)
+- `from`은 `entity`, `block`, `storage` 중 한가지여야 한다.
+- `name`은 블록의 좌표, 저장소의 이름, 엔티티 중 한가지여야 한다
+- `dir`은 가져오고자 하는 nbt의 경로를 뜻한다
+- `type`은 어떤 자료형으로 읽어오고자 하는지를 뜻한다
+`/data modify {from} {name} {dir} set value {var}`와 같은 역할이다
 ### int(any a)
 `a`를 `int` 자료형으로 변환해준다   
 `float` 또는 `double`의 경우엔 `round(a)`와 같다
