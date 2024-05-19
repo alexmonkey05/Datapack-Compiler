@@ -322,7 +322,7 @@ print(get_score("asdf", "test"))
 ```
 100
 ```
-### set_score(any var, string player, string objective)
+### set_score(string player, string objective, any var)
 `player`의 `objective`에 `var`의 값을 스코어로 넣는다   
 `/scoreboard players set {player} {objective} {var}`와 같은 역할이다
 `var`를 반환한다
