@@ -180,6 +180,7 @@ class Parser:
                 node, error = method(parent)
             return node, error
         elif self.current_tok.string not in self.variables and self.current_tok.string not in self.functions and self.current_tok.string not in BUILT_IN_FUNCTION:
+            print(self.current_tok)
             return None, InvalidSyntaxError(
                 self.current_tok,
                 self.filename,
@@ -207,6 +208,8 @@ class Parser:
         return Node(self.current_tok.string, token = self.current_tok), None
     def type_4(self, parent): # NEWLINE type (end of the line)
         return Node("new_line", token = self.current_tok), None
+    def type_6(self, parent):
+        return self.type_4(parent)
     def type_55(self, parent): # OPERATOR type
         operator = self.current_tok.string
         if operator in MEANS_END: return self.type_4(parent)
@@ -421,6 +424,8 @@ class Parser:
         node = Node("operator", token = None)
         Node(operator, parent=node, token = self.current_tok)
         front_node = parent.children[-1]
+
+
         back_priority = OPERATOR_PRIORITY[operator]
         front_priority = None
         temp_node = front_node
@@ -624,6 +629,10 @@ class Variable:
         self.is_array = is_array
         self.temp = temp
         self.details = details
+        self.value = False
+    
+    def __str__(self):
+        return f"({self.name}, {self.type}, {self.is_array}, {self.temp}, {self.value})"
 
 class Function:
     def __init__(self, name, type_, inputs, temp) -> None:
@@ -683,6 +692,8 @@ class Interpreter:
         self.using_variables = [{}]
         self.is_parameter = False
 
+        self.const = []
+
     def interprete(self, node, current_dir = None, current_file = None):
         if node.name == "root" or node.name == "assign":
             for child in node.children:
@@ -701,6 +712,7 @@ class Interpreter:
         var_name = node.children[0].name
         type_ = node.children[1].name
         var = Variable(var_name, type_, False, get_var_temp())
+        self.const.append(var)
         if var.name in self.using_variables[-1]:
             return None, InvalidSyntaxError(
                 node.children[0].token,
@@ -777,7 +789,7 @@ class Interpreter:
                 self.filename,
                 f"{fun.name} must have only {len(fun.inputs)} parameters"
             )
-        file = open(self.current_dir + self.current_file, "a")
+        file = open(self.current_dir + self.current_file, "a", encoding="utf-8")
         for i in range(len(fun.inputs)):
             var = fun.inputs[i]
             value = input_nodes[i].children[0]
@@ -897,7 +909,7 @@ class Interpreter:
 
         if_score, error = self.interprete(node.children[0].children[0]) # interprete condition
         if error: return None, error
-        file = open(self.current_dir + self.current_file, "a")
+        file = open(self.current_dir + self.current_file, "a", encoding="utf-8")
         file.write(f"execute if score #{if_score} {SCOREBOARD_NAME} matches 1 run function {self.namespace}:{self.get_folder_dir()}{self.current_file[:-11]}\n")
         file.close()
 
@@ -948,7 +960,7 @@ class Interpreter:
                 )
             temp = self.to_storage(var_name)
             command = command.replace("^" + var_name + "&", f"$({temp})")
-            used_temp.remove(temp)
+            if temp in used_temp: used_temp.remove(temp)
             temps.append(temp)
         used_temp += temps
         return command
@@ -1042,11 +1054,13 @@ class Interpreter:
                     self.write(f"execute store result score #{fun.temp} {SCOREBOARD_NAME} run data get storage {STORAGE_NAME} {return_value}\n")
             else: self.write(f"scoreboard players set #{fun.temp} {SCOREBOARD_NAME} {return_value}\n")
         else: self.write(f"data modify storage {STORAGE_NAME} {fun.temp} set from storage {STORAGE_NAME} {self.to_storage(return_value)}\n")
+        return_command = f"return run scoreboard players get #{fun.temp} {SCOREBOARD_NAME}"
+        if fun.type not in SCORE_TYPES: return_command = f"return run data get storage {STORAGE_NAME} {fun.temp}"
         if temp_node:
-            file = open(self.current_dir + fun_name + ".mcfunction", "a")
-            file.write("return 0")
+            file = open(self.current_dir + fun_name + ".mcfunction", "a", encoding="utf-8")
+            file.write(return_command)
             file.close()
-        else: self.write("return 0")
+        else: self.write(return_command)
         return fun.temp, None
     def break_(self, node):
         self.write("return 0\n")
@@ -1086,16 +1100,23 @@ class Interpreter:
 
     def operator_equal(self, node):
         var1 = node.children[1].name
+
         if var1 in INTERPRETE_THESE:
             var1, error = self.interprete(node.children[1])
             if error: return None, error
         if var1.__class__ == Variable:
             var1 = var1.name
+        elif var1 in self.variables and not self.variables[var1][-1].is_array:
+            self.const.remove(var1)
+
 
         var2 = node.children[2].name
         if var2 in INTERPRETE_THESE:
             var2, error = self.interprete(node.children[2])
             if error: return None, error
+
+        if node.children[1].name == "define_var" and var2[:4] != "temp":
+            self.variables[var1][-1].value = var2
 
         var1_type = self.get_type(var1)
         var2_type = self.get_type(var2)
@@ -1175,7 +1196,7 @@ class Interpreter:
                 f"Operands must be of the same data type"
             )
         
-        file = open(self.current_dir + self.current_file, "a")
+        file = open(self.current_dir + self.current_file, "a", encoding="utf-8")
         temp2 = get_temp()
         if var2 in self.variables:
             file.write(f"scoreboard players operation #{temp2} {SCOREBOARD_NAME} = #{self.variables[var2][-1].temp} {SCOREBOARD_NAME}\n")
@@ -1250,7 +1271,7 @@ class Interpreter:
                 f"Operands must be of the same data type"
             )
         
-        file = open(self.current_dir + self.current_file, "a")
+        file = open(self.current_dir + self.current_file, "a", encoding="utf-8")
         temp2 = get_temp()
         if var2 in self.variables:
             file.write(f"scoreboard players operation #{temp2} {SCOREBOARD_NAME} = #{self.variables[var2][-1].temp} {SCOREBOARD_NAME}\n")
@@ -1285,7 +1306,7 @@ class Interpreter:
             if error: return None, error
         if var1.__class__ == Variable:
             var1 = var1.name
-        file = open(self.current_dir + self.current_file, "a")
+        file = open(self.current_dir + self.current_file, "a", encoding="utf-8")
         file.write(f"scoreboard players set #{temp1} {SCOREBOARD_NAME} 0\n")
         var1_type = self.get_type(var1)
         if var1_type in SCORE_TYPES:
@@ -1303,7 +1324,7 @@ class Interpreter:
 
         var2_type = self.get_type(var2)
         temp2 = get_temp()
-        file = open(self.current_dir + self.current_file, "a")
+        file = open(self.current_dir + self.current_file, "a", encoding="utf-8")
         file.write(f"scoreboard players set #{temp2} {SCOREBOARD_NAME} 0\n")
         if var2_type in SCORE_TYPES:
             if var2 in self.variables:
@@ -1341,7 +1362,7 @@ class Interpreter:
                 f"Index must be an integer"
             )
         temp = get_temp()
-        file = open(self.current_dir + self.current_file, "a")
+        file = open(self.current_dir + self.current_file, "a", encoding="utf-8")
         if var.type in SCORE_TYPES:
             if index not in self.variables:
                 file.write(f"execute store result score #{temp} {SCOREBOARD_NAME} run data get storage {STORAGE_NAME} {var.temp}[{index}]\n")
@@ -1422,7 +1443,13 @@ class Interpreter:
                 else:
                     result_arr.append('{"nbt":"%s","storage":"%s"}' % (var.temp, STORAGE_NAME))
             else:
-                if temp[0] == "\"": temp = temp[1:-1]
+                if temp[0] != "\"":
+                    return None, InvalidSyntaxError(
+                        input_node.token,
+                        self.filename,
+                        f"{temp} is not string type"
+                    )
+                temp = temp[1:-1]
                 result_arr.append('{"text":"%s"}' % temp.replace("\"", "\\\""))
         result = ""
         for string in result_arr:
@@ -1965,7 +1992,7 @@ execute store result score #{temp} {SCOREBOARD_NAME} run data get storage {STORA
         return filename
 
     def write(self, txt):
-        file = open(self.current_dir + self.current_file, "a")
+        file = open(self.current_dir + self.current_file, "a", encoding="utf-8")
         file.write(txt)
         file.close()
 
@@ -1974,7 +2001,7 @@ execute store result score #{temp} {SCOREBOARD_NAME} run data get storage {STORA
         temp3 = None
         if is_var: temp3 = get_var_temp()
         else: temp3 = get_temp()
-        file = open(self.current_dir + self.current_file, "a")
+        file = open(self.current_dir + self.current_file, "a", encoding="utf-8")
         if value in self.variables:
             if value_type in SCORE_TYPES:
                 if value_type == "int" or value_type == "bool": file.write(f"execute store result storage {STORAGE_NAME} {temp3} {value_type} 1 run scoreboard players get #{self.variables[value][-1].temp} {SCOREBOARD_NAME}\n")
@@ -2323,6 +2350,28 @@ def get_var_temp():
     return temp
 
 
+#######################################
+# OPTIMIZER
+#######################################
+
+class Optimizer:
+    def __init__(self, interpreter) -> None:
+        self.interpreter = interpreter
+    
+    def optimize(self):
+        self.const_var()
+    
+    def const_var(self):
+        const_arr = []
+        
+        for var in self.interpreter.const:
+            if var.is_array or var.value == False: continue
+            if var.value in self.interpreter.variables:
+                var.value = self.interpreter.variables[var.value][-1].value
+            const_arr.append(var)
+        for var in const_arr:
+            print(var)
+
 def print_tree(ast):
     for pre, fill, node in RenderTree(ast):
         if node.token:
@@ -2355,6 +2404,9 @@ def interprete(filename, result_dir, namespace, is_modul = False, token = None):
     if error:
         print("\n\n" + error.as_string())
         return None, error
+    
+    optimizer = Optimizer(interpreter)
+    optimizer.optimize()
     return {"variables":interpreter.variables, "functions":interpreter.functions}, None
 
 def generate_datapack(filename, result_dir = "./", namespace = "pack"):
@@ -2380,8 +2432,8 @@ def reset_temp():
     temp_cnt = 0
     used_temp = []
 if __name__ == "__main__":
-    # generate_datapack("./test.planet", "./", "pack")
-
+    generate_datapack("./test.planet", "./", "pack")
+    exit()
     tk = Tk()
     filename = None
     def event():
