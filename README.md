@@ -1,4 +1,4 @@
-# Datapack-Compiler
+# Comet(Datapack-Compiler)
 ## 프로젝트 설명
 이 프로젝트는 마인크래프트 컴파일러를 만드는 프로젝트입니다.   
 출처(링크)만 표기한다면 자유로운 사용을 허가합니다.
