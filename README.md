@@ -1,7 +1,7 @@
-# Comet(Datapack-Compiler)
+# Datapack-Compiler
 ## 프로젝트 설명
 이 프로젝트는 마인크래프트 컴파일러를 만드는 프로젝트입니다.   
-출처(링크)만 표기한다면 자유로운 사용을 허가합니다.
+40행성(40planet)에 의해 제작되었으며, 출처만 표기한다면 자유로운 사용을 허가합니다.
 
 ## 문법
 ### 자료형 목록
@@ -16,34 +16,23 @@
 - nbt
 	- `{id:"minecraft:block_display",Tags:["temp"]}`와 같은 json 자료형
 ### 변수 선언
-다른 언어와 마찬가지로 `<자료형> <변수명>`의 형태로 선언한다
+`var <변수명>`의 형태로 선언한다
 ```
-int a
-float b = 2.0
-entity c = @p[tag=player]
-entity d = @p[tag=^b&] # ^b&는 후술할 매크로 기능이다
+var a
+var b = 2.0
+var c = @p[tag=player]
+var d = @p[tag=^b&] # ^b&는 후술할 매크로 기능이다
 ```
 
-배열 선언은 아래와 같이 `<자료형>[] <변수명>`으로 선언한다
+배열 선언은 다른 변수와 똑같이 선언한다
 ```
-int[] array = [1, 2, 3]
-float[] array_2
+var array = [1, 2, 3]
 ```
-만약 선언 이후, 값을 지정해주지 않는다면 각 자료형에 따른 기본값은 아래와 같다
-- int - `0`
-- float - `0f`
-- double - `0d`
-- string - `""`
-- entity - `""`
-- nbt - `{}`
-- 모든 배열 - `[]`
-	- 아직 발견된 버그는 없으나, 테스트가 부족합니다
-
 ### 지역변수
 ```
-int a
+var a
 if (조건) {
-	int a
+	var a
 }
 ```
 이때, if문 안의 a와 밖의 a는 서로 다른 변수이다.   
@@ -52,8 +41,8 @@ if (조건) {
 `\n` 또는 `;`를 명령어의 끝으로 생각한다
 - 단, `[`, `{` 등의 몇몇 예외가 있다
 ```
-int a
-nbt b = {
+var a
+var b = {
 	test: "asdf"
 }
 ```
@@ -104,9 +93,9 @@ File FILENAME, line 2
 ```
 ### 조건문
 `if( <조건> ){ ~~~ }`와 같은 형식으로 작성한다   
-~~중괄호를 생략하는 경우, 조건 다음의 명령어 한 줄만 실행한다.~~
+중괄호를 생략하는 경우, 조건 다음의 명령어 한 줄만 실행한다.
 ```
-int a = 0;
+var a = 0;
 if(a == 0){
 	a = a + 1;
 }
@@ -118,9 +107,9 @@ if(a == 0)
 	a = a + 1
 ```
 `if (...) {...} else {...}`과 같은 형태로 else를 사용할 수 있다   
-~~마찬가지로 중괄호를 생략하는 경우, 한 줄의 명령어만 실행된다~~
+마찬가지로 중괄호를 생략하는 경우, 한 줄의 명령어만 실행된다
 ```
-int a = 0
+var a = 0
 if(a == 1){
 	a = a + 1
 } else {
@@ -129,16 +118,16 @@ if(a == 1){
 ```
 
 ```
-int a = 0
+var a = 0
 if(a == 1){
 	a = a + 1
 } else
 	a = a - 1
 ```
-~~중괄호를 생략하면 다음 한 줄의 명령어만 실행하기 때문에 `else if` 구문도 지원한다~~
-else if를 사용하는 경우 버그가 발생할 수 있으니 되도록 중괄호를 쓰는 것을 권장한다
+중괄호를 생략하면 다음 한 줄의 명령어만 실행하기 때문에 `else if` 구문도 지원한다   
+그러나 종종 else if를 사용하는 경우 버그가 발생할 수 있으니 되도록 중괄호를 쓰는 것을 권장한다
 ```
-int a = 0
+var a = 0
 if(a == 1){
 	a = a + 1
 } else if (a == 0){
@@ -148,14 +137,14 @@ if(a == 1){
 ### 반복문
 `while`의 경우, `if`와 같은 형태로 적을 수 있다
 ```
-int a = 0
+var a = 0
 while(a < 10){
 	a = a + 1
 }
 ```
 
 ```
-int a = 0
+var a = 0
 while(a < 10)
 	a = a + 1
 ```
@@ -163,20 +152,17 @@ while(a < 10)
 `continue`와 `for`는 지원하지 않는다
 
 ### 함수 선언
-`def [자료형] <함수명>( [매개변수] ){...}`의 형태로 적어 함수를 선언할 수 있다   
-`[자료형]`을 생략하면 함수의 반환 자료형은 `void(없음)`으로 설정된다   
+`def <함수명>( [매개변수] ){...}`의 형태로 적어 함수를 선언할 수 있다   
 `[매개변수]`는 필요에 따라 생략해도 된다   
-`[자료형]`을 적었더라도 꼭 값을 반환할 필요는 없다
 ```
 def tick(){
-	int a = 1
+	var a = 1
 }
 ```
 
 ```
-def int test(int a, float b){
-	a = 3
-	b = 0.5
+def test(var a, var b){
+    print(a, b)
 }
 ```
 함수 이름에 대문자를 사용하면 마인크래프트는 그 함수를 그냥 없는 것으로 생각한다
@@ -190,7 +176,7 @@ def int test(int a, float b){
 `함수명(인자)`와 같이 작성하여 함수를 호출 할 수 있다   
 이때, 매개변수와 인자의 자료형이 다르면 에러가 발생한다
 ```
-def dumb_function(int a){
+def dumb_function(var a){
 	return a
 }
 
@@ -207,7 +193,7 @@ def load(){
    
 `^변수명&`처럼 적으면 매크로처럼 사용 가능하다
 ```
-int a = 123
+var a = 123
 /say ^a&
 ```
 
@@ -294,7 +280,7 @@ ranadom()
 ### type(any a)
 `a`의 자료형을 문자열로 반환한다
 ```
-float test
+var test = 1.0
 print(type(test))
 ```
 
@@ -314,7 +300,7 @@ print(round(1.2))
 `player`의 `objective` 점수를 가져온다   
 `/scoreboard players get {player} {objective}`와 같은 역할이다
 ```
-/scorebaord objectives add test dummy
+/scoreboard objectives add test dummy
 /scoreboard players set asdf test 100
 print(get_score("asdf", "test"))
 ```
@@ -327,8 +313,8 @@ print(get_score("asdf", "test"))
 `/scoreboard players set {player} {objective} {var}`와 같은 역할이다
 `var`를 반환한다
 ```
-int a = 10
-print(set_score(a, "test", "num"))
+var a = 10
+print(set_score("test", "num", a))
 /tellraw @a {"score":{"name":"test","objective":"num"}}
 ```
 
@@ -336,7 +322,7 @@ print(set_score(a, "test", "num"))
 10
 10
 ```
-### get_data(string from, string|entity name, string dir, string type)
+### get_data(string from, string|entity name, string dir)
 - `from`은 `entity`, `block`, `storage` 중 한가지여야 한다.
 - `name`은 블록의 좌표, 저장소의 이름, 엔티티 중 한가지여야 한다
 - `dir`은 가져오고자 하는 nbt의 경로를 뜻한다
@@ -344,7 +330,7 @@ print(set_score(a, "test", "num"))
 `/data get {from} {name} {dir}`와 같은 역할이다
 ```
 /data modify storage minecraft:test test_dir set value "it's test string!"
-print(get_data("storage", "minecraft:test", "test_dir", "string"))
+print(get_data("storage", "minecraft:test", "test_dir"))
 ```
 
 ```
@@ -356,6 +342,10 @@ it's test string!
 - `dir`은 가져오고자 하는 nbt의 경로를 뜻한다
 - `type`은 어떤 자료형으로 읽어오고자 하는지를 뜻한다   
 `/data modify {from} {name} {dir} set value {var}`와 같은 역할이다
+```
+set_data("storage", "minecraft:test", "test_dir", "it's test string!")
+print(get_data("storage", "minecraft:test", "test_dir"))
+```
 ### int(any a)
 `a`를 `int` 자료형으로 변환해준다   
 `float` 또는 `double`의 경우엔 `round(a)`와 같다
