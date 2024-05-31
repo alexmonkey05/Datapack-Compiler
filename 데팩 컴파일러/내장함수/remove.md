@@ -1,1 +1,0 @@
-`data remove`에 해당하는 함수

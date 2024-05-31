@@ -1986,8 +1986,8 @@ def reset_temp():
     temp_cnt = 0
     used_temp = []
 if __name__ == "__main__":
-    generate_datapack("./test.planet", "./", "pack")
-    exit()
+    # generate_datapack("./test.planet", "./", "pack")
+    # exit()
     tk = Tk()
     filename = None
     def event():
