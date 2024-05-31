@@ -8,3 +8,5 @@
   - 변수 선언 키워드 변경
 	  - ("int", "float", "double", "string", "entity") -> var
   - 함수의 리턴 자료형 설정 불가능
+- get_data의 4번째 인자가 삭제됨
+  - 3개의 인자만 받도록 변경됨
