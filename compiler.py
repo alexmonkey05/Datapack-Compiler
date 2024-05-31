@@ -1048,14 +1048,13 @@ class Interpreter:
         if var2 in INTERPRETE_THESE:
             var2, error = self.interprete(node.children[2])
             if error: return None, error
-        if var2 in self.variables: var2 = self.variables[var2][-1].temp
 
         temp = get_temp()
         if var1 != "var1":
             if var1 in self.variables: self.write(f"data modify storage {STORAGE_NAME} var1 set from storage {STORAGE_NAME} {self.variables[var1][-1].temp}\n")
             else: self.write(f"data modify storage {STORAGE_NAME} var1 set value {var1}\n")
         if var2 in self.variables: self.write(f"data modify storage {STORAGE_NAME} var2 set from storage {STORAGE_NAME} {self.variables[var2][-1].temp}\n")
-        else: self.write(f"data modify storage {STORAGE_NAME} var1 set value {var2}\n")
+        else: self.write(f"data modify storage {STORAGE_NAME} var2 set value {var2}\n")
         self.write(f"scoreboard players set #operator_type {SCOREBOARD_NAME} {OPERATOR_ID[operator]}\nfunction basic:operation\ndata modify storage {STORAGE_NAME} {temp} set from storage {STORAGE_NAME} var1\n")
         return temp, None
     def operator_and_or(self, node):
@@ -1986,7 +1985,7 @@ def reset_temp():
     temp_cnt = 0
     used_temp = []
 if __name__ == "__main__":
-    # generate_datapack("./test.planet", "./", "pack")
+    # generate_datapack("./example/test.planet", "./", "pack")
     # exit()
     tk = Tk()
     filename = None
