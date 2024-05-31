@@ -21,20 +21,20 @@ from tkinter import messagebox
 DIGITS = '0123456789'
 LETTERS = string.ascii_letters
 LETTERS_DIGITS = LETTERS + DIGITS
-MINECRAFT_SELECTOR = "parse"
+MINECRAFT_SELECTOR = "parsen"
 
 MINECRAFTCOMMAND = "/"
 TERM = ("*", "/", "%")
 FACTOR = ("+", "-")
 BASIC_OPERATOR = FACTOR + TERM + ("=", "==", "!=", ">", "<", ">=", "<=", ".")
 LOGIC_OPERATOR = ("==", "!=", "!", ">", ">=", "<", "<=")
-SCORE_TYPES = ("int", "float", "double", "bool")
+SCORE_TYPES = ("int", "float", "double", "byte")
 TYPES = ("entity", "nbt", "string") + SCORE_TYPES
 MEANS_END = (";", "]", "}")
 SCOREBOARD_NAME = "40planet_num"
 STORAGE_NAME = "40planet:value"
 
-KEYWORDS = ( "if", "else", "while", "import", "def", "break", "and", "or", "return", "execute" ) + TYPES
+KEYWORDS = ( "if", "else", "while", "import", "def", "break", "and", "or", "return", "execute", "var" ) # + TYPES
 
 OPERATOR_TO_STRING = {
     "=":"equal",
@@ -44,12 +44,12 @@ OPERATOR_TO_STRING = {
     "/":"basic",
     "%":"basic",
     "return": "return",
-    "==": "bool",
-    "!=": "bool",
-    ">=": "bool",
-    "<=": "bool",
-    "<": "bool",
-    ">": "bool",
+    "==": "basic",
+    "!=": "basic",
+    ">=": "basic",
+    "<=": "basic",
+    "<": "basic",
+    ">": "basic",
     ".":"dot",
     "[":"big_paren",
     "(":"small_paren",
@@ -84,9 +84,26 @@ OPERATOR_PRIORITY = {
     "paren":100
 }
 
-INTERPRETE_THESE = ("operator", "call_function", "make_array", "make_nbt", "make_selector", "define_var", "define_array")
+OPERATOR_ID = {
+    "+":1,
+    "-":2,
+    "*":3,
+    "/":4,
+    "%":5,
+    "==":6,
+    "!=":7,
+    ">=":8,
+    ">":9,
+    "<=":10,
+    "<":11,
+    "!":12,
+    "member":13,
+    # ".":14
+}
 
-BUILT_IN_FUNCTION = ("print", "random", "type", "round", "get_score", "get_data", "set_score") + TYPES
+INTERPRETE_THESE = ("operator", "call_function", "make_array", "make_nbt", "make_selector", "define_var")
+
+BUILT_IN_FUNCTION = ("print", "random", "type", "get_score", "get_data", "set_score", "set_data") + TYPES
 
 EXECUTE_KEYWORDS = ( "as", "at", "if", "positioned", "" )
 
@@ -172,7 +189,7 @@ class Parser:
             else: return Node(self.current_tok.string, token = self.current_tok), None
         elif self.current_tok.string in KEYWORDS:
             error = None
-            if self.current_tok.string in TYPES:
+            if self.current_tok.string == "var":
                 node, error = self.define_var()
             else:
                 method_name = f'make_tree_of_{self.current_tok.string}'
@@ -180,7 +197,6 @@ class Parser:
                 node, error = method(parent)
             return node, error
         elif self.current_tok.string not in self.variables and self.current_tok.string not in self.functions and self.current_tok.string not in BUILT_IN_FUNCTION:
-            print(self.current_tok)
             return None, InvalidSyntaxError(
                 self.current_tok,
                 self.filename,
@@ -216,7 +232,7 @@ class Parser:
         elif operator in BASIC_OPERATOR:
             pre_token = self.reverse()
             self.advance()
-            if operator != MINECRAFTCOMMAND or (pre_token.string != "\n"):
+            if (operator != MINECRAFTCOMMAND or pre_token.string != "\n") and self.tok_idx > 1:
                 node, error = self.operator_basic(parent)
                 if error: return None, error
                 return node, error
@@ -329,11 +345,6 @@ class Parser:
         input_node = Node("input", parent=node, token = None)
         while self.current_tok.string != ")":
             if self.current_tok.string == ",": self.advance()
-            if self.current_tok.string not in TYPES: return InvalidSyntaxError(
-                self.current_tok,
-                self.filename,
-                f"type keyword was expected, but it's not"
-            )
             temp, error = self.define_var()
             temp.parent = input_node
             self.functions[name]["inputs"].append(temp.children[0])
@@ -572,38 +583,21 @@ class Parser:
 
     def define_var(self):
         type_ = self.current_tok.string
-        tok = self.current_tok
         self.advance()
-        is_array = False
         if self.current_tok.type != 1:
-            if self.current_tok.string == "(":
-                self.reverse()
-                return self.make_tree_of_call_function()
-            elif self.current_tok.string != "[": 
-                return None, InvalidSyntaxError(
-                    self.current_tok,
-                    self.filename,
-                    "Variable's name was expected, but it's not"
-                )
-            else:
-                is_array = True
-                temp_tok = self.advance()
-                if temp_tok.string != "]": return None, InvalidSyntaxError(
-                    temp_tok,
-                    self.filename,
-                    "] was expected, but it's not"
-                )
-                self.advance()
+            return None, InvalidSyntaxError(
+                self.current_tok,
+                self.filename,
+                "Variable's name was expected, but it's not"
+            )
         
-        var = Variable(self.current_tok.string, type_, is_array)
+        var = Variable(self.current_tok.string, type_, False)
         self.variables[var.name] = var
 
 
-        if var.is_array: node = Node("define_array", token = None)
-        else: node = Node("define_var", token = None)
+        node = Node("define_var", token = None)
 
         Node(var.name, parent=node, token = self.current_tok)
-        Node(var.type, parent=node, token = tok)
 
 
         return node, None
@@ -660,14 +654,7 @@ def make_basic_files(file_dir, namespace = "pack"):
     file = open(file_dir + f"{namespace}/data/{namespace}/functions/load.mcfunction", "w+")
     file.write(f"\
 # This data pack was compiled with the 40planet's compiler.\n\
-# https://github.com/alexmonkey05/Datapack-Interpreter\n\
-scoreboard objectives add {SCOREBOARD_NAME} dummy\n\
-scoreboard players set 100 {SCOREBOARD_NAME} 100\n\
-scoreboard players set #0 {SCOREBOARD_NAME} 0\n\
-kill 0-0-0-0-a\n\
-summon text_display 0 0 0 {{UUID:[I;0,0,0,10]}}\n\
-forceload add 0 0\n\
-say done!\n")
+# https://github.com/alexmonkey05/Datapack-Interpreter\n\n")
     file.close()
     file = open(file_dir + f"{namespace}/data/{namespace}/functions/tick.mcfunction", "w+")
     file.close()
@@ -684,7 +671,8 @@ class Interpreter:
         self.namespace = namespace
         self.current_dir = result_dir + f"{self.namespace}/data/{self.namespace}/functions/" + current_dir
         self.current_file = "load.mcfunction"
-        self.variables = { "0":[Variable("0", "int", False, "0")] }
+        # self.variables = { "0":[Variable("0", "int", False, "0")] }
+        self.variables = {}
         self.functions = {}
         self.modules = {}
 
@@ -710,8 +698,7 @@ class Interpreter:
         return var_name, None
     def define_var_(self, node):
         var_name = node.children[0].name
-        type_ = node.children[1].name
-        var = Variable(var_name, type_, False, get_var_temp())
+        var = Variable(var_name, "type_", False, get_var_temp())
         self.const.append(var)
         if var.name in self.using_variables[-1]:
             return None, InvalidSyntaxError(
@@ -723,28 +710,8 @@ class Interpreter:
         self.variables[var.name].append(var)
         self.using_variables[-1][var.name] = var
         if self.is_parameter: return var, None
-        if type_ in SCORE_TYPES:
-            self.write(f"scoreboard players set #{var.temp} {SCOREBOARD_NAME} 0\n")
-        elif type_ == "string": self.write(f"data modify storage {STORAGE_NAME} {var.temp} set value \"\"\n")
         return var, None
-    def define_array_(self, node):
-        var_name = node.children[0].name
-        type_ = node.children[1].name
-        var = Variable(var_name, type_, True, get_var_temp())
-        
-        if var.name in self.using_variables[-1]:
-            return None, InvalidSyntaxError(
-                node.children[0].token,
-                self.filename,
-                f"\"{var.name}\" already defined"
-            )
-        self.write(f"data modify storage {STORAGE_NAME} {var.temp} set value []\n")
-        if var_name not in self.variables: self.variables[var_name] = []
-        self.variables[var_name].append(var)
-        self.using_variables[-1][var.name] = var
-
-        return var, None
-    def define_function_(self, node):
+    def define_function_(self, node): # 나중에 구조 뒤엎기
         fun = Function(node.children[1].name, node.children[0].name, [], get_fun_temp())
         self.functions[fun.name] = fun
         inputs = node.children[2].children
@@ -774,7 +741,7 @@ class Interpreter:
         self.using_variables.pop(-1)
         self.variables[fun.temp] = [Variable(fun.name, fun.type, False, fun.temp)]
         return None, None
-    def call_function_(self, node):
+    def call_function_(self, node): # 나중에 구조 뒤엎기
         input_nodes = node.children[1].children
         if node.children[0].name in BUILT_IN_FUNCTION:
             method_name = f'fun_{node.children[0].name}'
@@ -797,32 +764,7 @@ class Interpreter:
             if temp in INTERPRETE_THESE:
                 temp, error = self.interprete(value)
                 if error: return None, error
-                
-            var_type = var.type
-            temp_type = self.get_type(temp)
-            if var_type != temp_type and {var_type, temp_type} != {"float", "double"}:
-                return None, InvalidSyntaxError(
-                    value.token,
-                    self.filename,
-                    f"The given value has a different data type from the parameter"
-                )
-            if (temp not in self.variables and var.is_array) or (temp in self.variables and self.variables[temp][-1].is_array and not var.is_array):
-                return None, InvalidSyntaxError(
-                    value.token,
-                    self.filename,
-                    f"The given value has a different data type from the parameter"
-                )
-            if var.is_array:
-                file.write(f"data modify storage {STORAGE_NAME} {var.temp} set from storage {STORAGE_NAME} {temp}\n")
-            elif var_type in SCORE_TYPES:
-                if temp in self.variables: file.write(f"scoreboard players operation #{var.temp} {SCOREBOARD_NAME} = #{self.variables[temp][-1].temp} {SCOREBOARD_NAME}\n")
-                else:
-                    if var_type == "int" or var_type == "bool":
-                        file.write(f"scoreboard players set #{var.temp} {SCOREBOARD_NAME} {temp}\n")
-                    else:
-                        file.write(f"scoreboard players set #{var.temp} {SCOREBOARD_NAME} {round(float(temp) * 100)}\n")
-            else:
-                file.write(f"data modify storage {STORAGE_NAME} {var.temp} set from storage {STORAGE_NAME} {temp}\n")
+
         file.write(f"function {self.namespace}:{self.get_folder_dir()}{fun.name}\n")
         file.close()
         return fun.temp, None
@@ -861,7 +803,7 @@ class Interpreter:
 
         current_file = self.current_file
         dump_function = self.make_dump_function()
-        self.write(f"execute if score #{if_score} {SCOREBOARD_NAME} matches 1 run function {self.namespace}:{self.get_folder_dir()}{dump_function[:-11]}\n")
+        self.write(f"execute store result score #{if_score} {SCOREBOARD_NAME} run data get storage {STORAGE_NAME} {if_score}\nexecute if score #{if_score} {SCOREBOARD_NAME} matches 1 run function {self.namespace}:{self.get_folder_dir()}{dump_function[:-11]}\n")
         self.current_file = dump_function
         self.using_variables.append({})
 
@@ -909,9 +851,7 @@ class Interpreter:
 
         if_score, error = self.interprete(node.children[0].children[0]) # interprete condition
         if error: return None, error
-        file = open(self.current_dir + self.current_file, "a", encoding="utf-8")
-        file.write(f"execute if score #{if_score} {SCOREBOARD_NAME} matches 1 run function {self.namespace}:{self.get_folder_dir()}{self.current_file[:-11]}\n")
-        file.close()
+        self.write(f"execute store result score #{if_score} {SCOREBOARD_NAME} run data get storage {STORAGE_NAME} {if_score}\nexecute if score #{if_score} {SCOREBOARD_NAME} matches 1 run function {self.namespace}:{self.get_folder_dir()}{self.current_file[:-11]}\n")
 
         self.current_file = current_file
         return None, None
@@ -923,16 +863,17 @@ class Interpreter:
         method = getattr(self, method_name)
         var_name, error = method(node)
         if error: return None, error
-        if "." in var_name and operator != "dot":
-            var = self.variables[var_name][-1]
-            if var.type in SCORE_TYPES:
-                if var.type == "int" or var.type == "bool": self.write(f"execute store result storage {STORAGE_NAME} {var.temp} int 1 run scoreboard players get #{var.temp} {SCOREBOARD_NAME}\n")
-                else: self.write(f"execute store result storage {STORAGE_NAME} {var.temp} {var.type[0]} 0.01 run scoreboard players get #{var.temp} {SCOREBOARD_NAME}\n")
+        # if "." in var_name and operator != "dot":
+        #     var = self.variables[var_name][-1]
+        #     if var.type in SCORE_TYPES:
+        #         if var.type == "int" or var.type == "bool": self.write(f"execute store result storage {STORAGE_NAME} {var.temp} int 1 run scoreboard players get #{var.temp} {SCOREBOARD_NAME}\n")
+        #         else: self.write(f"execute store result storage {STORAGE_NAME} {var.temp} {var.type[0]} 0.01 run scoreboard players get #{var.temp} {SCOREBOARD_NAME}\n")
         return var_name, error
     def command_(self, node):
         command = node.children[0].name
         if "^" in command:
-            command = self.macro_(command, node.token)
+            command, error = self.macro_(command, node.token)
+            if error: return None, error
             if command[0] != "$": command = "$" + command
             self.macro(command + "\n")
         else:
@@ -940,7 +881,6 @@ class Interpreter:
         return None, None
     def macro_(self, command, token):
         global used_temp
-        temps = []
         while "^" in command:
             var_name = ""
             is_var_name = True
@@ -958,26 +898,20 @@ class Interpreter:
                     self.filename,
                     f"\"{var_name}\" was not defined"
                 )
-            temp = self.to_storage(var_name)
-            command = command.replace("^" + var_name + "&", f"$({temp})")
-            if temp in used_temp: used_temp.remove(temp)
-            temps.append(temp)
-        used_temp += temps
-        return command
+            command = command.replace("^" + var_name + "&", f"$({self.variables[var_name][-1].temp})")
+        return command, None
     def make_array_(self, node):
         temp = get_temp()
         self.write(f"data modify storage {STORAGE_NAME} {temp} set value []\n")
-        type_ = ""
         for child in node.children:
             temp2 = child.name
             if temp2 in INTERPRETE_THESE:
                 temp2, error = self.interprete(child)
                 if error: return None, error
             self.write(f"data modify storage {STORAGE_NAME} {temp} append from storage {STORAGE_NAME} {self.to_storage(temp2)}\n")
-            type_ = self.get_type(temp2)
 
         if temp not in self.variables: self.variables[temp] = []
-        self.variables[temp].append(Variable(temp, type_, True, temp))
+        self.variables[temp].append(Variable(temp, "arr", True, temp))
         return temp, None
     def make_nbt_(self, node):
         temp = get_temp()
@@ -993,18 +927,8 @@ class Interpreter:
             var_temp = self.to_storage(value)
             self.write(f"data modify storage {STORAGE_NAME} {temp}.{key} set from storage {STORAGE_NAME} {var_temp}\n")
             if value in self.variables:
-                var_type = self.variables[value][-1].type
-                self.add_var(f"{temp}.{key}", var_type, self.variables[value][-1].is_array, value)
-                if var_type == "nbt":
-                    for var in self.variables[value][-1].details:
-                        variable = self.variables[var][-1]
-                        del(self.variables[var])
-                        var_name = f"{temp}.{key}." + ".".join(var.split(".")[1:])
-                        self.add_var(var_name, variable.type, variable.is_array, var_name)
-                        keys.append(var_name)
-                        self.add_used_temp(var)
-                    del(self.variables[value])
-            else: self.add_var(f"{temp}.{key}", self.get_type(value), False, var_temp)
+                self.add_var(f"{temp}.{key}", "var_type", self.variables[value][-1].is_array, value)
+            else: self.add_var(f"{temp}.{key}", "asdf", False, var_temp)
             keys.append(f"{temp}.{key}")
         self.add_var(temp, "nbt", False, temp, keys)
         return temp, None
@@ -1039,28 +963,8 @@ class Interpreter:
         if return_value in INTERPRETE_THESE:
             return_value, error = self.interprete(return_node)
             if error: return None, error
-        return_type = self.get_type(return_value)
-        if fun.type != return_type and {fun.type, return_type} != {"float", "double"}:
-            return None, InvalidSyntaxError(
-                node.token,
-                self.filename,
-                f"The given value has a different data type from the parameter"
-            )
-        if fun.type in SCORE_TYPES:
-            if return_value in self.variables:
-                if self.variables[return_value][-1].type in SCORE_TYPES:
-                    self.write(f"scoreboard players operation #{fun.temp} {SCOREBOARD_NAME} = #{self.variables[return_value][-1].temp} {SCOREBOARD_NAME}\n")
-                else:
-                    self.write(f"execute store result score #{fun.temp} {SCOREBOARD_NAME} run data get storage {STORAGE_NAME} {return_value}\n")
-            else: self.write(f"scoreboard players set #{fun.temp} {SCOREBOARD_NAME} {return_value}\n")
-        else: self.write(f"data modify storage {STORAGE_NAME} {fun.temp} set from storage {STORAGE_NAME} {self.to_storage(return_value)}\n")
-        return_command = f"return run scoreboard players get #{fun.temp} {SCOREBOARD_NAME}"
-        if fun.type not in SCORE_TYPES: return_command = f"return run data get storage {STORAGE_NAME} {fun.temp}"
-        if temp_node:
-            file = open(self.current_dir + fun_name + ".mcfunction", "a", encoding="utf-8")
-            file.write(return_command)
-            file.close()
-        else: self.write(return_command)
+        if return_value in self.variables: self.write(f"data modify storage {STORAGE_NAME} {fun.temp} set from storage {STORAGE_NAME} {self.variables[return_value][-1].temp}\nreturn run data get storage {STORAGE_NAME} {fun.temp}")
+        else: self.write(f"data modify storage {STORAGE_NAME} {fun.temp} set value {return_value}\nreturn {return_value}")
         return fun.temp, None
     def break_(self, node):
         self.write("return 0\n")
@@ -1085,7 +989,6 @@ class Interpreter:
             if error: return None, error
 
         self.current_file = current_file
-
         for var in self.using_variables[-1]:
             used_var_temp.append(self.using_variables[-1][var].temp)
             if var == "0": continue
@@ -1096,7 +999,7 @@ class Interpreter:
 
 
         return None, None
-    
+
 
     def operator_equal(self, node):
         var1 = node.children[1].name
@@ -1106,7 +1009,7 @@ class Interpreter:
             if error: return None, error
         if var1.__class__ == Variable:
             var1 = var1.name
-        elif var1 in self.variables and not self.variables[var1][-1].is_array:
+        elif var1 in self.const and var1 in self.variables and not self.variables[var1][-1].is_array:
             self.const.remove(var1)
 
 
@@ -1117,227 +1020,64 @@ class Interpreter:
 
         if node.children[1].name == "define_var" and var2[:4] != "temp":
             self.variables[var1][-1].value = var2
-
-        var1_type = self.get_type(var1)
-        var2_type = self.get_type(var2)
-        if var1_type != var2_type and {var1_type, var2_type} != {"float", "double"}:
+        
+        if var1 not in self.variables:
             return None, InvalidSyntaxError(
                 node.children[0].token,
                 self.filename,
-                f"Operands must be of the same data type"
+                f"\"{var1}\" is not defined"
             )
-        
-        if var1 in self.variables and self.variables[var1][-1].is_array:
-            if var2 not in self.variables or not self.variables[var2][-1].is_array:
-                return None, InvalidSyntaxError(
-                    node.children[0].token,
-                    self.filename,
-                    f"\"{var1}\" is an array"
-                )
+
+        if var2 in self.variables:
             self.write(f"data modify storage {STORAGE_NAME} {self.variables[var1][-1].temp} set from storage {STORAGE_NAME} {self.variables[var2][-1].temp}\n")
-        elif var1_type in SCORE_TYPES:
-            if var2 in self.variables:
-                self.write(f"scoreboard players operation #{self.variables[var1][-1].temp} {SCOREBOARD_NAME} = #{self.variables[var2][-1].temp} {SCOREBOARD_NAME}\n")
-            else:
-                if var1_type == "int" or var1_type == "bool": self.write(f"scoreboard players set #{self.variables[var1][-1].temp} {SCOREBOARD_NAME} {var2}\n")
-                else: self.write(f"scoreboard players set #{self.variables[var1][-1].temp} {SCOREBOARD_NAME} {round(float(var2) * 100)}\n")
+        elif "." in var2:
+            self.write(f"data modify storage {STORAGE_NAME} {self.variables[var1][-1].temp} set from storage {STORAGE_NAME} {var2}\n")
         else:
-            if var2 in self.variables:
-                self.write(f"data modify storage {STORAGE_NAME} {self.variables[var1][-1].temp} set from storage {STORAGE_NAME} {self.variables[var2][-1].temp}\n")
-                
-                if var2_type == "nbt":
-                    for var in self.variables[var2][-1].details:
-                        variable = self.variables[var][-1]
-                        del(self.variables[var])
-                        var_name = f"{var1}." + ".".join(var.split(".")[1:])
-                        var_temp = f"{self.variables[var1][-1].temp}." + ".".join(var.split(".")[1:])
-                        self.add_var(var_name, variable.type, variable.is_array, var_temp)
-                    del(self.variables[var2])
-            else:
-                self.write(f"data modify storage {STORAGE_NAME} {self.variables[var1][-1].temp} set value {var2}\n")
+            self.write(f"data modify storage {STORAGE_NAME} {self.variables[var1][-1].temp} set value {var2}\n")
 
         self.add_used_temp(var2)
         return var1, None
     def operator_basic(self, node):
-        temp = get_temp()
         operator = node.children[0].name
         var1 = node.children[1].name
         if var1 in INTERPRETE_THESE:
             var1, error = self.interprete(node.children[1])
             if error: return None, error
-        if var1.__class__ == Variable:
-            var1 = var1.name
-
-        var1_type = self.get_type(var1)
-        if var1_type not in SCORE_TYPES:
-            return None, InvalidSyntaxError(
-                node.children[0].token,
-                self.filename,
-                f"{operator} can not operate {var1_type} type data"
-            )
-        
-        if var1 in self.variables:
-            self.write(f"scoreboard players operation #{temp} {SCOREBOARD_NAME} = #{self.variables[var1][-1].temp} {SCOREBOARD_NAME}\n")
-        else:
-            if var1_type == "int" or var1_type == "bool": self.write(f"scoreboard players set #{temp} {SCOREBOARD_NAME} {var1}\n")
-            else: self.write(f"scoreboard players set #{temp} {SCOREBOARD_NAME} {round(float(var1) * 100)}\n")
-
 
         var2 = node.children[2].name
         if var2 in INTERPRETE_THESE:
             var2, error = self.interprete(node.children[2])
             if error: return None, error
+        if var2 in self.variables: var2 = self.variables[var2][-1].temp
 
-        var2_type = self.get_type(var2)
-        if var1_type != var2_type and {var1_type, var2_type} != {"float", "double"}:
-            return None, InvalidSyntaxError(
-                node.children[0].token,
-                self.filename,
-                f"Operands must be of the same data type"
-            )
-        
-        file = open(self.current_dir + self.current_file, "a", encoding="utf-8")
-        temp2 = get_temp()
-        if var2 in self.variables:
-            file.write(f"scoreboard players operation #{temp2} {SCOREBOARD_NAME} = #{self.variables[var2][-1].temp} {SCOREBOARD_NAME}\n")
-        else:
-            if var1_type == "int" or var1_type == "bool": file.write(f"scoreboard players set #{temp2} {SCOREBOARD_NAME} {var2}\n")
-            else:
-                file.write(f"scoreboard players set #{temp2} {SCOREBOARD_NAME} {round(float(var2) * 100)}\n")
-                if operator == "/":
-                    file.write(f"scoreboard players operation #{temp} {SCOREBOARD_NAME} *= 100 {SCOREBOARD_NAME}\n")
-        file.write(f"scoreboard players operation #{temp} {SCOREBOARD_NAME} {operator}= #{temp2} {SCOREBOARD_NAME}\n")
-        if (var1_type == "double" or var1_type == "float") and operator == "*":
-            file.write(f"scoreboard players operation #{temp} {SCOREBOARD_NAME} /= 100 {SCOREBOARD_NAME}\n")
-
-        self.add_used_temp(var1)
-        self.add_used_temp(var2)
-        self.add_used_temp(temp2)
-        self.add_var(temp, var1_type, False, temp)
+        temp = get_temp()
+        if var1 != "var1":
+            if var1 in self.variables: self.write(f"data modify storage {STORAGE_NAME} var1 set from storage {STORAGE_NAME} {self.variables[var1][-1].temp}\n")
+            else: self.write(f"data modify storage {STORAGE_NAME} var1 set value {var1}\n")
+        if var2 in self.variables: self.write(f"data modify storage {STORAGE_NAME} var2 set from storage {STORAGE_NAME} {self.variables[var2][-1].temp}\n")
+        else: self.write(f"data modify storage {STORAGE_NAME} var1 set value {var2}\n")
+        self.write(f"scoreboard players set #operator_type {SCOREBOARD_NAME} {OPERATOR_ID[operator]}\nfunction basic:operation\ndata modify storage {STORAGE_NAME} {temp} set from storage {STORAGE_NAME} var1\n")
         return temp, None
-    def operator_bool(self, node):
-        temp = get_temp()
-        operator = node.children[0].name
-        var1 = node.children[1].name
-        if var1 in INTERPRETE_THESE:
-            var1, error = self.interprete(node.children[1])
-            if error: return None, error
-        if var1.__class__ == Variable:
-            var1 = var1.name
-
-        var1_type = self.get_type(var1)
-        if var1_type not in SCORE_TYPES:
-            if operator != "==" and operator != "!=":
-                return None, InvalidSyntaxError(
-                    node.children[0].token,
-                    self.filename,
-                    f"{operator} can not operate {var1_type} type data"
-                )
-            if var1 in self.variables:
-                self.write(f"data modify storage {STORAGE_NAME} {temp} set from storage {STORAGE_NAME} {self.variables[var1][-1].temp}\n")
-            else:
-                self.write(f"data modify storage {STORAGE_NAME} {temp} set value {var1}\n")
-        else:
-            if var1 in self.variables:
-                self.write(f"scoreboard players operation #{temp} {SCOREBOARD_NAME} = #{self.variables[var1][-1].temp} {SCOREBOARD_NAME}\n")
-            else:
-                if var1_type == "int" or var1_type == "bool": self.write(f"scoreboard players set #{temp} {SCOREBOARD_NAME} {var1}\n")
-                else: self.write(f"scoreboard players set #{temp} {SCOREBOARD_NAME} {round(float(var1) * 100)}\n")
-
-
-        var2 = node.children[2].name
-        if var2 in INTERPRETE_THESE:
-            var2, error = self.interprete(node.children[2])
-            if error: return None, error
-
-        var2_type = self.get_type(var2)
-
-        if var1_type not in SCORE_TYPES:
-            self.write(f"execute store success score #{temp} {SCOREBOARD_NAME} run data modify storage {STORAGE_NAME} {temp} set ")
-            if var2 in self.variables:
-                self.write(f"from storage {STORAGE_NAME} {self.variables[var2][-1].temp}\n")
-            else:
-                self.write(f"value {var2}\n")
-            self.write(f"execute store result score #{temp} {SCOREBOARD_NAME} if score #{temp} {SCOREBOARD_NAME} matches 0\n")
-            self.add_used_temp(var1)
-            self.add_used_temp(var2)
-            self.add_var(temp, "bool", False, temp)
-            return temp, None
-
-        if var1_type != var2_type and {var1_type, var2_type} != {"float", "double"}:
-            return None, InvalidSyntaxError(
-                node.children[0].token,
-                self.filename,
-                f"Operands must be of the same data type"
-            )
-        
-        file = open(self.current_dir + self.current_file, "a", encoding="utf-8")
-        temp2 = get_temp()
-        if var2 in self.variables:
-            file.write(f"scoreboard players operation #{temp2} {SCOREBOARD_NAME} = #{self.variables[var2][-1].temp} {SCOREBOARD_NAME}\n")
-        else:
-            if var1_type == "int" or var1_type == "bool": file.write(f"scoreboard players set #{temp2} {SCOREBOARD_NAME} {var2}\n")
-            else:
-                file.write(f"scoreboard players set #{temp2} {SCOREBOARD_NAME} {round(float(var2) * 100)}\n")
-
-        temp3 = get_temp()
-        file.write(f"scoreboard players set #{temp3} {SCOREBOARD_NAME} 0\n")
-        if operator == "==":
-            file.write(f"execute if score #{temp} {SCOREBOARD_NAME} = #{temp2} {SCOREBOARD_NAME} run scoreboard players set #{temp3} {SCOREBOARD_NAME} 1\n")
-        elif operator == "!=":
-            file.write(f"execute unless score #{temp} {SCOREBOARD_NAME} = #{temp2} {SCOREBOARD_NAME} run scoreboard players set #{temp3} {SCOREBOARD_NAME} 1\n")
-        else:
-            file.write(f"execute if score #{temp} {SCOREBOARD_NAME} {operator} #{temp2} {SCOREBOARD_NAME} run scoreboard players set #{temp3} {SCOREBOARD_NAME} 1\n")
-
-        file.close()
-        self.add_used_temp(var1)
-        self.add_used_temp(var2)
-        self.add_used_temp(temp)
-        self.add_used_temp(temp2)
-        self.add_var(temp3, "bool", False, temp3)
-        return temp3, None
     def operator_and_or(self, node):
         
         temp = get_temp()
-        temp1 = get_temp()
         var1 = node.children[1].name
         if var1 in INTERPRETE_THESE:
             var1, error = self.interprete(node.children[1])
             if error: return None, error
-        if var1.__class__ == Variable:
-            var1 = var1.name
-        file = open(self.current_dir + self.current_file, "a", encoding="utf-8")
-        file.write(f"scoreboard players set #{temp1} {SCOREBOARD_NAME} 0\n")
-        var1_type = self.get_type(var1)
-        if var1_type in SCORE_TYPES:
-            if var1 in self.variables:
-                file.write(f"execute if score #{self.variables[var1][-1].temp} {SCOREBOARD_NAME} matches 1.. run scoreboard players set #{temp1} {SCOREBOARD_NAME} 1\n")
-            elif float(var1) > 0:
-                file.write(f"scoreboard players set #{temp1} {SCOREBOARD_NAME} 1\n")
-        file.close()
-
 
         var2 = node.children[2].name
         if var2 in INTERPRETE_THESE:
             var2, error = self.interprete(node.children[2])
             if error: return None, error
 
-        var2_type = self.get_type(var2)
+        temp1 = get_temp()
         temp2 = get_temp()
-        file = open(self.current_dir + self.current_file, "a", encoding="utf-8")
-        file.write(f"scoreboard players set #{temp2} {SCOREBOARD_NAME} 0\n")
-        if var2_type in SCORE_TYPES:
-            if var2 in self.variables:
-                file.write(f"execute if score #{self.variables[var2][-1].temp} {SCOREBOARD_NAME} matches 1.. run scoreboard players set #{temp2} {SCOREBOARD_NAME} 1\n")
-            elif float(var2) > 0:
-                file.write(f"scoreboard players set #{temp2} {SCOREBOARD_NAME} 1\n")
-        operator = node.children[0].name
-        file.write(f"scoreboard players set #{temp} {SCOREBOARD_NAME} 0\n")
-        if operator == "and":
-            file.write(f"scoreboard players operation #{temp1} {SCOREBOARD_NAME} *= #{temp2} {SCOREBOARD_NAME}\nscoreboard players operation #{temp} {SCOREBOARD_NAME} = #{temp1} {SCOREBOARD_NAME}\n")
-        else:
-            file.write(f"execute if score #{temp1} {SCOREBOARD_NAME} matches 1 run scoreboard players set #{temp} {SCOREBOARD_NAME} 1\nexecute if score #{temp2} {SCOREBOARD_NAME} matches 1 run scoreboard players set #{temp} {SCOREBOARD_NAME} 1\n")
-        file.close()
+        self.write(f"\
+execute store result score #{temp1} {SCOREBOARD_NAME} run data get storage {STORAGE_NAME} {var1}\n\
+execute store result score #{temp2} {SCOREBOARD_NAME} run data get storage {STORAGE_NAME} {var2}\n\
+execute store rsult storage {STORAGE_NAME} {temp} byte 1 run scoreboard players operation #{temp1} {SCOREBOARD_NAME} *= #{temp2} {SCOREBOARD_NAME}\n\
+")
         self.add_used_temp(var1)
         self.add_used_temp(var2)
         self.add_used_temp(temp1)
@@ -1345,44 +1085,38 @@ class Interpreter:
         return temp, None
     def operator_member(self, node):
         var_name = node.children[1].name
-        var = self.variables[var_name][-1]
-        if not var.is_array: return None, InvalidSyntaxError(
+        if var_name not in self.variables: return None, InvalidSyntaxError(
                 node.children[1].token,
                 self.filename,
-                f"Member operators must be used on arrays"
+                f"{var_name} is not defined"
             )
+        var = self.variables[var_name][-1]
         index = node.children[2].name
         if index in INTERPRETE_THESE:
             index, error = self.interprete(node.children[2])
             if error: return None, error
-        if self.get_type(index) != "int":
-            return None, InvalidSyntaxError(
-                node.children[1].token,
-                self.filename,
-                f"Index must be an integer"
-            )
         temp = get_temp()
-        file = open(self.current_dir + self.current_file, "a", encoding="utf-8")
-        if var.type in SCORE_TYPES:
-            if index not in self.variables:
-                file.write(f"execute store result score #{temp} {SCOREBOARD_NAME} run data get storage {STORAGE_NAME} {var.temp}[{index}]\n")
-            else:
-                self.write(f"execute store result storage {STORAGE_NAME} temp int 1 run scoreboard players get #{self.variables[index][-1].temp} {SCOREBOARD_NAME}\n")
-                if var.type == "float" or var.type == "double": self.macro(f"$execute store result score #{temp} {SCOREBOARD_NAME} run data get storage {STORAGE_NAME} {var.temp}[$(temp)] 100\n")
-                else: self.macro(f"$execute store result score #{temp} {SCOREBOARD_NAME} run data get storage {STORAGE_NAME} {var.temp}[$(temp)]\n")
+        if var_name in self.variables: var_name = self.variables[var_name][-1].temp
+        if index in self.variables:
+            index = self.variables[index][-1].temp
+            self.write(f"\
+data modify storage {STORAGE_NAME} var1 set from storage {STORAGE_NAME} {var_name}\n\
+data modify storage {STORAGE_NAME} var2 set from storage {STORAGE_NAME} {index}\n\
+scoreboard players set #operator_type {SCOREBOARD_NAME} {OPERATOR_ID["member"]}\n\
+function basic:operation\n\
+data modify storage {STORAGE_NAME} {temp} set from storage {STORAGE_NAME} var1\n\
+")
         else:
-            if index not in self.variables:
-                file.write(f"data modify storage {STORAGE_NAME} {temp} set from storage {STORAGE_NAME} {var_name}[{index}]\n")
-            else:
-                self.write(f"execute store result storage {STORAGE_NAME} temp int 1 run scoreboard players get #{self.variables[index][-1].temp} {SCOREBOARD_NAME}\n")
-                self.macro(f"$data modify storage {STORAGE_NAME} {temp} set from storage {STORAGE_NAME} {var_name}[$(temp)]\n")
+            self.write(f"\
+data modify storage {STORAGE_NAME} {temp} set from storage {STORAGE_NAME} {var_name}[{index}]\n\
+")
         self.add_var(temp, var.type, False, temp)
         self.add_used_temp(index)
         return temp, None
     def operator_not(self, node):
         temp, error = self.interprete(node.children[1])
         if error: return None, error
-        self.write(f"execute store result score #{temp} {SCOREBOARD_NAME} if score #{temp} {SCOREBOARD_NAME} matches 0\n")
+        self.write(f"execute store result storage {STORAGE_NAME} {temp} byte 1 run data get storage {STORAGE_NAME} {temp}\n")
         self.add_var(temp, "bool", False, temp)
         return temp, None
     def operator_dot(self, node):
@@ -1408,7 +1142,7 @@ class Interpreter:
             else:
                 pass
         elif var1 in self.variables: # 인스턴스
-            return var1 + "." + var2, None
+            return f"{var1}.{var2}", None
         else: # 모듈 또는 클래스
             
             return None, InvalidSyntaxError(
@@ -1427,29 +1161,15 @@ class Interpreter:
                 temp, error = self.interprete(input_node.children[0])
                 if error: return None, error
             if temp in self.variables:
-                var = self.variables[temp][-1]
-                if "." in temp:
-                    result_arr.append('{"nbt":"%s","storage":"%s"}' % (var.temp, STORAGE_NAME))
-                elif var.type in ("float", "double"):
-                    self.write(f"execute store result storage {STORAGE_NAME} {var.temp} {var.type} 0.01 run scoreboard players get #{var.temp} {SCOREBOARD_NAME}\n")
-                    result_arr.append('{"nbt":"%s","storage":"%s"}' % (var.temp, STORAGE_NAME))
-                elif var.type in ("int", "bool") and not var.is_array:
-                    result_arr.append('{"score":{"name":"#%s","objective":"%s"}}' % (var.temp, SCOREBOARD_NAME))
-                elif var.type == "entity":
-                    if not dump_file:
-                        dump_file = self.make_dump_function()
-                        self.current_file = dump_file
-                    result_arr.append('{"selector":"$(%s)"}' % var.temp)
-                else:
-                    result_arr.append('{"nbt":"%s","storage":"%s"}' % (var.temp, STORAGE_NAME))
+                result_arr.append('{"nbt":"%s","storage":"%s"}' % (self.variables[temp][-1].temp, STORAGE_NAME))
             else:
-                if temp[0] != "\"":
+                if temp[0] == "\"": temp = temp[1:-1]
+                elif temp[0] not in DIGITS:
                     return None, InvalidSyntaxError(
-                        input_node.token,
+                        input_node.children[0].token,
                         self.filename,
-                        f"{temp} is not string type"
+                        f"{temp} is not defined"
                     )
-                temp = temp[1:-1]
                 result_arr.append('{"text":"%s"}' % temp.replace("\"", "\\\""))
         result = ""
         for string in result_arr:
@@ -1470,7 +1190,7 @@ class Interpreter:
                 f"random must have only 0 parameters"
             )
         temp = get_temp()
-        self.write(f"execute store result score #{temp} {SCOREBOARD_NAME} run random value 0..1000\n")
+        self.write(f"execute store result storage {STORAGE_NAME} {temp} float 0.001 run random value 0..1000\n")
         self.add_var(temp, "int", False, temp)
         return temp, None
     def fun_type(self, node, input_nodes):
@@ -1482,35 +1202,34 @@ class Interpreter:
             )
         var_name = input_nodes[0].children[0].name
         temp = get_temp()
-        self.write(f"data modify storage {STORAGE_NAME} {temp} set value \"{self.get_type(var_name)}\"\n")
+        self.write(f"data modify storage {STORAGE_NAME} type_var set from storage {STORAGE_NAME} {self.variables[var_name][-1].temp}\n\
+execute store result score #{temp} {SCOREBOARD_NAME} run function basic:get_type_score \n\
+execute if score #{temp} {SCOREBOARD_NAME} matches 0 run data modify storage {STORAGE_NAME} {temp} set value \"nbt\"\n\
+execute if score #{temp} {SCOREBOARD_NAME} matches 1 run data modify storage {STORAGE_NAME} {temp} set value \"int\"\n\
+execute if score #{temp} {SCOREBOARD_NAME} matches 2 run data modify storage {STORAGE_NAME} {temp} set value \"float\"\n\
+execute if score #{temp} {SCOREBOARD_NAME} matches 3 run data modify storage {STORAGE_NAME} {temp} set value \"double\"\n\
+execute if score #{temp} {SCOREBOARD_NAME} matches 4 run data modify storage {STORAGE_NAME} {temp} set value \"string\"\n\
+execute if score #{temp} {SCOREBOARD_NAME} matches 5 run data modify storage {STORAGE_NAME} {temp} set value \"byte\"\n\
+")
         self.add_var(temp, "string", False, temp)
         return temp, None
-    def fun_round(self, node, input_nodes):
-        if 1 != len(input_nodes):
-            return None, InvalidSyntaxError(
-                node.children[0].token,
-                self.filename,
-                f"type must have only 1 parameters"
-            )
-        var_name = input_nodes[0].children[0].name
-        var_type = self.get_type(var_name)
-        if var_type not in SCORE_TYPES:
-            return None, InvalidSyntaxError(
-                input_nodes[0].token,
-                self.filename,
-                f"Parameter only can be int, float or double type"
-            )
-        temp = get_temp()
-        if var_type == "int" or var_type == "bool":
-            return var_name, None
-        if var_name in self.variables:
-            self.write(f"\
-execute store result storage {STORAGE_NAME} {temp} int 0.01 run scoreboard players get #{var_name} {SCOREBOARD_NAME}\n\
-execute store result score #{temp} {SCOREBOARD_NAME} run data get storage {STORAGE_NAME} {temp}\n")
-        else:
-            self.write(f"scoreboard players set #{temp} {SCOREBOARD_NAME} {round(float(var_name))}\n")
-        self.add_var(temp, "int", False, temp)
-        return temp, None
+#     def fun_round(self, node, input_nodes):
+#         if 1 != len(input_nodes):
+#             return None, InvalidSyntaxError(
+#                 node.children[0].token,
+#                 self.filename,
+#                 f"type must have only 1 parameters"
+#             )
+#         var_name = input_nodes[0].children[0].name
+#         temp = get_temp()
+#         if var_name in self.variables:
+#             self.write(f"\
+# execute store result storage {STORAGE_NAME} {temp} int 1 run data get storage {STORAGE_NAME} {self.variables[var_name][-1].temp} \n\
+# ")
+#         else:
+#             self.write(f"data modify {STORAGE_NAME} {temp} set value {round(float(var_name))}\n")
+#         self.add_var(temp, "int", False, temp)
+#         return temp, None
     def fun_get_score(self, node, input_nodes):
         if 2 != len(input_nodes):
             return None, InvalidSyntaxError(
@@ -1527,41 +1246,29 @@ execute store result score #{temp} {SCOREBOARD_NAME} run data get storage {STORA
         if var2 in INTERPRETE_THESE:
             var2, error = self.interprete(input_nodes[1].children[0])
             if error: return None, error
-        var1_type = self.get_type(var1)
-        var2_type = self.get_type(var2)
-        if var1_type not in ("string", "entity") or var2_type != "string":
-            return None, InvalidSyntaxError(
-                node.children[0].token,
-                self.filename,
-                f"Parameter's type must be string"
-            )
         is_var = False
         if var1 in self.variables:
-            var_storage = self.to_storage(var1)
-            self.write(f"data modify storage {STORAGE_NAME} temp set from storage {STORAGE_NAME} {var_storage}\n")
-            var1 = f"$(temp)"
+            var1 = f"$({self.variables[var1][-1].temp})"
             is_var = True
-        elif var1_type == "string": var1 = var1[1:-1]
+        elif var1[0] == "\"": var1 = var1[1:-1]
         if var2 in self.variables:
-            var_storage = self.to_storage(var2)
-            self.write(f"data modify storage {STORAGE_NAME} temp_ set from storage {STORAGE_NAME} {var_storage}\n")
-            var2 = f"$(temp_)"
+            var2 = f"$({self.variables[var2][-1].temp})"
             is_var = True
-        elif var2_type == "string": var2 = var2[1:-1]
+        elif var2[0] == "\"": var2 = var2[1:-1]
         if is_var:
-            self.macro(f"$scoreboard players operation #{temp} {SCOREBOARD_NAME} = {var1} {var2}\n")
+            self.macro(f"$execute store result storage {STORAGE_NAME} {temp} int 1 run scoreboard players get {var1} {var2}\n")
         else:
-            self.write(f"scoreboard players operation #{temp} {SCOREBOARD_NAME} = {var1} {var2}\n")
+            self.write(f"execute store result storage {STORAGE_NAME} {temp} int 1 run scoreboard players get {var1} {var2}\n")
         self.add_var(temp, "int", False, temp)
         self.add_used_temp(var1)
         self.add_used_temp(var2)
         return temp, None
     def fun_get_data(self, node, input_nodes):
-        if 4 != len(input_nodes):
+        if 3 != len(input_nodes):
             return None, InvalidSyntaxError(
                 node.children[0].token,
                 self.filename,
-                f"get_data must have only 4 parameters"
+                f"get_data must have only 3 parameters"
             )
         temp = get_temp()
         var1 = input_nodes[0].children[0].name
@@ -1576,66 +1283,28 @@ execute store result score #{temp} {SCOREBOARD_NAME} run data get storage {STORA
         if var3 in INTERPRETE_THESE:
             var3, error = self.interprete(input_nodes[1].children[0])
             if error: return None, error
-        var4 = input_nodes[3].children[0].name
-        if var4 in INTERPRETE_THESE:
-            var4, error = self.interprete(input_nodes[1].children[0])
-            if error: return None, error
-        var1_type = self.get_type(var1)
-        var2_type = self.get_type(var2)
-        var3_type = self.get_type(var3)
-        var4_type = self.get_type(var4)
-        if var4 not in ("entity", "block", "stroage"):
-            return None, InvalidSyntaxError(
-                    node.children[0].token,
-                    self.filename,
-                    f"from parameters must be \"block\", \"entity\" or \"stoage\""
-                )
-        if var4_type != "string":
-            return None, InvalidSyntaxError(
-                    node.children[0].token,
-                    self.filename,
-                    f"Type must be string type"
-                )
-        if var1_type != "string" or (var2_type != "string" and var2_type != "entity") or var3_type != "string":
-            return None, InvalidSyntaxError(
-                node.children[0].token,
-                self.filename,
-                f"Parameter's type must be string"
-            )
+        
         is_var = False
         if var1 in self.variables:
-            var_storage = self.to_storage(var1)
-            self.write(f"data modify storage {STORAGE_NAME} temp set from storage {STORAGE_NAME} {var_storage}\n")
-            var1 = f"$(temp)"
+            var1 = f"$({self.variables[var1][-1].temp})"
             is_var = True
-        elif var1_type == "string": var1 = var1[1:-1]
+        elif var1[0] == "\"": var1 = var1[1:-1]
         if var2 in self.variables:
-            var_storage = self.to_storage(var2)
-            self.write(f"data modify storage {STORAGE_NAME} temp_ set from storage {STORAGE_NAME} {var_storage}\n")
-            var2 = f"$(temp_)"
+            var2 = f"$({self.variables[var2][-1].temp})"
             is_var = True
-        elif var2_type == "string": var2 = var2[1:-1]
+        elif var2[0] == "\"": var2 = var2[1:-1]
         if var3 in self.variables:
-            var_storage = self.to_storage(var3)
-            self.write(f"data modify storage {STORAGE_NAME} temp__ set from storage {STORAGE_NAME} {var_storage}\n")
-            var3 = f"$(temp__)"
+            var3 = f"$({self.variables[var3][-1].temp})"
             is_var = True
-        elif var3_type == "string": var3 = var3[1:-1]
+        elif var3[0] == "\"": var3 = var3[1:-1]
         if is_var:
             self.macro(f"$data modify storage {STORAGE_NAME} {temp} set from {var1} {var2} {var3}\n")
         else:
             self.write(f"data modify storage {STORAGE_NAME} {temp} set from {var1} {var2} {var3}\n")
-        if var4_type == "string": var4 = var4[1:-1]
-        if var4 in SCORE_TYPES:
-            if var4 == "float" or var4 == "double":
-                self.write(f"execute store result score #{temp} {SCOREBOARD_NAME} run data get storage {STORAGE_NAME} {temp} 100\n")
-            else:
-                self.write(f"execute store result score #{temp} {SCOREBOARD_NAME} run data get storage {STORAGE_NAME} {temp}\n")
-        self.add_var(temp, var4, False, temp)
+        self.add_var(temp, "var4", False, temp)
         self.add_used_temp(var1)
         self.add_used_temp(var2)
         self.add_used_temp(var3)
-        self.add_used_temp(var4)
         return temp, None
     def fun_set_score(self, node, input_nodes):
         if 3 != len(input_nodes):
@@ -1657,45 +1326,21 @@ execute store result score #{temp} {SCOREBOARD_NAME} run data get storage {STORA
             var3, error = self.interprete(var3)
             if error: return None, error
         
-        var1_type = self.get_type(var1)
-        var2_type = self.get_type(var2)
-        var3_type = self.get_type(var3)
-        if var3_type not in SCORE_TYPES:
-            return None, InvalidSyntaxError(
-                input_nodes[2].children[0].token,
-                self.filename,
-                f'third parameter must be one of {SCORE_TYPES}'
-            )
-        if var1_type != "string":
-            return None, InvalidSyntaxError(
-                input_nodes[0].children[0].token,
-                self.filename,
-                f'first parameter must be string'
-            )
-        if var2_type != "string":
-            return None, InvalidSyntaxError(
-                input_nodes[1].children[0].token,
-                self.filename,
-                f'second parameter must be one of string'
-            )
-        
         is_var = False
         if var1 in self.variables:
             is_var = True
             var1 = f"$({self.variables[var1][-1].temp})"
-        else: var1 = var1[1:-1]
+        elif var1[0] == "\"": var1 = var1[1:-1]
         if var2 in self.variables:
             is_var = True
             var2 = f"$({self.variables[var2][-1].temp})"
-        else: var2 = var2[1:-1]
+        elif var2[0] == "\"": var2 = var2[1:-1]
         if var3 not in self.variables:
-            return None, InvalidSyntaxError(
-                input_nodes[1].children[0].token,
-                self.filename,
-                f'{var3} is not defined'
-            )
-        if is_var: self.macro(f"$scoreboard players operation {var1} {var2} = #{self.variables[var3][-1].temp} {SCOREBOARD_NAME}\n")
-        else: self.write(f"scoreboard players operation {var1} {var2} = #{self.variables[var3][-1].temp} {SCOREBOARD_NAME}\n")
+            if is_var: self.macro(f"$scoreboard players set {var1} {var2} {var3}\n")
+            else: self.write(f"scoreboard players set {var1} {var2} {var3}\n")
+        else:
+            if is_var: self.macro(f"$execute store result score {var1} {var2} run data get storage {STORAGE_NAME} {self.variables[var3][-1].temp}\n")
+            else: self.write(f"execute store result score {var1} {var2} run data get storage {STORAGE_NAME} {self.variables[var3][-1].temp}\n")
         return var3, None
     def fun_set_data(self, node, input_nodes):
         if 4 != len(input_nodes):
@@ -1721,53 +1366,37 @@ execute store result score #{temp} {SCOREBOARD_NAME} run data get storage {STORA
         if var4 in INTERPRETE_THESE:
             var4, error = self.interprete(input_nodes[1].children[0])
             if error: return None, error
-        var1_type = self.get_type(var1)
-        var2_type = self.get_type(var2)
-        var3_type = self.get_type(var3)
-        var4_type = self.get_type(var4)
-        if var1 not in self.variables and var1 not in ("entity", "block", "stroage"):
+
+        if var1 not in self.variables and var1 not in ('"entity"', '"block"', '"storage"'):
             return None, InvalidSyntaxError(
                     node.children[0].token,
                     self.filename,
                     f"from parameters must be \"block\", \"entity\" or \"stoage\""
                 )
-        if var4_type != "string":
-            return None, InvalidSyntaxError(
-                    node.children[0].token,
-                    self.filename,
-                    f"Type must be string type"
-                )
-        if var1_type != "string" or (var2_type != "string" and var2_type != "entity") or var3_type != "string":
-            return None, InvalidSyntaxError(
-                node.children[0].token,
-                self.filename,
-                f"Parameter's type must be string"
-            )
         is_var = False
         if var1 in self.variables:
-            var_storage = self.to_storage(var1)
-            self.write(f"data modify storage {STORAGE_NAME} temp set from storage {STORAGE_NAME} {var_storage}\n")
-            var1 = f"$(temp)"
+            var1 = f"$({self.variables[var1][-1].temp})"
             is_var = True
-        elif var1_type == "string": var1 = var1[1:-1]
+        elif var1[0] == "\"": var1 = var1[1:-1]
         if var2 in self.variables:
-            var_storage = self.to_storage(var2)
-            self.write(f"data modify storage {STORAGE_NAME} temp_ set from storage {STORAGE_NAME} {var_storage}\n")
-            var2 = f"$(temp_)"
+            var1 = f"$({self.variables[var2][-1].temp})"
             is_var = True
-        elif var2_type == "string": var2 = var2[1:-1]
+        elif var2[0] == "\"": var2 = var2[1:-1]
         if var3 in self.variables:
-            var_storage = self.to_storage(var3)
-            self.write(f"data modify storage {STORAGE_NAME} temp__ set from storage {STORAGE_NAME} {var_storage}\n")
-            var3 = f"$(temp__)"
+            var3 = f"$({self.variables[var3][-1].temp})"
             is_var = True
-        elif var3_type == "string": var3 = var3[1:-1]
-        var4 = self.to_storage(var4)
-        if is_var:
-            self.macro(f"$data modify {var1} {var2} {var3} set from storage {STORAGE_NAME} {var4}\n")
+        elif var3[0] == "\"": var3 = var3[1:-1]
+        if var4 in self.variables:
+            if is_var:
+                self.macro(f"$data modify {var1} {var2} {var3} set from storage {STORAGE_NAME} {var4}\n")
+            else:
+                self.write(f"data modify {var1} {var2} {var3} set from storage {STORAGE_NAME} {var4}\n")
         else:
-            self.write(f"data modify {var1} {var2} {var3} set from storage {STORAGE_NAME} {var4}\n")
-        self.add_var(temp, var4, False, temp)
+            if is_var:
+                self.macro(f"$data modify {var1} {var2} {var3} set value {var4}\n")
+            else:
+                self.write(f"data modify {var1} {var2} {var3} set value {var4}\n")
+        self.add_var(temp, "var4", False, temp)
         self.add_used_temp(var1)
         self.add_used_temp(var2)
         self.add_used_temp(var3)
@@ -1786,44 +1415,33 @@ execute store result score #{temp} {SCOREBOARD_NAME} run data get storage {STORA
             var, error = self.interprete(input_node)
             if error: return None, error
         temp = get_temp()
-        self.add_var(temp, "int", False, temp)
         if var in self.variables:
-            var = self.variables[var][-1]
-            if var.is_array:
-                self.write(f"execute store result score #{temp} {SCOREBOARD_NAME} run data get storage {STORAGE_NAME} {var.temp}")
-            elif var.type == "string":
-                self.macro(f"$scoreboard players set #{temp} {SCOREBOARD_NAME} $({var.temp})")
-            elif var.type in ("entity", "nbt"):
-                return None, InvalidSyntaxError(
-                    node.children[0].token,
-                    self.filename,
-                    f"\"entity\" can not be \"int\""
-                )
-            elif var.type in ("int", "bool"):
-                self.write(f"scoreboard players operation #{temp} {SCOREBOARD_NAME} = #{var.temp} {SCOREBOARD_NAME}")
-            else:
-                self.write(f"scoreboard players operation #{temp} {SCOREBOARD_NAME} = #{var.temp} {SCOREBOARD_NAME}\nscoreboard players operation #{temp} {SCOREBOARD_NAME} /= 100 {SCOREBOARD_NAME}")
+            self.write(f"data modify storage {STORAGE_NAME} type_var set from storage {STORAGE_NAME} {self.variables[var][-1].temp}\n\
+execute store result score #type {SCOREBOARD_NAME} run function basic:get_type_score\n\
+function basic:int/convert/execute\n\
+data modify storage {STORAGE_NAME} {temp} set from storage {STORAGE_NAME} var1\n")
+        elif var[0] == "\"":
+            self.write(f"data modify storage {STORAGE_NAME} {temp} set value {var[1:-1]}\n")
+        elif var[0] == "@":
+            return None, InvalidSyntaxError(
+                node.children[0].token,
+                self.filename,
+                f"\"entity\" can not be \"int\""
+            )
+        elif "." in var:
+            self.write(f"data modify storage {STORAGE_NAME} {temp} set value {round(float(var))}\n")
         else:
-            var_type = self.get_type(var)
-            if var_type in ("entity", "nbt"):
-                return None, InvalidSyntaxError(
-                    node.children[0].token,
-                    self.filename,
-                    f"\"entity\" can not be \"int\""
-                )
-            elif var_type == "string":
-                self.macro(f"$scoreboard players set #{temp} {SCOREBOARD_NAME} $({var[1:-1]})\n")
-            elif var_type in ("int", "bool"):
-                self.write(f"scoreboard players set #{temp} {SCOREBOARD_NAME} {var}\n")
-            else: self.write(f"scoreboard players set #{temp} {SCOREBOARD_NAME} {round(var)}")
+            self.write(f"data modify storage {STORAGE_NAME} {temp} set value {var}\n")
+        
         self.add_used_temp(var)
+        self.add_var(temp, "int", False, temp)
         return temp, None
-    def fun_bool(self, node, input_nodes):
+    def fun_byte(self, node, input_nodes):
         if 1 != len(input_nodes):
             return None, InvalidSyntaxError(
                 node.children[0].token,
                 self.filename,
-                f"bool must have only 1 parameters"
+                f"byte must have only 1 parameters"
             )
         input_node = input_nodes[0].children[0]
         var = input_node.name
@@ -1831,19 +1449,22 @@ execute store result score #{temp} {SCOREBOARD_NAME} run data get storage {STORA
             var, error = self.interprete(input_node)
             if error: return None, error
         temp = get_temp()
-        self.add_var(temp, "bool", False, temp)
-        self.write(f"scoreboard players set #{temp} {SCOREBOARD_NAME} 0\n")
         if var in self.variables:
-            var = self.variables[var][-1]
-            if var.type in SCORE_TYPES:
-                self.write(f"execute if score #{var.temp} matches 1.. run scoreboard players set #{temp} {SCOREBOARD_NAME} 1\n")
-            else:
-                self.write(f"execute if data storage {STORAGE_NAME} {var.temp} run scoreboard players set #{temp} {SCOREBOARD_NAME} 1\n")
+            self.write(f"execute store result score {SCOREBOARD_NAME} #temp run data get storage {STORAGE_NAME} {self.variables[var][-1].temp}\n\
+execute if score #temp {SCOREBOARD_NAME} matches 1.. run data modify storage {STORAGE_NAME} {temp} set value 1b\n\
+execute if score #temp {SCOREBOARD_NAME} matches ..0 run data modify storage {STORAGE_NAME} {temp} set value 0b\n")
+        elif var[0] == "\"":
+            if var == '""': self.write(f"data modify storage {STORAGE_NAME} {temp} set value 0b")
+            else: self.write(f"data modify storage {STORAGE_NAME} {temp} set value 1b")
+        elif var[0] == "@":
+            self.write(f"execute store result score {SCOREBOARD_NAME} #temp if entity {var}\n\
+execute if score #temp {SCOREBOARD_NAME} matches 1.. run data modify storage {STORAGE_NAME} {temp} set value 1b\n\
+execute if score #temp {SCOREBOARD_NAME} matches ..0 run data modify storage {STORAGE_NAME} {temp} set value 0b\n")
         else:
-            if var == "0" or var == "false":
-                self.write(f"scoreboard players set #{temp} {SCOREBOARD_NAME} 0\n")
-            else: self.write(f"scoreboard players set #{temp} {SCOREBOARD_NAME} 1\n")
+            self.write(f"data modify storage {STORAGE_NAME} {temp} set value {var == 0}\n")
+        
         self.add_used_temp(var)
+        self.add_var(temp, "int", False, temp)
         return temp, None
     def fun_float(self, node, input_nodes, type_ = "float"):
         if 1 != len(input_nodes):
@@ -1858,44 +1479,30 @@ execute store result score #{temp} {SCOREBOARD_NAME} run data get storage {STORA
             var, error = self.interprete(input_node)
             if error: return None, error
         temp = get_temp()
-        self.add_var(temp, type_, False, temp)
         if var in self.variables:
-            var = self.variables[var][-1]
-            if var.is_array or var.type in ("nbt", "entity"):
-                if not var.is_array: return None, InvalidSyntaxError(
-                    node.children[0].token,
-                    self.filename,
-                    f"\"{var.type}\" can not be \"{type_}\""
-                )
-                else: return None, InvalidSyntaxError(
-                    node.children[0].token,
-                    self.filename,
-                    f"\"array\" can not be \"float\""
-                )
-            elif var.type in ("float", "double"):
-                self.add_used_temp(temp)
-                temp = var.temp
-            elif var.type == "string":
-                self.macro(f"$scoreboard players set #{temp} {SCOREBOARD_NAME} $({var.temp})\n")
-            else:
-                self.write(f"scoreboard players operatin #{temp} {SCOREBOARD_NAME} = #{var.temp} {SCOREBOARD_NAME}\nscoreboard players operation #{temp} {SCOREBOARD_NAME} *= 100 {SCOREBOARD_NAME}\n")
+            self.write(f"data modify storage {STORAGE_NAME} type_var set from storage {STORAGE_NAME} {self.variables[var][-1].temp}\n\
+execute store result score #type {SCOREBOARD_NAME} run function basic:get_type_score\n\
+function basic:{type_}/convert/execute\n\
+data modify storage {STORAGE_NAME} {temp} set from storage {STORAGE_NAME} var1\n")
+        elif var[0] == "\"":
+            self.write(f"data modify storage {STORAGE_NAME} {temp} set value {var[1:-1]}{type_[0]}\n")
+        elif var[0] == "@":
+            return None, InvalidSyntaxError(
+                node.children[0].token,
+                self.filename,
+                f"\"entity\" can not be \"{type_}\""
+            )
+        elif "." in var:
+            self.write(f"data modify storage {STORAGE_NAME} {temp} set value {(float(var))}{type_[0]}\n")
         else:
-            var_type = self.get_type(var)
-            if var_type in ("nbt", "entity"):
-                return None, InvalidSyntaxError(
-                    node.children[0].token,
-                    self.filename,
-                    f"\"{var_type}\" can not be \"float\""
-                )
-            elif var_type in SCORE_TYPES:
-                self.write(f"scoreboard players set #{temp} {SCOREBOARD_NAME} {round(float(var) * 100)}\n")
-            elif var_type == "string":
-                self.macro(f"$scoreboard players set #{temp} {SCOREBOARD_NAME} $({var[1:-1]})\n")
+            self.write(f"data modify storage {STORAGE_NAME} {temp} set value {var}{type_[0]}\n")
+        
         self.add_used_temp(var)
+        self.add_var(temp, "int", False, temp)
         return temp, None
     def fun_double(self, node, input_nodes):
-        return self.fun_float(self, node, input_nodes, "double")
-    def fun_string(self, node, input_nodes):
+        return self.fun_float(node, input_nodes, "double")
+    def fun_string(self, node, input_nodes): # 책갈피
         if 1 != len(input_nodes):
             return None, InvalidSyntaxError(
                 node.children[0].token,
@@ -1908,48 +1515,48 @@ execute store result score #{temp} {SCOREBOARD_NAME} run data get storage {STORA
             var, error = self.interprete(input_node)
             if error: return None, error
         temp = get_temp()
-        self.add_var(temp, "string", False, temp)
-        var_type = self.get_type(var)
         if var in self.variables:
-            if self.variables[var][-1].is_array : self.macro(f"$data modify storage {STORAGE_NAME} {temp} set value \"$({self.variables[var][-1].temp})\"")
-            elif var_type in ("int", "bool"): self.write(f"execute store result stoarge {STORAGE_NAME} {self.variables[var][-1].temp} int 1 run scoreboard players get #{self.variables[var][-1].temp} {SCOREBOARD_NAME}")
-            elif var_type in ("float", "double"): self.write(f"execute store result stoarge {STORAGE_NAME} {self.variables[var][-1].temp} float 0.01 run scoreboard players get #{self.variables[var][-1].temp} {SCOREBOARD_NAME}")
-            elif var_type in ("string", "entity"): self.write(f"data modify storage {STORAGE_NAME} {temp} set from storage {STORAGE_NAME} {self.variables[var][-1].temp}\n")
-            else: self.macro(f"$data modify storage {STORAGE_NAME} {temp} set value \"$({self.variables[var][-1].temp})\"")
+            self.write(f"data modify storage {STORAGE_NAME} type_var set from storage {STORAGE_NAME} {self.variables[var][-1].temp}\n\
+execute store result score #type {SCOREBOARD_NAME} run function basic:get_type_score\n\
+execute if score #type {SCOREBOARD_NAME} matches 4 run data modify storage {STORAGE_NAME} {temp} set from storage {STORAGE_NAME} type_var\n\
+execute unless score #type {SCOREBOARD_NAME} matches 4 run ")
+            self.macro(f"$data modify storage {STORAGE_NAME} {temp} set value \"$({self.variables[var][-1].temp})\"")
         else:
-            if var_type == "string":
+            if var[0] == "\"":
                 var = var[1:-1]
-            self.write(f"$data modify storage {STORAGE_NAME} {temp} set value \"{var}\"")
+            self.write(f"data modify storage {STORAGE_NAME} {temp} set value \"{var}\"")
         self.add_used_temp(var)
+        self.add_var(temp, "string", False, temp)
         return temp, None
     def fun_entity(self, node, input_nodes):
-        if 1 != len(input_nodes):
-            return None, InvalidSyntaxError(
-                node.children[0].token,
-                self.filename,
-                f"entity must have only 1 parameters"
-            )
-        input_node = input_nodes[0].children[0]
-        var = input_node.name
-        if var in INTERPRETE_THESE:
-            var, error = self.interprete(input_node)
-            if error: return None, error
-        temp = get_temp()
-        self.add_var(temp, "entity", False, temp)
+        return self.fun_string(node, input_nodes)
+        # if 1 != len(input_nodes):
+        #     return None, InvalidSyntaxError(
+        #         node.children[0].token,
+        #         self.filename,
+        #         f"entity must have only 1 parameters"
+        #     )
+        # input_node = input_nodes[0].children[0]
+        # var = input_node.name
+        # if var in INTERPRETE_THESE:
+        #     var, error = self.interprete(input_node)
+        #     if error: return None, error
+        # temp = get_temp()
+        # self.add_var(temp, "entity", False, temp)
         
-        var_type = self.get_type(var)
-        if var_type != "string":
-            return None, InvalidSyntaxError(
-                node.children[0].token,
-                self.filename,
-                f"\"{var_type}\" can not be \"entity\""
-            )
-        if var in self.variables:
-            self.macro(f"$data modify storage {STORAGE_NAME} {temp} set value $({self.variables[var][-1].temp})")
-        else:
-            self.macro(f"$data modify storage {STORAGE_NAME} {temp} set value {var}")
-        self.add_used_temp(var)
-        return temp, None
+        # var_type = self.get_type(var)
+        # if var_type != "string":
+        #     return None, InvalidSyntaxError(
+        #         node.children[0].token,
+        #         self.filename,
+        #         f"\"{var_type}\" can not be \"entity\""
+        #     )
+        # if var in self.variables:
+        #     self.macro(f"$data modify storage {STORAGE_NAME} {temp} set value $({self.variables[var][-1].temp})")
+        # else:
+        #     self.macro(f"$data modify storage {STORAGE_NAME} {temp} set value {var}")
+        # self.add_used_temp(var)
+        # return temp, None
 
     def get_folder_dir(self):
         dir_arr = self.current_dir.split("/")
@@ -1958,26 +1565,12 @@ execute store result score #{temp} {SCOREBOARD_NAME} run data get storage {STORA
         if len(dir_arr) > 5: folder = "/".join(dir_arr[5:])
         return folder
     
-    def is_equal_type(self, var1, var2):
-        var1_type = self.get_type(var1)
-        var2_type = self.get_type(var2)
-        # print(self.variables)
-        # print(var1_type, var2_type)
-        return var1_type == var2_type or {var1_type, var2_type} == {"float", "double"}
-
-    def get_type(self, var_name):
-        if var_name in self.variables and len(self.variables[var_name]) != 0:
-            return self.variables[var_name][-1].type
-        elif var_name[0] in DIGITS:
-            if str.isdigit(var_name):
-                return "int"
-            else:
-                return "float"
-        elif var_name[0] == "\"":
-            return "string"
-        elif var_name[0] == "@":
-            return "entity"
-        return "nbt"
+    def to_storage(self, var):
+        if var in self.variables:
+            return self.variables[var][-1].temp
+        temp = get_temp()
+        self.write(f"data modify storage {STORAGE_NAME} {temp} set value {var}\n")
+        return temp
 
     def add_used_temp(self, var):
         if var[:4] == "temp":
@@ -1995,31 +1588,6 @@ execute store result score #{temp} {SCOREBOARD_NAME} run data get storage {STORA
         file = open(self.current_dir + self.current_file, "a", encoding="utf-8")
         file.write(txt)
         file.close()
-
-    def to_storage(self, value, is_var = False):
-        value_type = self.get_type(value)
-        temp3 = None
-        if is_var: temp3 = get_var_temp()
-        else: temp3 = get_temp()
-        file = open(self.current_dir + self.current_file, "a", encoding="utf-8")
-        if value in self.variables:
-            if value_type in SCORE_TYPES:
-                if value_type == "int" or value_type == "bool": file.write(f"execute store result storage {STORAGE_NAME} {temp3} {value_type} 1 run scoreboard players get #{self.variables[value][-1].temp} {SCOREBOARD_NAME}\n")
-                else: file.write(f"execute store result storage {STORAGE_NAME} {temp3} {value_type} 0.01 run scoreboard players get #{self.variables[value][-1].temp} {SCOREBOARD_NAME}\n")
-            else:
-                self.add_used_temp(temp3)
-                file.close()
-                return self.variables[value][-1].temp
-        else:
-            if value_type == "int":
-                file.write(f"data modify storage {STORAGE_NAME} {temp3} set value {value}\n")
-            elif value_type in SCORE_TYPES:
-                file.write(f"data modify storage {STORAGE_NAME} {temp3} set value {value}{value_type[0]}\n")
-            else:
-                file.write(f"data modify storage {STORAGE_NAME} {temp3} set value {value}\n")
-        self.add_used_temp(temp3)
-        file.close()
-        return temp3
 
     def macro(self, txt):
         current_file = self.current_file
@@ -2072,16 +1640,7 @@ class Execute:
 
     def entity(self, node):
         
-        type_ = None
         result = ""
-        if node[0] == "@": type_ = "entity"
-        elif node in self.interpreter.variables: type_ = self.interpreter.variables[node][-1].type
-        if type_ != "entity":
-            return None, InvalidSyntaxError(
-                self.token,
-                self.interpreter.filename,
-                f"\"as\" must be followed by the entity type"
-            )
         
         if node in self.interpreter.variables:
             result = f"$({self.interpreter.variables[node][-1].temp})"
@@ -2125,12 +1684,7 @@ class Execute:
                 self.interpreter.filename,
                 f'\"{node}\" is not definded'
             )
-        elif self.interpreter.variables[node][-1].type != "string":
-            return InvalidSyntaxError(
-                self.token,
-                self.interpreter.filename,
-                f'\"{node}\" is not string type'
-            )
+        
         else:
             self.result += f"$({self.interpreter.variables[node][-1].temp}) "
             if self.result[0] != "$": self.result = "$" + self.result
@@ -2369,8 +1923,8 @@ class Optimizer:
             if var.value in self.interpreter.variables:
                 var.value = self.interpreter.variables[var.value][-1].value
             const_arr.append(var)
-        for var in const_arr:
-            print(var)
+        # for var in const_arr:
+            # print(var)
 
 def print_tree(ast):
     for pre, fill, node in RenderTree(ast):
@@ -2384,7 +1938,7 @@ def interprete(filename, result_dir, namespace, is_modul = False, token = None):
     if len(filename) < 7 or filename[-7:] != ".planet": filename += ".planet"
     token_arr = []
     if not os.path.isfile(filename):
-        return None, Error(token, f"\"{filename}\" does not exist", filename, "")
+        return None, Error(token, f"\"{filename}\" does not exist", filename)
     with tokenize.open(filename) as f:
         tokens = tokenize.generate_tokens(f.readline)
         for token in tokens:
@@ -2405,8 +1959,8 @@ def interprete(filename, result_dir, namespace, is_modul = False, token = None):
         print("\n\n" + error.as_string())
         return None, error
     
-    optimizer = Optimizer(interpreter)
-    optimizer.optimize()
+    # optimizer = Optimizer(interpreter)
+    # optimizer.optimize()
     return {"variables":interpreter.variables, "functions":interpreter.functions}, None
 
 def generate_datapack(filename, result_dir = "./", namespace = "pack"):
