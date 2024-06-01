@@ -1,5 +1,6 @@
-def print_fun(var a){
+def print_fun(var a, var b){
     print(a)
 }
 
-print_fun(123)
+print_fun(123, 456)
+print(a)

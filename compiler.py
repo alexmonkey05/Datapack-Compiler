@@ -723,7 +723,6 @@ class Interpreter:
             fun.inputs.append(var)
             self.using_variables[-1][var.name] = var
             if var.name not in self.variables: self.variables[var.name] = []
-            self.variables[var.name].append(var)
         self.is_parameter = False
         currrent_file = self.current_file
         self.current_file = fun.name + ".mcfunction"
@@ -1989,8 +1988,8 @@ def reset_temp():
     temp_cnt = 0
     used_temp = []
 if __name__ == "__main__":
-    generate_datapack("./example/test.planet", "./", "pack")
-    exit()
+    # generate_datapack("./example/test.planet", "./", "pack")
+    # exit()
     tk = Tk()
     filename = None
     def event():
