@@ -103,7 +103,7 @@ OPERATOR_ID = {
 
 INTERPRETE_THESE = ("operator", "call_function", "make_array", "make_nbt", "make_selector", "define_var")
 
-BUILT_IN_FUNCTION = ("print", "random", "type", "get_score", "get_data", "set_score", "set_data") + TYPES
+BUILT_IN_FUNCTION = ("print", "random", "type", "get_score", "get_data", "set_score", "set_data", "round") + TYPES
 
 EXECUTE_KEYWORDS = ( "as", "at", "if", "positioned", "" )
 
@@ -654,7 +654,7 @@ def make_basic_files(file_dir, namespace = "pack"):
     file = open(file_dir + f"{namespace}/data/{namespace}/functions/load.mcfunction", "w+")
     file.write(f"\
 # This data pack was compiled with the 40planet's compiler.\n\
-# https://github.com/alexmonkey05/Datapack-Interpreter\n\n")
+# https://github.com/alexmonkey05/Datapack-Compiler\n\n")
     file.close()
     file = open(file_dir + f"{namespace}/data/{namespace}/functions/tick.mcfunction", "w+")
     file.close()
@@ -1215,23 +1215,23 @@ execute if score #{temp} {SCOREBOARD_NAME} matches 5 run data modify storage {ST
 ")
         self.add_var(temp, "string", False, temp)
         return temp, None
-#     def fun_round(self, node, input_nodes):
-#         if 1 != len(input_nodes):
-#             return None, InvalidSyntaxError(
-#                 node.children[0].token,
-#                 self.filename,
-#                 f"type must have only 1 parameters"
-#             )
-#         var_name = input_nodes[0].children[0].name
-#         temp = get_temp()
-#         if var_name in self.variables:
-#             self.write(f"\
-# execute store result storage {STORAGE_NAME} {temp} int 1 run data get storage {STORAGE_NAME} {self.variables[var_name][-1].temp} \n\
-# ")
-#         else:
-#             self.write(f"data modify {STORAGE_NAME} {temp} set value {round(float(var_name))}\n")
-#         self.add_var(temp, "int", False, temp)
-#         return temp, None
+    def fun_round(self, node, input_nodes):
+        if 1 != len(input_nodes):
+            return None, InvalidSyntaxError(
+                node.children[0].token,
+                self.filename,
+                f"type must have only 1 parameters"
+            )
+        var_name = input_nodes[0].children[0].name
+        temp = get_temp()
+        if var_name in self.variables:
+            self.write(f"\
+execute store result storage {STORAGE_NAME} {temp} int 1 run data get storage {STORAGE_NAME} {self.variables[var_name][-1].temp}\n\
+")
+        else:
+            self.write(f"data modify storage {STORAGE_NAME} {temp} set value {round(float(var_name))}\n")
+        self.add_var(temp, "int", False, temp)
+        return temp, None
     def fun_get_score(self, node, input_nodes):
         if 2 != len(input_nodes):
             return None, InvalidSyntaxError(

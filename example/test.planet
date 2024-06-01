@@ -1,6 +1,2 @@
-def print_fun(var a, var b){
-    print(a)
-}
-
-print_fun(123, 456)
-print(a)
+var a = 1.2
+round(a)
