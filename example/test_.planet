@@ -1,0 +1,13 @@
+execute(as @a){
+  var i = 0
+  var inventory = get_data("entity", "@s", "Inventory")
+  /execute store result score len num run data get entity @s Inventory
+  var len = get_score("len", "num")
+  while(i < len){
+    var item = inventory[i]
+    #if (대충 아이템 조건)
+      var slot = inventory[i].Slot
+      /item replace entity @s container.^slot& with <아이템>
+    i = i + 1 
+  }
+}

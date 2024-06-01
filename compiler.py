@@ -764,6 +764,10 @@ class Interpreter:
             if temp in INTERPRETE_THESE:
                 temp, error = self.interprete(value)
                 if error: return None, error
+            if temp in self.variables:
+                self.write(f"data modify storage {STORAGE_NAME} {var.temp} set from storage {STORAGE_NAME} {temp}\n")
+            else:
+                self.write(f"data modify storage {STORAGE_NAME} {var.temp} set value {temp}\n")
 
         file.write(f"function {self.namespace}:{self.get_folder_dir()}{fun.name}\n")
         file.close()
@@ -1985,8 +1989,8 @@ def reset_temp():
     temp_cnt = 0
     used_temp = []
 if __name__ == "__main__":
-    # generate_datapack("./example/test.planet", "./", "pack")
-    # exit()
+    generate_datapack("./example/test.planet", "./", "pack")
+    exit()
     tk = Tk()
     filename = None
     def event():
