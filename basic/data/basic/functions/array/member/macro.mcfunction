@@ -1,0 +1,1 @@
+$return run data modify storage 40planet:value var1 set from storage 40planet:value var1[$(var2)]

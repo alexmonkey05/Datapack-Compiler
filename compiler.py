@@ -773,7 +773,10 @@ class Interpreter:
         return fun.temp, None
     def import_(self, node):
         name = node.children[0].name
-        os.makedirs(self.result_dir +f"{self.namespace}/data/{self.namespace}/functions/{name}/")
+        try:
+            os.makedirs(self.result_dir +f"{self.namespace}/data/{self.namespace}/functions/{name}/")
+        except:
+            return None, None
         open(self.result_dir +f"{self.namespace}/data/{self.namespace}/functions/{name}/load.mcfunction", "w+").close()
         open(self.result_dir +f"{self.namespace}/data/{self.namespace}/functions/{name}/tick.mcfunction", "w+").close()
         with open(self.result_dir + f"{self.namespace}/data/minecraft/tags/functions/load.json") as f:
