@@ -10,3 +10,6 @@
   - 함수의 리턴 자료형 설정 불가능
 - get_data의 4번째 인자가 삭제됨
   - 3개의 인자만 받도록 변경됨
+# 2024/06/03
+- float(a)가 "data modify storage 40planet:value <temp> 1 set value a"로 컴파일 되던 오류 수정
+- A가 B를 import하고 B가 A를 import 했을 때 에러나는 현상 오류 수정
