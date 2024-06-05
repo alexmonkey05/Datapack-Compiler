@@ -1,2 +1,3 @@
-var a = 1.2
-round(a)
+import test2
+
+test2.print_test()

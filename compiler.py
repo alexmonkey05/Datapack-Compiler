@@ -9,6 +9,7 @@ import json
 from tkinter import *
 from tkinter import filedialog
 from tkinter import messagebox
+import tkinter.ttk as ttk
 
 
 
@@ -1993,22 +1994,28 @@ def reset_temp():
 if __name__ == "__main__":
     # generate_datapack("./example/test.planet", "./", "pack")
     # exit()
+
+    DEFAULT_VERSION = "버전을 선택하세요"
+
     tk = Tk()
     filename = None
     def event():
+        version = combobox.get()
+        if version == DEFAULT_VERSION:
+            messagebox.showinfo("name", "버전을 선택해주세요")
+            return
         namespace = entry1.get().strip()
         if namespace == "": namespace = "pack"
         try:
             name = tk.file.name
             dir = tk.dir
-            reset_temp()
             temp, error = generate_datapack(name, dir, namespace)
             if error:
                 messagebox.showinfo("name", error.as_string())
             else:
                 messagebox.showinfo("name", "done!")
         except:
-            pass
+            messagebox.showinfo("name", "파일 또는 데이터팩 경로가 설정되지 않았습니다.")
 
     def select_planet_file():
         tk.file = filedialog.askopenfile(
@@ -2036,6 +2043,11 @@ if __name__ == "__main__":
 
     btn1 = Button(tk,text='Select',command=select_planet_file).grid(row=0,column=1)
     btn2 = Button(tk,text='Select',command=select_folder).grid(row=1,column=1)
-    btn3 = Button(tk,text='Compile',command=event).grid(row=3,column=0)
+    btn3 = Button(tk,text='Compile',command=event).grid(row=3,column=1)
+
+    values = ["1.20"]
+    combobox = ttk.Combobox(tk,values=values,state="readonly")
+    combobox.grid(row=3,column=0)
+    combobox.set(DEFAULT_VERSION)
 
     tk.mainloop()
