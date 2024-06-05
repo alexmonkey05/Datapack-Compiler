@@ -13,3 +13,5 @@
 # 2024/06/03
 - float(a)가 "data modify storage 40planet:value <temp> 1 set value a"로 컴파일 되던 오류 수정
 - A가 B를 import하고 B가 A를 import 했을 때 에러나는 현상 오류 수정
+# 2024/06/05
+- 버전 선택 기능 추가
