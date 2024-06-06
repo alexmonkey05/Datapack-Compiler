@@ -15,3 +15,13 @@
 - A가 B를 import하고 B가 A를 import 했을 때 에러나는 현상 오류 수정
 # 2024/06/05 2.2
 - 버전 선택 기능 추가
+# 2024/06/06 2.3
+- 아래와 같은 상황에서 break, return이 정상작동 하지 않던 문제를 해결함
+```
+def test(){
+  execute(as @a){
+    return 0
+  }
+  print("return dosen't worked")
+}
+```

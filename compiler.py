@@ -35,7 +35,7 @@ MEANS_END = (";", "]", "}")
 SCOREBOARD_NAME = "40planet_num"
 STORAGE_NAME = "40planet:value"
 
-KEYWORDS = ( "if", "else", "while", "import", "def", "break", "and", "or", "return", "execute", "var" ) # + TYPES
+KEYWORDS = ( "if", "else", "while", "from", "import", "def", "break", "and", "or", "return", "execute", "var")#, "const" )
 
 OPERATOR_TO_STRING = {
     "=":"equal",
@@ -191,12 +191,13 @@ class Parser:
         elif self.current_tok.string in KEYWORDS:
             error = None
             if self.current_tok.string == "var":
-                node, error = self.define_var()
+                return self.define_var()
+            elif self.current_tok.string == "const":
+                return self.define_const()
             else:
                 method_name = f'make_tree_of_{self.current_tok.string}'
                 method = getattr(self, method_name)
-                node, error = method(parent)
-            return node, error
+                return method(parent)
         elif self.current_tok.string not in self.variables and self.current_tok.string not in self.functions and self.current_tok.string not in BUILT_IN_FUNCTION:
             return None, InvalidSyntaxError(
                 self.current_tok,
@@ -432,8 +433,19 @@ class Parser:
 
     def operator_basic(self, parent): # 이항연산
         operator = self.current_tok.string
-        if operator == ".": operator = "dot"
         node = Node("operator", token = None)
+        if operator == ".": operator = "dot"
+        elif operator == "-":
+            front_tok = self.reverse()
+            if front_tok.type != 1 and front_tok.type != 2: # Not number and not variable
+                self.advance()
+                tok = self.advance()
+                if tok.type == 2:
+                    Node("-", parent=node, token = self.current_tok)
+                    Node("0", parent=node, token = self.current_tok)
+                    Node(tok.string, parent=node, token = self.current_tok)
+                    return node, None
+                self.reverse()
         Node(operator, parent=node, token = self.current_tok)
         front_node = parent.children[-1]
 
@@ -602,6 +614,26 @@ class Parser:
 
 
         return node, None
+    def define_const(self):
+        type_ = self.current_tok.string
+        self.advance()
+        if self.current_tok.type != 1:
+            return None, InvalidSyntaxError(
+                self.current_tok,
+                self.filename,
+                "Variable's name was expected, but it's not"
+            )
+        
+        var = Variable(self.current_tok.string, type_, False)
+        self.variables[var.name] = var
+
+
+        node = Node("define_const", token = None)
+
+        Node(var.name, parent=node, token = self.current_tok)
+
+
+        return node, None
 
     def is_next_match(self, target):
         tok = self.advance()
@@ -618,16 +650,16 @@ class Parser:
 #######################################
 
 class Variable:
-    def __init__(self, name, type_, is_array, temp = "", details = None) -> None:
+    def __init__(self, name, type_, is_const, temp = "", details = None) -> None:
         self.name = name
         self.type = type_
-        self.is_array = is_array
+        self.is_const = is_const
         self.temp = temp
         self.details = details
         self.value = False
     
     def __str__(self):
-        return f"({self.name}, {self.type}, {self.is_array}, {self.temp}, {self.value})"
+        return f"({self.name}, {self.type}, {self.is_const}, {self.temp}, {self.value})"
 
 class Function:
     def __init__(self, name, type_, inputs, temp) -> None:
@@ -640,37 +672,45 @@ class Function:
 # INTERPRETER
 #######################################
 
-def make_basic_files(file_dir, namespace = "pack"):
+def make_basic_files(version, file_dir, namespace = "pack"):
     if os.path.exists(file_dir + f"{namespace}"): shutil.rmtree(file_dir + f"{namespace}")
 
-    os.makedirs(file_dir + f"{namespace}/data/minecraft/tags/functions")
-    os.makedirs(file_dir + f"{namespace}/data/{namespace}/functions")
+    function_folder = "function"
+    if version == "1.20": function_folder = "functions"
 
-    file = open(file_dir + f"{namespace}/data/minecraft/tags/functions/load.json", "w+")
+    os.makedirs(file_dir + f"{namespace}/data/minecraft/tags/{function_folder}")
+    os.makedirs(file_dir + f"{namespace}/data/{namespace}/{function_folder}")
+
+    file = open(file_dir + f"{namespace}/data/minecraft/tags/{function_folder}/load.json", "w+")
     file.write(f"{{\"values\": [\"{namespace}:load\"]}}")
     file.close()
-    file = open(file_dir + f"{namespace}/data/minecraft/tags/functions/tick.json", "w+")
+    file = open(file_dir + f"{namespace}/data/minecraft/tags/{function_folder}/tick.json", "w+")
     file.write(f"{{\"values\": [\"{namespace}:tick\"]}}")
     file.close()
-    file = open(file_dir + f"{namespace}/data/{namespace}/functions/load.mcfunction", "w+")
+    file = open(file_dir + f"{namespace}/data/{namespace}/{function_folder}/load.mcfunction", "w+")
     file.write(f"\
 # This data pack was compiled with the 40planet's compiler.\n\
 # https://github.com/alexmonkey05/Datapack-Compiler\n\n")
     file.close()
-    file = open(file_dir + f"{namespace}/data/{namespace}/functions/tick.mcfunction", "w+")
+    file = open(file_dir + f"{namespace}/data/{namespace}/{function_folder}/tick.mcfunction", "w+")
     file.close()
     file = open(file_dir + f"{namespace}/pack.mcmeta", "w+")
     file.write('{ "pack": {"pack_format": 9, "description": "by 40planet"} }')
     file.close()
 
 class Interpreter:
-    def __init__(self, root, current_dir = "", result_dir = "./", namespace = "pack", filename = "") -> None:
+    def __init__(self, version, root, current_dir = "", result_dir = "./", namespace = "pack", filename = "") -> None:
+        self.version = version
+        self.function_folder = "function"
+        if version == "1.20": self.function_folder = "functions"
+
+
         self.root = root
         self.current_node = root
         self.result_dir = result_dir
         self.filename = filename
         self.namespace = namespace
-        self.current_dir = result_dir + f"{self.namespace}/data/{self.namespace}/functions/" + current_dir
+        self.current_dir = result_dir + f"{self.namespace}/data/{self.namespace}/{self.function_folder}/" + current_dir
         self.current_file = "load.mcfunction"
         # self.variables = { "0":[Variable("0", "int", False, "0")] }
         self.variables = {}
@@ -682,6 +722,7 @@ class Interpreter:
         self.is_parameter = False
 
         self.const = []
+
 
     def interprete(self, node, current_dir = None, current_file = None):
         if node.name == "root" or node.name == "assign":
@@ -712,7 +753,22 @@ class Interpreter:
         self.using_variables[-1][var.name] = var
         if self.is_parameter: return var, None
         return var, None
-    def define_function_(self, node): # 나중에 구조 뒤엎기
+    def define_const_(self, node):
+        var_name = node.children[0].name
+        var = Variable(var_name, "type_", True, get_var_temp())
+        self.const.append(var)
+        if var.name in self.using_variables[-1]:
+            return None, InvalidSyntaxError(
+                node.children[0].token,
+                self.filename,
+                f"\"{var.name}\" already defined"
+            )
+        if var.name not in self.variables: self.variables[var.name] = []
+        self.variables[var.name].append(var)
+        self.using_variables[-1][var.name] = var
+        if self.is_parameter: return var, None
+        return var, None
+    def define_function_(self, node):
         fun = Function(node.children[1].name, node.children[0].name, [], get_fun_temp())
         self.functions[fun.name] = fun
         inputs = node.children[2].children
@@ -741,7 +797,7 @@ class Interpreter:
         self.using_variables.pop(-1)
         self.variables[fun.temp] = [Variable(fun.name, fun.type, False, fun.temp)]
         return None, None
-    def call_function_(self, node): # 나중에 구조 뒤엎기
+    def call_function_(self, node):
         input_nodes = node.children[1].children
         if node.children[0].name in BUILT_IN_FUNCTION:
             method_name = f'fun_{node.children[0].name}'
@@ -775,24 +831,24 @@ class Interpreter:
     def import_(self, node):
         name = node.children[0].name
         try:
-            os.makedirs(self.result_dir +f"{self.namespace}/data/{self.namespace}/functions/{name}/")
+            os.makedirs(self.result_dir +f"{self.namespace}/data/{self.namespace}/{self.function_folder}/{name}/")
         except:
             return None, None
-        open(self.result_dir +f"{self.namespace}/data/{self.namespace}/functions/{name}/load.mcfunction", "w+").close()
-        open(self.result_dir +f"{self.namespace}/data/{self.namespace}/functions/{name}/tick.mcfunction", "w+").close()
-        with open(self.result_dir + f"{self.namespace}/data/minecraft/tags/functions/load.json") as f:
+        open(self.result_dir +f"{self.namespace}/data/{self.namespace}/{self.function_folder}/{name}/load.mcfunction", "w+").close()
+        open(self.result_dir +f"{self.namespace}/data/{self.namespace}/{self.function_folder}/{name}/tick.mcfunction", "w+").close()
+        with open(self.result_dir + f"{self.namespace}/data/minecraft/tags/{self.function_folder}/load.json") as f:
             data = json.load(f)
             data["values"].append(f"{self.namespace}:{name}/load")
-            file = open(self.result_dir + f"{self.namespace}/data/minecraft/tags/functions/load.json", "w+")
+            file = open(self.result_dir + f"{self.namespace}/data/minecraft/tags/{self.function_folder}/load.json", "w+")
             file.write(str(data).replace("\'", "\""))
             file.close()
-        with open(self.result_dir + f"{self.namespace}/data/minecraft/tags/functions/tick.json") as f:
+        with open(self.result_dir + f"{self.namespace}/data/minecraft/tags/{self.function_folder}/tick.json") as f:
             data = json.load(f)
             data["values"].append(f"{self.namespace}:{name}/tick")
-            file = open(self.result_dir + f"{self.namespace}/data/minecraft/tags/functions/tick.json", "w+")
+            file = open(self.result_dir + f"{self.namespace}/data/minecraft/tags/{self.function_folder}/tick.json", "w+")
             file.write(str(data).replace("\'", "\""))
             file.close()
-        details, error = interprete("/".join(self.filename.split("/")[:-1]) + "/" + name, self.result_dir, self.namespace, True, node.children[0].token)
+        details, error = interprete("/".join(self.filename.split("/")[:-1]) + "/" + name, self.version, self.result_dir, self.namespace, True, node.children[0].token)
         if error: return None, error
         self.variables[name] = [Variable(name, "module", False)]
         self.modules[name] = details
@@ -934,7 +990,7 @@ class Interpreter:
             var_temp = self.to_storage(value)
             self.write(f"data modify storage {STORAGE_NAME} {temp}.{key} set from storage {STORAGE_NAME} {var_temp}\n")
             if value in self.variables:
-                self.add_var(f"{temp}.{key}", "var_type", self.variables[value][-1].is_array, value)
+                self.add_var(f"{temp}.{key}", "var_type", self.variables[value][-1].is_const, value)
             else: self.add_var(f"{temp}.{key}", "asdf", False, var_temp)
             keys.append(f"{temp}.{key}")
         self.add_var(temp, "nbt", False, temp, keys)
@@ -970,11 +1026,32 @@ class Interpreter:
         if return_value in INTERPRETE_THESE:
             return_value, error = self.interprete(return_node)
             if error: return None, error
-        if return_value in self.variables: self.write(f"data modify storage {STORAGE_NAME} {fun.temp} set from storage {STORAGE_NAME} {self.variables[return_value][-1].temp}\nreturn run data get storage {STORAGE_NAME} {fun.temp}")
-        else: self.write(f"data modify storage {STORAGE_NAME} {fun.temp} set value {return_value}\nreturn {return_value}")
+        
+        file = open(f"{self.current_dir}/{self.get_folder_dir()}{fun.name}.mcfunction", "a", encoding="utf-8")
+        if return_value in self.variables: file.write(f"data modify storage {STORAGE_NAME} {fun.temp} set from storage {STORAGE_NAME} {self.variables[return_value][-1].temp}\nreturn run data get storage {STORAGE_NAME} {fun.temp}")
+        else: file.write(f"data modify storage {STORAGE_NAME} {fun.temp} set value {return_value}\nreturn {return_value}")
+        file.close()
         return fun.temp, None
     def break_(self, node):
-        self.write("return 0\n")
+        node.children[0].parent = None
+        fun_name = self.current_file[:-11]
+        temp_node = None
+        if fun_name not in self.functions:
+            temp_node = node
+            while temp_node.name != "while":
+                temp_node = temp_node.parent
+                if temp_node.name == "root":
+                    return None, InvalidSyntaxError(
+                        temp_node.token,
+                        self.filename,
+                        f"\"break\" must in while"
+                    )
+            fun_name = temp_node.children[1].name
+        fun = self.functions[fun_name]
+        
+        file = open(f"{self.current_dir}/{self.get_folder_dir()}{fun.name}.mcfunction", "a", encoding="utf-8")
+        file.write("return 0\n")
+        file.close()
         return None, None
     def execute_(self, node):
         execute = Execute(node.children[0].children[0].name, self, node.token)
@@ -1016,8 +1093,7 @@ class Interpreter:
             if error: return None, error
         if var1.__class__ == Variable:
             var1 = var1.name
-        elif var1 in self.const and var1 in self.variables and not self.variables[var1][-1].is_array:
-            self.const.remove(var1)
+
 
 
         var2 = node.children[2].name
@@ -1321,15 +1397,15 @@ execute store result storage {STORAGE_NAME} {temp} int 1 run data get storage {S
             )
         var1 = input_nodes[0].children[0].name
         if var1 in INTERPRETE_THESE:
-            var1, error = self.interprete(var1)
+            var1, error = self.interprete(input_nodes[0].children[0])
             if error: return None, error
         var2 = input_nodes[1].children[0].name
         if var2 in INTERPRETE_THESE:
-            var2, error = self.interprete(var2)
+            var2, error = self.interprete(input_nodes[1].children[0])
             if error: return None, error
         var3 = input_nodes[2].children[0].name
         if var3 in INTERPRETE_THESE:
-            var3, error = self.interprete(var3)
+            var3, error = self.interprete(input_nodes[2].children[0])
             if error: return None, error
         
         is_var = False
@@ -1508,7 +1584,7 @@ data modify storage {STORAGE_NAME} {temp} set from storage {STORAGE_NAME} var1\n
         return temp, None
     def fun_double(self, node, input_nodes):
         return self.fun_float(node, input_nodes, "double")
-    def fun_string(self, node, input_nodes): # 책갈피
+    def fun_string(self, node, input_nodes):
         if 1 != len(input_nodes):
             return None, InvalidSyntaxError(
                 node.children[0].token,
@@ -1603,9 +1679,9 @@ execute unless score #type {SCOREBOARD_NAME} matches 4 run ")
         self.current_file = current_file
         self.write(f"function {self.namespace}:{self.get_folder_dir()}{dump_file[:-11]} with storage {STORAGE_NAME}\n")
 
-    def add_var(self, name, type, is_array, temp, details = None):
+    def add_var(self, name, type, is_const, temp, details = None):
         if name not in self.variables: self.variables[name] = []
-        self.variables[name].append(Variable(name, type, is_array, temp, details))
+        self.variables[name].append(Variable(name, type, is_const, temp, details))
 
 class Execute:
     def __init__(self, condition, interpreter, token) -> None:
@@ -1919,18 +1995,7 @@ class Optimizer:
         self.interpreter = interpreter
     
     def optimize(self):
-        self.const_var()
-    
-    def const_var(self):
-        const_arr = []
-        
-        for var in self.interpreter.const:
-            if var.is_array or var.value == False: continue
-            if var.value in self.interpreter.variables:
-                var.value = self.interpreter.variables[var.value][-1].value
-            const_arr.append(var)
-        # for var in const_arr:
-            # print(var)
+        pass
 
 def print_tree(ast):
     for pre, fill, node in RenderTree(ast):
@@ -1940,7 +2005,7 @@ def print_tree(ast):
         else:
             print("%s%s" % (pre, node.name))
 
-def interprete(filename, result_dir, namespace, is_modul = False, token = None):
+def interprete(filename, version, result_dir, namespace, is_modul = False, token = None):
     if len(filename) < 7 or filename[-7:] != ".planet": filename += ".planet"
     token_arr = []
     if not os.path.isfile(filename):
@@ -1958,8 +2023,8 @@ def interprete(filename, result_dir, namespace, is_modul = False, token = None):
     # print_tree(ast)
 
     interpreter = None
-    if not is_modul: interpreter = Interpreter(ast, result_dir=result_dir, namespace=namespace, filename=filename)
-    else: interpreter = Interpreter(ast, filename.split("/")[-1][:-7] + "/", result_dir=result_dir, namespace=namespace, filename=filename)
+    if not is_modul: interpreter = Interpreter(version, ast, result_dir=result_dir, namespace=namespace, filename=filename)
+    else: interpreter = Interpreter(version, ast, filename.split("/")[-1][:-7] + "/", result_dir=result_dir, namespace=namespace, filename=filename)
     temp, error = interpreter.interprete(ast)
     if error:
         print("\n\n" + error.as_string())
@@ -1969,7 +2034,7 @@ def interprete(filename, result_dir, namespace, is_modul = False, token = None):
     # optimizer.optimize()
     return {"variables":interpreter.variables, "functions":interpreter.functions}, None
 
-def generate_datapack(filename, result_dir = "./", namespace = "pack"):
+def generate_datapack(filename, version, result_dir = "./", namespace = "pack"):
     result_dir = result_dir.strip()
     namespace = namespace.strip()
     if result_dir == "" or namespace == "":
@@ -1977,8 +2042,8 @@ def generate_datapack(filename, result_dir = "./", namespace = "pack"):
         return
     if result_dir[-1] != "/" and result_dir[-1] != "\\":
         result_dir += "/"
-    make_basic_files(result_dir, namespace)
-    return interprete(filename, result_dir, namespace)
+    make_basic_files(version, result_dir, namespace)
+    return interprete(filename, version, result_dir, namespace)
 
 def reset_temp():
     global var_temp_cnt
@@ -1992,8 +2057,8 @@ def reset_temp():
     temp_cnt = 0
     used_temp = []
 if __name__ == "__main__":
-    # generate_datapack("./example/test.planet", "./", "pack")
-    # exit()
+    generate_datapack("./rpg/main.planet", "1.20", "./", "pack")
+    exit()
 
     DEFAULT_VERSION = "버전을 선택하세요"
 
@@ -2006,16 +2071,16 @@ if __name__ == "__main__":
             return
         namespace = entry1.get().strip()
         if namespace == "": namespace = "pack"
-        try:
-            name = tk.file.name
-            dir = tk.dir
-            temp, error = generate_datapack(name, dir, namespace)
-            if error:
-                messagebox.showinfo("name", error.as_string())
-            else:
-                messagebox.showinfo("name", "done!")
-        except:
-            messagebox.showinfo("name", "파일 또는 데이터팩 경로가 설정되지 않았습니다.")
+        # try:
+        name = tk.file.name
+        dir = tk.dir
+        temp, error = generate_datapack(name, version, dir, namespace)
+        if error:
+            messagebox.showinfo("name", error.as_string())
+        else:
+            messagebox.showinfo("name", "done!")
+        # except:
+        #     messagebox.showinfo("name", "파일 또는 데이터팩 경로가 설정되지 않았습니다.")
 
     def select_planet_file():
         tk.file = filedialog.askopenfile(
