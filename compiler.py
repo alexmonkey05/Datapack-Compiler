@@ -202,7 +202,7 @@ class Parser:
             return None, InvalidSyntaxError(
                 self.current_tok,
                 self.filename,
-                f"{self.current_tok.string} was not definded"
+                f"{self.current_tok.string} was not defined"
             )
         elif self.current_tok.string in self.variables:
             node = Node(self.current_tok.string, token = self.current_tok)
@@ -252,7 +252,7 @@ class Parser:
             return None, InvalidSyntaxError(
                 self.current_tok,
                 self.filename,
-                f"{self.current_tok.string} was not definded operator"
+                f"{self.current_tok.string} was not defined operator"
             )
     def type_65(self, parent): # NEWLINE type (\n)
         return self.type_4(parent)
@@ -501,11 +501,15 @@ class Parser:
         return node, None
     def operator_make_array(self):
         node = Node("make_array", token = self.current_tok)
-        while self.current_tok.string != "]":
-            self.advance()
-            if self.current_tok.string == ",": continue
+        depth = 1
+        while depth > 0:
+            tok = self.advance()
+            if tok.string == ",": continue
+            elif tok.string == "]": depth -= 1
+            elif tok.string == "[": depth += 1
             temp, error = self.build_ast(node)
             if error: return None, error
+        self.reverse()
         return node, error
     def operator_member(self, parent):
         pre_node = parent.children[-1]
@@ -722,6 +726,8 @@ class Interpreter:
         self.is_parameter = False
 
         self.const = []
+        self.used_return = {}
+        self.used_break = []
 
 
     def interprete(self, node, current_dir = None, current_file = None):
@@ -796,6 +802,14 @@ class Interpreter:
                 del(self.variables[var])
         self.using_variables.pop(-1)
         self.variables[fun.temp] = [Variable(fun.name, fun.type, False, fun.temp)]
+        reset_return_score = ""
+        for temp in self.used_return:
+            reset_return_score += f"scoreboard players set #{temp} {SCOREBOARD_NAME} 0\n"
+        with open(self.current_dir + fun.name + ".mcfunction", 'r+', encoding="utf-8") as file: 
+            file_data = file.read()
+            file.seek(0, 0) 
+            file.write(reset_return_score + file_data) 
+        self.used_return = {}
         return None, None
     def call_function_(self, node):
         input_nodes = node.children[1].children
@@ -860,7 +874,7 @@ class Interpreter:
             var = details["variables"][var_name][0]
             self.variables[var.name] = [var]
         return None, None
-    def if_(self, node):
+    def if_(self, node, type = "if"):
         if_score, error = self.interprete(node.children[0].children[0]) # interprete condition
         if error: return None, error
 
@@ -875,6 +889,8 @@ class Interpreter:
             if error: return None, error
 
         self.current_file = current_file
+
+        if type == "if": self.break_and_return()
 
         for var in self.using_variables[-1]:
             used_var_temp.append(self.using_variables[-1][var].temp)
@@ -907,15 +923,17 @@ class Interpreter:
         self.add_used_temp(if_score)
         return dump_function, None
     def while_(self, node):
-        dump_function, error = self.if_(node)
+        dump_function, error = self.if_(node, "while")
         if error: return None, error
         current_file = self.current_file
         self.current_file = dump_function
 
         if_score, error = self.interprete(node.children[0].children[0]) # interprete condition
         if error: return None, error
+        for temp in self.used_break:
+            self.write(f"scoreboard players set #{temp} {SCOREBOARD_NAME} 0\n")
+        self.used_break = []
         self.write(f"execute store result score #{if_score} {SCOREBOARD_NAME} run data get storage {STORAGE_NAME} {if_score}\nexecute if score #{if_score} {SCOREBOARD_NAME} matches 1 run function {self.namespace}:{self.get_folder_dir()}{self.current_file[:-11]}\n")
-
         self.current_file = current_file
         return None, None
     def operator_(self, node):
@@ -971,7 +989,9 @@ class Interpreter:
             if temp2 in INTERPRETE_THESE:
                 temp2, error = self.interprete(child)
                 if error: return None, error
-            self.write(f"data modify storage {STORAGE_NAME} {temp} append from storage {STORAGE_NAME} {self.to_storage(temp2)}\n")
+            temp2 = self.to_storage(temp2)
+            self.write(f"data modify storage {STORAGE_NAME} {temp} append from storage {STORAGE_NAME} {temp2}\n")
+            self.add_used_temp(temp2)
 
         if temp not in self.variables: self.variables[temp] = []
         self.variables[temp].append(Variable(temp, "arr", True, temp))
@@ -1009,6 +1029,7 @@ class Interpreter:
         node.children[0].parent = None
         fun_name = self.current_file[:-11]
         temp_node = None
+        temp = get_temp()
         if fun_name not in self.functions:
             temp_node = node
             while temp_node.name != "define_function":
@@ -1027,31 +1048,26 @@ class Interpreter:
             return_value, error = self.interprete(return_node)
             if error: return None, error
         
-        file = open(f"{self.current_dir}/{self.get_folder_dir()}{fun.name}.mcfunction", "a", encoding="utf-8")
-        if return_value in self.variables: file.write(f"data modify storage {STORAGE_NAME} {fun.temp} set from storage {STORAGE_NAME} {self.variables[return_value][-1].temp}\nreturn run data get storage {STORAGE_NAME} {fun.temp}")
-        else: file.write(f"data modify storage {STORAGE_NAME} {fun.temp} set value {return_value}\nreturn {return_value}")
-        file.close()
+        if return_value in self.variables:
+            self.write(f"data modify storage {STORAGE_NAME} {fun.temp} set from storage {STORAGE_NAME} {self.variables[return_value][-1].temp}\nscoreboard players set #{temp} {SCOREBOARD_NAME} 1\nreturn run data get storage {STORAGE_NAME} {fun.temp}\n")
+        else:
+            self.write(f"data modify storage {STORAGE_NAME} {fun.temp} set value {return_value}\nscoreboard players set #{temp} {SCOREBOARD_NAME} 1\nreturn {return_value}\n")
+        self.used_return[temp] = fun.temp
         return fun.temp, None
     def break_(self, node):
         node.children[0].parent = None
-        fun_name = self.current_file[:-11]
-        temp_node = None
-        if fun_name not in self.functions:
-            temp_node = node
-            while temp_node.name != "while":
-                temp_node = temp_node.parent
-                if temp_node.name == "root":
-                    return None, InvalidSyntaxError(
-                        temp_node.token,
-                        self.filename,
-                        f"\"break\" must in while"
-                    )
-            fun_name = temp_node.children[1].name
-        fun = self.functions[fun_name]
-        
-        file = open(f"{self.current_dir}/{self.get_folder_dir()}{fun.name}.mcfunction", "a", encoding="utf-8")
-        file.write("return 0\n")
-        file.close()
+        temp_node = node
+        while temp_node.name != "while":
+            temp_node = temp_node.parent
+            if temp_node.name == "root":
+                return None, InvalidSyntaxError(
+                    temp_node.token,
+                    self.filename,
+                    f"\"break\" must in while"
+                )
+        temp = get_temp()        
+        self.write(f"scoreboard players set #{temp} {SCOREBOARD_NAME} 1\nreturn 0\n")
+        self.used_break.append(temp)
         return None, None
     def execute_(self, node):
         execute = Execute(node.children[0].children[0].name, self, node.token)
@@ -1073,6 +1089,7 @@ class Interpreter:
             if error: return None, error
 
         self.current_file = current_file
+        self.break_and_return()
         for var in self.using_variables[-1]:
             used_var_temp.append(self.using_variables[-1][var].temp)
             if var == "0": continue
@@ -1084,6 +1101,12 @@ class Interpreter:
 
         return None, None
 
+    def break_and_return(self):
+        for temp in self.used_return:
+            self.write(f"execute if score #{temp} {SCOREBOARD_NAME} matches 1 run return run data get storage {STORAGE_NAME} {self.used_return[temp]}\n")
+        
+        for temp in self.used_break:
+            self.write(f"execute if score #{temp} {SCOREBOARD_NAME} matches 1 run return 0")
 
     def operator_equal(self, node):
         var1 = node.children[1].name
@@ -1224,13 +1247,16 @@ data modify storage {STORAGE_NAME} {temp} set from storage {STORAGE_NAME} {var_n
             else:
                 pass
         elif var1 in self.variables: # 인스턴스
-            return f"{var1}.{var2}", None
+            result = f"{var1}.{var2}"
+            if result not in self.variables:
+                self.variables[result] = [Variable(result, "asdf", False, result)]
+            return result, None
         else: # 모듈 또는 클래스
             
             return None, InvalidSyntaxError(
                 var1_node.token,
                 self.filename,
-                f"{var1} was not definded"
+                f"{var1} was not defined"
             )
 
     def fun_print(self, node, input_nodes):
@@ -1764,7 +1790,7 @@ class Execute:
             return InvalidSyntaxError(
                 self.token,
                 self.interpreter.filename,
-                f'\"{node}\" is not definded'
+                f'\"{node}\" is not defined'
             )
         
         else:
@@ -1986,6 +2012,7 @@ def get_var_temp():
     return temp
 
 
+
 #######################################
 # OPTIMIZER
 #######################################
@@ -2057,7 +2084,8 @@ def reset_temp():
     temp_cnt = 0
     used_temp = []
 if __name__ == "__main__":
-    generate_datapack("./rpg/main.planet", "1.20", "./", "pack")
+    # generate_datapack("./rpg/main.planet", "1.20", "./", "pack")
+    generate_datapack("./example/test.planet", "1.20", "./", "pack")
     exit()
 
     DEFAULT_VERSION = "버전을 선택하세요"

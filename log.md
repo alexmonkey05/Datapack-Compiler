@@ -25,3 +25,17 @@ def test(){
   print("return dosen't worked")
 }
 ```
+# 2024/06/12 2.4
+- 아래와 같은 상황에서 break, return이 정상작동 하지 않던 문제를 해결함
+```
+def test(){
+    if(1 == 1){
+        if(1 == 1){
+            return 1
+            print("asdf")
+        }
+    }
+}
+```
+- 이중배열 선언 시 오류가 나던 문제를 해결함
+- `test.asdf.fdsa`와 같이 "." 연산자로 2번 이상 데이터 접근 시 오류가 나던 문제를 해결함

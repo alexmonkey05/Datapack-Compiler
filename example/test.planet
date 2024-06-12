@@ -1,3 +1,8 @@
-import test2
-
-test2.print_test()
+def test(){
+    if(1 == 1){
+        if(1 == 1){
+            return 1
+            print("asdf")
+        }
+    }
+}
