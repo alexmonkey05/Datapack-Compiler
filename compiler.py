@@ -2085,8 +2085,8 @@ def reset_temp():
     used_temp = []
 if __name__ == "__main__":
     # generate_datapack("./rpg/main.planet", "1.20", "./", "pack")
-    generate_datapack("./example/test.planet", "1.20", "./", "pack")
-    exit()
+    # generate_datapack("./example/test.planet", "1.20", "./", "pack")
+    # exit()
 
     DEFAULT_VERSION = "버전을 선택하세요"
 
