@@ -104,9 +104,9 @@ OPERATOR_ID = {
 
 INTERPRETE_THESE = ("operator", "call_function", "make_array", "make_nbt", "make_selector", "define_var")
 
-BUILT_IN_FUNCTION = ("print", "random", "type", "get_score", "get_data", "set_score", "set_data", "round") + TYPES
+BUILT_IN_FUNCTION = ("print", "random", "type", "get_score", "get_data", "set_score", "set_data", "round", "del") + TYPES
 
-EXECUTE_KEYWORDS = ( "as", "at", "if", "positioned", "" )
+EXECUTE_KEYWORDS = ( "as", "at", "if", "positioned" )
 
 MINECRAFT_TYPES = ("byte", "short", "int", "float", "double", "long")
 #######################################
@@ -425,7 +425,7 @@ class Parser:
         while paren_cnt > 0:
             self.advance()
             if self.current_tok.string == "(": paren_cnt += 1
-            if self.current_tok.string == ")": paren_cnt -= 1
+            elif self.current_tok.string == ")": paren_cnt -= 1
         error = self.is_next_match("{")
         if error: return None, error
         self.make_tree_of_assign(execute_node)
@@ -805,10 +805,12 @@ class Interpreter:
         reset_return_score = ""
         for temp in self.used_return:
             reset_return_score += f"scoreboard players set #{temp} {SCOREBOARD_NAME} 0\n"
-        with open(self.current_dir + fun.name + ".mcfunction", 'r+', encoding="utf-8") as file: 
+        filename = self.current_dir + fun.name + ".mcfunction"
+        if not os.path.isfile(filename): open(filename, 'w+', encoding="utf-8").close()
+        with open(filename, 'r+', encoding="utf-8") as file: 
             file_data = file.read()
-            file.seek(0, 0) 
-            file.write(reset_return_score + file_data) 
+            file.seek(0, 0)
+            file.write(reset_return_score + file_data)
         self.used_return = {}
         return None, None
     def call_function_(self, node):
@@ -1665,6 +1667,36 @@ execute unless score #type {SCOREBOARD_NAME} matches 4 run ")
         #     self.macro(f"$data modify storage {STORAGE_NAME} {temp} set value {var}")
         # self.add_used_temp(var)
         # return temp, None
+    def fun_del(self, node, input_nodes):
+        if 1 != len(input_nodes):
+            return None, InvalidSyntaxError(
+                node.children[0].token,
+                self.filename,
+                f"del must have only 1 parameters"
+            )
+        var = input_nodes[0].children[0]
+        if var.name != "operator" or var.children[0].name != "member":
+            return None, InvalidSyntaxError(
+                node.children[0].token,
+                self.filename,
+                f"parameter must be member operator"
+            )
+        var1 = var.children[1].name
+        var2 = var.children[2].name
+        if var2 in INTERPRETE_THESE:
+            var2, error = self.interprete(var.children[2])
+            if error: return None, error
+        
+        if var1 not in self.variables:
+            return None, InvalidSyntaxError(
+                node.children[0].token,
+                self.filename,
+                f"{var1} is not defined"
+            )
+        
+        if var2 in self.variables: self.macro(f"$data remove storage {STORAGE_NAME} {var1}[$({var2})]\n")
+        else: self.write(f"data remove storage {STORAGE_NAME} {var1}[{var2}]\n")
+        return var1, None
 
     def get_folder_dir(self):
         dir_arr = self.current_dir.split("/")
