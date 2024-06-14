@@ -1,3 +1,1 @@
-var arr = [1, 2, 3]
-del(arr[0])
-arr + 2
+print(string(1 + 1))

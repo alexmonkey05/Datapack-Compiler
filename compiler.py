@@ -1163,6 +1163,9 @@ class Interpreter:
         if var2 in self.variables: self.write(f"data modify storage {STORAGE_NAME} var2 set from storage {STORAGE_NAME} {self.variables[var2][-1].temp}\n")
         else: self.write(f"data modify storage {STORAGE_NAME} var2 set value {var2}\n")
         self.write(f"scoreboard players set #operator_type {SCOREBOARD_NAME} {OPERATOR_ID[operator]}\nfunction basic:operation\ndata modify storage {STORAGE_NAME} {temp} set from storage {STORAGE_NAME} var1\n")
+        self.add_var(temp, "temp", False, temp)
+        self.add_used_temp(var1)
+        self.add_used_temp(var2)
         return temp, None
     def operator_and_or(self, node):
         
@@ -1625,15 +1628,15 @@ data modify storage {STORAGE_NAME} {temp} set from storage {STORAGE_NAME} var1\n
             if error: return None, error
         temp = get_temp()
         if var in self.variables:
-            self.write(f"data modify storage {STORAGE_NAME} type_var set from storage {STORAGE_NAME} {self.variables[var][-1].temp}\n\
-execute store result score #type {SCOREBOARD_NAME} run function basic:get_type_score\n\
-execute if score #type {SCOREBOARD_NAME} matches 4 run data modify storage {STORAGE_NAME} {temp} set from storage {STORAGE_NAME} type_var\n\
-execute unless score #type {SCOREBOARD_NAME} matches 4 run ")
-            self.macro(f"$data modify storage {STORAGE_NAME} {temp} set value \"$({self.variables[var][-1].temp})\"")
+            self.write(f"data modify storage {STORAGE_NAME} type_var set from storage {STORAGE_NAME} {self.variables[var][-1].temp}\n")
+# execute store result score #type {SCOREBOARD_NAME} run function basic:get_type_score\n\
+# execute if score #type {SCOREBOARD_NAME} matches 4 run data modify storage {STORAGE_NAME} {temp} set from storage {STORAGE_NAME} type_var\n\
+# execute unless score #type {SCOREBOARD_NAME} matches 4 run ")
+            # self.macro(f"$data modify storage {STORAGE_NAME} {temp} set value \"$({self.variables[var][-1].temp})\"\n")
         else:
             if var[0] == "\"":
                 var = var[1:-1]
-            self.write(f"data modify storage {STORAGE_NAME} {temp} set value \"{var}\"")
+            self.write(f"data modify storage {STORAGE_NAME} {temp} set value \"{var}\"\n")
         self.add_used_temp(var)
         self.add_var(temp, "string", False, temp)
         return temp, None
@@ -2122,8 +2125,8 @@ def reset_temp():
     used_temp = []
 if __name__ == "__main__":
     # generate_datapack("./rpg/main.planet", "1.20.4", "./", "pack")
-    generate_datapack("./example/test.planet", "1.20.4", "./", "pack")
-    exit()
+    # generate_datapack("./example/test.planet", "1.20.4", "./", "pack")
+    # exit()
 
 
     tk = Tk()

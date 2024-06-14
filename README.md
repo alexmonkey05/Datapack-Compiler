@@ -377,10 +377,10 @@ print(double(1))
 ```
 1.0d
 ```
-### bool(any a)
-`a`를 `bool`로 변환해준다
+### byte(any a)
+`a`를 `byte`로 변환해준다
 ```
-print(bool(100))
+print(byte(100))
 ```
 
 ```
