@@ -1,0 +1,1 @@
+$data modify storage 40planet:value var1 append from storage 40planet:value var2[$(idx)]

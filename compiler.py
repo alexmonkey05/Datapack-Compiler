@@ -680,7 +680,7 @@ def make_basic_files(version, file_dir, namespace = "pack"):
     if os.path.exists(file_dir + f"{namespace}"): shutil.rmtree(file_dir + f"{namespace}")
 
     function_folder = "function"
-    if version == "1.20": function_folder = "functions"
+    if version == "1.20.4": function_folder = "functions"
 
     os.makedirs(file_dir + f"{namespace}/data/minecraft/tags/{function_folder}")
     os.makedirs(file_dir + f"{namespace}/data/{namespace}/{function_folder}")
@@ -706,7 +706,7 @@ class Interpreter:
     def __init__(self, version, root, current_dir = "", result_dir = "./", namespace = "pack", filename = "") -> None:
         self.version = version
         self.function_folder = "function"
-        if version == "1.20": self.function_folder = "functions"
+        if version == "1.20.4": self.function_folder = "functions"
 
 
         self.root = root
@@ -738,7 +738,6 @@ class Interpreter:
             return None, None
         if current_dir: self.current_dir = current_dir
         if current_file: self.current_file = current_file
-
 
         method = getattr(self, node.name + "_")
         var_name, error = method(node)
@@ -2122,9 +2121,9 @@ def reset_temp():
     temp_cnt = 0
     used_temp = []
 if __name__ == "__main__":
-    # generate_datapack("./rpg/main.planet", "1.20", "./", "pack")
-    # generate_datapack("./example/test.planet", "1.20", "./", "pack")
-    # exit()
+    # generate_datapack("./rpg/main.planet", "1.20.4", "./", "pack")
+    generate_datapack("./example/test.planet", "1.20.4", "./", "pack")
+    exit()
 
 
     tk = Tk()
