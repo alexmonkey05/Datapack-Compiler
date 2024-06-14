@@ -1941,7 +1941,7 @@ class Execute:
             if error: return error
             self.result += f"{pos} "
         elif node == "items":
-            if self.interpreter.version == "1.20":
+            if self.interpreter.version == "1.20.4":
                 return InvalidSyntaxError(
                     self.token,
                     self.interpreter.filename,
@@ -2126,15 +2126,11 @@ if __name__ == "__main__":
     # generate_datapack("./example/test.planet", "1.20", "./", "pack")
     # exit()
 
-    DEFAULT_VERSION = "버전을 선택하세요"
 
     tk = Tk()
     filename = None
     def event():
         version = combobox.get()
-        if version == DEFAULT_VERSION:
-            messagebox.showinfo("name", "버전을 선택해주세요")
-            return
         namespace = entry1.get().strip()
         if namespace == "": namespace = "pack"
         try:
@@ -2176,9 +2172,9 @@ if __name__ == "__main__":
     btn2 = Button(tk,text='Select',command=select_folder).grid(row=1,column=1)
     btn3 = Button(tk,text='Compile',command=event).grid(row=3,column=1)
 
-    values = ["1.20", "1.21"]
+    values = ["1.20.4", "1.20.6", "1.21"]
     combobox = ttk.Combobox(tk,values=values,state="readonly")
     combobox.grid(row=3,column=0)
-    combobox.set(DEFAULT_VERSION)
+    combobox.set("1.21")
 
     tk.mainloop()
