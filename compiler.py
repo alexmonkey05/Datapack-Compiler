@@ -1941,6 +1941,12 @@ class Execute:
             if error: return error
             self.result += f"{pos} "
         elif node == "items":
+            if self.interpreter.version == "1.20":
+                return InvalidSyntaxError(
+                    self.token,
+                    self.interpreter.filename,
+                    f'\"execute if items\" is available since version 1.21'
+                )
             node = self.advance()
             self.result += node + " "
             if node == "entity":
@@ -2131,16 +2137,16 @@ if __name__ == "__main__":
             return
         namespace = entry1.get().strip()
         if namespace == "": namespace = "pack"
-        # try:
-        name = tk.file.name
-        dir = tk.dir
-        temp, error = generate_datapack(name, version, dir, namespace)
-        if error:
-            messagebox.showinfo("name", error.as_string())
-        else:
-            messagebox.showinfo("name", "done!")
-        # except:
-        #     messagebox.showinfo("name", "파일 또는 데이터팩 경로가 설정되지 않았습니다.")
+        try:
+            name = tk.file.name
+            dir = tk.dir
+            temp, error = generate_datapack(name, version, dir, namespace)
+            if error:
+                messagebox.showinfo("name", error.as_string())
+            else:
+                messagebox.showinfo("name", "done!")
+        except:
+            messagebox.showinfo("name", "알 수 없는 오류가 발생했습니다.")
 
     def select_planet_file():
         tk.file = filedialog.askopenfile(
@@ -2170,7 +2176,7 @@ if __name__ == "__main__":
     btn2 = Button(tk,text='Select',command=select_folder).grid(row=1,column=1)
     btn3 = Button(tk,text='Compile',command=event).grid(row=3,column=1)
 
-    values = ["1.20"]
+    values = ["1.20", "1.21"]
     combobox = ttk.Combobox(tk,values=values,state="readonly")
     combobox.grid(row=3,column=0)
     combobox.set(DEFAULT_VERSION)
