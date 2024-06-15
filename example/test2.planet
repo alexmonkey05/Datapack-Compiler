@@ -1,3 +1,5 @@
-def print_test(){
+
+def test(){
     print("test")
 }
+/function __namespace__:test

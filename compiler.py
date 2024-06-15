@@ -34,6 +34,7 @@ TYPES = ("entity", "nbt", "string") + SCORE_TYPES
 MEANS_END = (";", "]", "}")
 SCOREBOARD_NAME = "40planet_num"
 STORAGE_NAME = "40planet:value"
+NAMESPACE = "__namespace__"
 
 KEYWORDS = ( "if", "else", "while", "from", "import", "def", "break", "and", "or", "return", "execute", "var")#, "const" )
 
@@ -416,8 +417,6 @@ class Parser:
         error = self.is_next_match("(")
         tok = self.current_tok
         condition = tok.line[tok.start[1] + 1:]
-        # print(tok.start[1])
-        # print(condition)
         condition = condition[:condition.find(")")]
         Node(condition, parent=node, token = None)
         if error: return None, error
@@ -533,7 +532,7 @@ class Parser:
         while True:
             tok = self.advance()
             if tok.string == "b":
-                Node("bool", parent=temp_node, token = self.current_tok)
+                Node("byte", parent=temp_node, token = self.current_tok)
                 tok = self.advance()
             elif tok.string == "d":
                 Node("double", parent=temp_node, token = self.current_tok)
@@ -716,7 +715,6 @@ class Interpreter:
         self.namespace = namespace
         self.current_dir = result_dir + f"{self.namespace}/data/{self.namespace}/{self.function_folder}/" + current_dir
         self.current_file = "load.mcfunction"
-        # self.variables = { "0":[Variable("0", "int", False, "0")] }
         self.variables = {}
         self.functions = {}
         self.modules = {}
@@ -948,11 +946,17 @@ class Interpreter:
         # if "." in var_name and operator != "dot":
         #     var = self.variables[var_name][-1]
         #     if var.type in SCORE_TYPES:
-        #         if var.type == "int" or var.type == "bool": self.write(f"execute store result storage {STORAGE_NAME} {var.temp} int 1 run scoreboard players get #{var.temp} {SCOREBOARD_NAME}\n")
+        #         if var.type == "int" or var.type == "byte": self.write(f"execute store result storage {STORAGE_NAME} {var.temp} int 1 run scoreboard players get #{var.temp} {SCOREBOARD_NAME}\n")
         #         else: self.write(f"execute store result storage {STORAGE_NAME} {var.temp} {var.type[0]} 0.01 run scoreboard players get #{var.temp} {SCOREBOARD_NAME}\n")
         return var_name, error
     def command_(self, node):
         command = node.children[0].name
+        if NAMESPACE + ":" in command:
+            namespace = self.namespace + ":"
+            folder_name = self.filename.split("/")[-1][:-7] + "/"
+            if folder_name == self.current_dir.split(f"{self.function_folder}/")[-1]:
+                namespace += folder_name
+            command = command.replace(NAMESPACE + ":", namespace)
         if "^" in command:
             command, error = self.macro_(command, node.token)
             if error: return None, error
@@ -1226,7 +1230,7 @@ data modify storage {STORAGE_NAME} {temp} set from storage {STORAGE_NAME} {var_n
         temp, error = self.interprete(node.children[1])
         if error: return None, error
         self.write(f"execute store result storage {STORAGE_NAME} {temp} byte 1 run data get storage {STORAGE_NAME} {temp}\n")
-        self.add_var(temp, "bool", False, temp)
+        self.add_var(temp, "byte", False, temp)
         return temp, None
     def operator_dot(self, node):
         var1_node = node.children[1]
