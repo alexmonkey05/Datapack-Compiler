@@ -194,6 +194,16 @@ def load(){
 	dumb_function(3)
 }
 ```
+만약 `/function`명령어를 사용해 함수를 호출하고 싶다면 아래와 같이 쓰면 된다   
+```
+def dumb_function(var a){
+	return a
+}
+
+/function __namespace__:dumb_function
+```
+`__namespace__`는 사용자가 입력한 네임스페이스로 바뀐다   
+만약 모듈로서 `import` 되었다면 `__namespace__`는 `namespace:filename/`의 형식으로 바뀌므로 걱정할 필요 없다
 ### 마인크래프트 명령어
 `/`를 맨 앞에 쓰면 그것은 마인크래프트 명령어로 인식한다
 ```
