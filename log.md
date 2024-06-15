@@ -58,3 +58,5 @@ arr = arr + 1
 - `basic.zip` 내의 `functions` 폴더 명이 `function`로 수정됨
 - `basic.zip`이 버전에 따라 달라짐에 따라 `basic_1.20.zip`, `basic_1.21.zip`으로 나뉨
 - 내장함수 `string`에 변수를 넣었을 경우에 데이터팩에 오류가 나던 현상이 해결됨
+# 2024/06/15 2.7
+- `__namespace__`를 활용하여 마크 명령어를 입력할 때에 네임스페이스를 쓸 수 있게 됨
