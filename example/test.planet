@@ -1,7 +1,1 @@
-import test2
-
-var arr = []
-append(arr, 1)
-var test = 2
-append(arr, test)
-print(arr)
+print(!is_module())

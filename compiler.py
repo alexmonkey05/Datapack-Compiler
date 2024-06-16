@@ -943,7 +943,7 @@ class Interpreter:
     def operator_(self, node):
         operator = node.children[0].name
         if operator == "paren":
-            return self.operator_(node.children[1])
+            return self.interprete(node.children[1])
         method_name = f'operator_{OPERATOR_TO_STRING[operator]}'
         method = getattr(self, method_name)
         var_name, error = method(node)
@@ -1233,7 +1233,7 @@ data modify storage {STORAGE_NAME} {temp} set from storage {STORAGE_NAME} {var_n
     def operator_not(self, node):
         temp, error = self.interprete(node.children[1])
         if error: return None, error
-        self.write(f"execute store result storage {STORAGE_NAME} {temp} byte 1 run data get storage {STORAGE_NAME} {temp}\n")
+        self.write(f"execute store result score #{temp} {SCOREBOARD_NAME} run data get storage {STORAGE_NAME} {temp}\nexecute store result storage {STORAGE_NAME} {temp} byte 1 if score #{temp} {SCOREBOARD_NAME} matches ..0\n")
         self.add_var(temp, "byte", False, temp)
         return temp, None
     def operator_dot(self, node):
@@ -2169,7 +2169,7 @@ def reset_temp():
     temp_cnt = 0
     used_temp = []
 if __name__ == "__main__":
-    # generate_datapack("./rpg/main.planet", "1.20.4", "./", "pack")
+    # generate_datapack("./rpg/main.planet", "1.20.6", "./", "pack")
     # generate_datapack("./example/test.planet", "1.20.6", "./", "pack")
     # exit()
 
