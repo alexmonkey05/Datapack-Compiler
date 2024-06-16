@@ -368,6 +368,14 @@ var test = 2
 append(arr, test)
 print(arr)
 ```
+### is_module()
+- 해당 파일이 모듈로써 불러와진 것인지 판단해준다
+- 파이썬의 `__name__ == "__main__"` 조건문 역할을 해준다.
+```
+if(is_module()){
+    print("this is not main")
+}
+```
 ### int(any a)
 `a`를 `int` 자료형으로 변환해준다   
 `float` 또는 `double`의 경우엔 `round(a)`와 같다

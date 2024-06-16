@@ -105,7 +105,7 @@ OPERATOR_ID = {
 
 INTERPRETE_THESE = ("operator", "call_function", "make_array", "make_nbt", "make_selector", "define_var")
 
-BUILT_IN_FUNCTION = ("print", "random", "type", "get_score", "get_data", "set_score", "set_data", "round", "del", "append") + TYPES
+BUILT_IN_FUNCTION = ("print", "random", "type", "get_score", "get_data", "set_score", "set_data", "round", "del", "append", "is_module") + TYPES
 
 EXECUTE_KEYWORDS = ( "as", "at", "if", "positioned" )
 
@@ -722,6 +722,11 @@ class Interpreter:
         self.dump_function_cnt = 0
         self.using_variables = [{}]
         self.is_parameter = False
+        folder_name = self.filename.split("/")[-1][:-7] + "/"
+        if folder_name == self.current_dir.split(f"{self.function_folder}/")[-1]:
+            self.is_module = True
+        else:
+            self.is_module = False
 
         self.const = []
         self.used_return = {}
@@ -953,9 +958,8 @@ class Interpreter:
         command = node.children[0].name
         if NAMESPACE + ":" in command:
             namespace = self.namespace + ":"
-            folder_name = self.filename.split("/")[-1][:-7] + "/"
-            if folder_name == self.current_dir.split(f"{self.function_folder}/")[-1]:
-                namespace += folder_name
+            if self.is_module:
+                namespace += self.filename.split("/")[-1][:-7] + "/"
             command = command.replace(NAMESPACE + ":", namespace)
         if "^" in command:
             command, error = self.macro_(command, node.token)
@@ -1727,7 +1731,19 @@ execute unless score #type {SCOREBOARD_NAME} matches 4 run ")
         else:
             self.write(f"data modify storage {STORAGE_NAME} {self.variables[arr][-1].temp} append value {element}\n")
         return arr, None
-        
+    def fun_is_module(self, node, input_nodes):
+        if 0 != len(input_nodes):
+            return None, InvalidSyntaxError(
+                node.children[0].token,
+                self.filename,
+                f"is_module must have only 0 parameters"
+            )
+        temp = get_temp()
+        if self.is_module:
+            self.write(f"data modify storage {STORAGE_NAME} {temp} set value 1b\n")
+        else:
+            self.write(f"data modify storage {STORAGE_NAME} {temp} set value 0b\n")
+        return temp, None
 
     def get_folder_dir(self):
         dir_arr = self.current_dir.split("/")
