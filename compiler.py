@@ -105,7 +105,7 @@ OPERATOR_ID = {
 
 INTERPRETE_THESE = ("operator", "call_function", "make_array", "make_nbt", "make_selector", "define_var")
 
-BUILT_IN_FUNCTION = ("print", "random", "type", "get_score", "get_data", "set_score", "set_data", "round", "del") + TYPES
+BUILT_IN_FUNCTION = ("print", "random", "type", "get_score", "get_data", "set_score", "set_data", "round", "del", "append") + TYPES
 
 EXECUTE_KEYWORDS = ( "as", "at", "if", "positioned" )
 
@@ -679,7 +679,7 @@ def make_basic_files(version, file_dir, namespace = "pack"):
     if os.path.exists(file_dir + f"{namespace}"): shutil.rmtree(file_dir + f"{namespace}")
 
     function_folder = "function"
-    if version == "1.20.4": function_folder = "functions"
+    if version[:4] == "1.20": function_folder = "functions"
 
     os.makedirs(file_dir + f"{namespace}/data/minecraft/tags/{function_folder}")
     os.makedirs(file_dir + f"{namespace}/data/{namespace}/{function_folder}")
@@ -705,7 +705,7 @@ class Interpreter:
     def __init__(self, version, root, current_dir = "", result_dir = "./", namespace = "pack", filename = "") -> None:
         self.version = version
         self.function_folder = "function"
-        if version == "1.20.4": self.function_folder = "functions"
+        if version[:4] == "1.20": self.function_folder = "functions"
 
 
         self.root = root
@@ -1632,11 +1632,11 @@ data modify storage {STORAGE_NAME} {temp} set from storage {STORAGE_NAME} var1\n
             if error: return None, error
         temp = get_temp()
         if var in self.variables:
-            self.write(f"data modify storage {STORAGE_NAME} type_var set from storage {STORAGE_NAME} {self.variables[var][-1].temp}\n")
-# execute store result score #type {SCOREBOARD_NAME} run function basic:get_type_score\n\
-# execute if score #type {SCOREBOARD_NAME} matches 4 run data modify storage {STORAGE_NAME} {temp} set from storage {STORAGE_NAME} type_var\n\
-# execute unless score #type {SCOREBOARD_NAME} matches 4 run ")
-            # self.macro(f"$data modify storage {STORAGE_NAME} {temp} set value \"$({self.variables[var][-1].temp})\"\n")
+            self.write(f"data modify storage {STORAGE_NAME} type_var set from storage {STORAGE_NAME} {self.variables[var][-1].temp}\n\
+execute store result score #type {SCOREBOARD_NAME} run function basic:get_type_score\n\
+execute if score #type {SCOREBOARD_NAME} matches 4 run data modify storage {STORAGE_NAME} {temp} set from storage {STORAGE_NAME} type_var\n\
+execute unless score #type {SCOREBOARD_NAME} matches 4 run ")
+            self.macro(f"$data modify storage {STORAGE_NAME} {temp} set value \"$({self.variables[var][-1].temp})\"\n")
         else:
             if var[0] == "\"":
                 var = var[1:-1]
@@ -1703,6 +1703,31 @@ data modify storage {STORAGE_NAME} {temp} set from storage {STORAGE_NAME} var1\n
         if var2 in self.variables: self.macro(f"$data remove storage {STORAGE_NAME} {var1}[$({var2})]\n")
         else: self.write(f"data remove storage {STORAGE_NAME} {var1}[{var2}]\n")
         return var1, None
+    def fun_append(self, node, input_nodes):
+        if 2 != len(input_nodes):
+            return None, InvalidSyntaxError(
+                node.children[0].token,
+                self.filename,
+                f"append must have only 2 parameters"
+            )
+        arr = input_nodes[0].children[0].name
+        if arr not in self.variables:
+            return None, InvalidSyntaxError(
+                node.children[0].token,
+                self.filename,
+                f"{arr} is not defined"
+            )
+        element = input_nodes[1].children[0].name
+        if element in INTERPRETE_THESE:
+            element, error = self.interprete(input_nodes[1].children[0])
+            if error: return None, error
+
+        if element in self.variables:
+            self.write(f"data modify storage {STORAGE_NAME} {self.variables[arr][-1].temp} append from storage {STORAGE_NAME} {self.variables[element][-1].temp}\n")
+        else:
+            self.write(f"data modify storage {STORAGE_NAME} {self.variables[arr][-1].temp} append value {element}\n")
+        return arr, None
+        
 
     def get_folder_dir(self):
         dir_arr = self.current_dir.split("/")
@@ -2129,7 +2154,7 @@ def reset_temp():
     used_temp = []
 if __name__ == "__main__":
     # generate_datapack("./rpg/main.planet", "1.20.4", "./", "pack")
-    # generate_datapack("./example/test.planet", "1.20.4", "./", "pack")
+    # generate_datapack("./example/test.planet", "1.20.6", "./", "pack")
     # exit()
 
 

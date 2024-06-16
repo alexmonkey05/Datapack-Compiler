@@ -357,6 +357,17 @@ it's test string!
 set_data("storage", "minecraft:test", "test_dir", "it's test string!")
 print(get_data("storage", "minecraft:test", "test_dir"))
 ```
+### append(any[] arr, any element)
+- `arr`은 원소를 추가할 배열이다.
+- `element`는 추가할 원소이다
+` `/data modify storage 40planet:values {arr} append value {element}`와 같은 역할이다
+```
+var arr = []
+append(arr, 1)
+var test = 2
+append(arr, test)
+print(arr)
+```
 ### int(any a)
 `a`를 `int` 자료형으로 변환해준다   
 `float` 또는 `double`의 경우엔 `round(a)`와 같다

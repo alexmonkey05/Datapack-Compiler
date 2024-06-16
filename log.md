@@ -60,3 +60,25 @@ arr = arr + 1
 - 내장함수 `string`에 변수를 넣었을 경우에 데이터팩에 오류가 나던 현상이 해결됨
 # 2024/06/15 2.7
 - `__namespace__`를 활용하여 마크 명령어를 입력할 때에 네임스페이스를 쓸 수 있게 됨
+```
+def dumb_function(var a){
+	return a
+}
+
+/function __namespace__:dumb_function
+```
+# 2024/06/16 2.8
+- `append` 내장함수가 추가됨
+`append(arr, element)`
+```
+var arr = []
+append(arr, 1)
+var test = 2
+append(arr, test)
+print(arr)
+```
+```
+[1, 2]
+```
+- `string` 내장함수가 제대로 작동하지 않던 오류를 해결함
+- `1.20.6`을 선택했을 때에 폴더명이 `function`으로 생성되던 오류를 해결함
