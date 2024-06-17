@@ -67,6 +67,7 @@ OPERATOR_TO_STRING = {
 OPERATOR_PRIORITY = {
     "=":0,
     "return": 0,
+    "member":1,
     "and":2,
     "or":2,
     "!":2,
@@ -81,7 +82,6 @@ OPERATOR_PRIORITY = {
     "*":5,
     "/":5,
     "%":5,
-    "member":6,
     "dot":6,
     "paren":100
 }
@@ -122,12 +122,15 @@ class Error:
         self.filename = filename
 
     def as_string(self):
-        result  = f'{self.error_name}: {self.details}\n'
-        result += f'File {self.filename}, line {self.token.start[0]}'
-        result += "\n\n" + self.token.line
-        if self.token.line[-1] != "\n": result += "\n"
-        result += " " * self.token.start[1]
-        result += "^" * (self.token.end[1] - self.token.start[1])
+        result = f'{self.error_name}: {self.details}\n'
+        try:
+            result += f'File {self.filename}, line {self.token.start[0]}'
+            result += "\n\n" + self.token.line
+            if self.token.line[-1] != "\n": result += "\n"
+            result += " " * self.token.start[1]
+            result += "^" * (self.token.end[1] - self.token.start[1])
+        except:
+            pass
         return result
 
 class InvalidSyntaxError(Error):
@@ -430,8 +433,8 @@ class Parser:
         self.make_tree_of_assign(execute_node)
         return execute_node, None
 
-    def operator_basic(self, parent): # 이항연산
-        operator = self.current_tok.string
+    def operator_basic(self, parent, operator = None): # 이항연산
+        if not operator: operator = self.current_tok.string
         node = Node("operator", token = None)
         if operator == ".": operator = "dot"
         elif operator == "-":
@@ -480,15 +483,8 @@ class Parser:
     def operator_big_paren(self, parent): # [
         pre_token = self.reverse()
         self.advance()
-        node = None
-        if pre_token.type != 1:
-            node, error = self.operator_make_array()
-            if error: return None, error
-            return node, error
-        else:
-            node, error = self.operator_member(parent)
-            if error: return None, error
-            return node, error
+        if pre_token.type == 1 or pre_token.string == "]" or pre_token.string == ")": return self.operator_basic(parent, "member")
+        else: return self.operator_make_array()
     def operator_small_paren(self, parent):
         node = Node("operator", token = None)
         Node("paren", parent=node, token = self.current_tok)
@@ -895,7 +891,7 @@ class Interpreter:
 
         self.current_file = current_file
 
-        if type == "if": self.break_and_return()
+        if type == "if": self.break_and_return(node)
 
         for var in self.using_variables[-1]:
             used_var_temp.append(self.using_variables[-1][var].temp)
@@ -937,7 +933,6 @@ class Interpreter:
         if error: return None, error
         for temp in self.used_break:
             self.write(f"scoreboard players set #{temp} {SCOREBOARD_NAME} 0\n")
-        self.used_break = []
         self.write(f"execute store result score #{if_score} {SCOREBOARD_NAME} run data get storage {STORAGE_NAME} {if_score}\nexecute if score #{if_score} {SCOREBOARD_NAME} matches 1 run function {self.namespace}:{self.get_folder_dir()}{self.current_file[:-11]}\n")
         self.current_file = current_file
         return None, None
@@ -1099,7 +1094,7 @@ class Interpreter:
             if error: return None, error
 
         self.current_file = current_file
-        self.break_and_return()
+        self.break_and_return(node)
         for var in self.using_variables[-1]:
             used_var_temp.append(self.using_variables[-1][var].temp)
             if var == "0": continue
@@ -1111,12 +1106,21 @@ class Interpreter:
 
         return None, None
 
-    def break_and_return(self):
+    def break_and_return(self, node):
         for temp in self.used_return:
             self.write(f"execute if score #{temp} {SCOREBOARD_NAME} matches 1 run return run data get storage {STORAGE_NAME} {self.used_return[temp]}\n")
 
         for temp in self.used_break:
             self.write(f"execute if score #{temp} {SCOREBOARD_NAME} matches 1 run return 0")
+        
+        while node.name != "root":
+            node = node.parent
+            if node.name == "define_function":
+                self.used_return = []
+            elif node.name == "while":
+                self.used_break = []
+            elif node.name == "if" or node.name == "execute": return
+
 
     def operator_equal(self, node):
         var1 = node.children[1].name
@@ -1202,35 +1206,37 @@ execute store rsult storage {STORAGE_NAME} {temp} byte 1 run scoreboard players 
         self.add_used_temp(temp2)
         return temp, None
     def operator_member(self, node):
-        var_name = node.children[1].name
-        if var_name not in self.variables: return None, InvalidSyntaxError(
-                node.children[1].token,
+        
+        operator = node.children[1]
+        while operator.name == "operator":
+            if operator.children[0].name != "member":
+                return None, InvalidSyntaxError(
+                    node.children[0].token,
+                    self.filename,
+                    f"{operator.name} operator can not be operated with member operator"
+                )
+            operator = operator.children[1]
+        arr = operator.name
+        operator = operator.parent
+        if arr not in self.variables:
+            return None, InvalidSyntaxError(
+                operator.children[1].token,
                 self.filename,
-                f"{var_name} is not defined"
+                f"{arr} is not defined"
             )
-        var = self.variables[var_name][-1]
-        index = node.children[2].name
-        if index in INTERPRETE_THESE:
-            index, error = self.interprete(node.children[2])
-            if error: return None, error
-        temp = get_temp()
-        if var_name in self.variables: var_name = self.variables[var_name][-1].temp
-        if index in self.variables:
-            index = self.variables[index][-1].temp
-            self.write(f"\
-data modify storage {STORAGE_NAME} var1 set from storage {STORAGE_NAME} {var_name}\n\
-data modify storage {STORAGE_NAME} var2 set from storage {STORAGE_NAME} {index}\n\
-scoreboard players set #operator_type {SCOREBOARD_NAME} {OPERATOR_ID["member"]}\n\
-function basic:operation\n\
-data modify storage {STORAGE_NAME} {temp} set from storage {STORAGE_NAME} var1\n\
-")
-        else:
-            self.write(f"\
-data modify storage {STORAGE_NAME} {temp} set from storage {STORAGE_NAME} {var_name}[{index}]\n\
-")
-        self.add_var(temp, var.type, False, temp)
+        arr = self.variables[arr][-1].temp
+        while operator != node.parent:
+            index = operator.children[2].name
+            if index in INTERPRETE_THESE:
+                index, error = self.interprete(operator.children[2])
+                if error: return None, error
+            if index in self.variables: arr += f"[$({index})]"
+            else: arr += f"[{index}]"
+            operator = operator.parent
+
+        self.add_var(arr, "type", False, arr)
         self.add_used_temp(index)
-        return temp, None
+        return arr, None
     def operator_not(self, node):
         temp, error = self.interprete(node.children[1])
         if error: return None, error
@@ -1723,22 +1729,27 @@ execute unless score #type {SCOREBOARD_NAME} matches 4 run ")
                 self.filename,
                 f"append must have only 2 parameters"
             )
-        arr = input_nodes[0].children[0].name
-        if arr not in self.variables:
+        arr_node = input_nodes[0].children[0]
+        arr = arr_node.name
+        if arr in INTERPRETE_THESE:
+            arr, error = self.interprete(arr_node)
+            if error: return None, error
+        elif arr not in self.variables:
             return None, InvalidSyntaxError(
                 node.children[0].token,
                 self.filename,
                 f"{arr} is not defined"
             )
+        else: arr = self.variables[arr][-1].temp
         element = input_nodes[1].children[0].name
         if element in INTERPRETE_THESE:
             element, error = self.interprete(input_nodes[1].children[0])
             if error: return None, error
 
         if element in self.variables:
-            self.write(f"data modify storage {STORAGE_NAME} {self.variables[arr][-1].temp} append from storage {STORAGE_NAME} {self.variables[element][-1].temp}\n")
+            self.write(f"data modify storage {STORAGE_NAME} {arr} append from storage {STORAGE_NAME} {self.variables[element][-1].temp}\n")
         else:
-            self.write(f"data modify storage {STORAGE_NAME} {self.variables[arr][-1].temp} append value {element}\n")
+            self.write(f"data modify storage {STORAGE_NAME} {arr} append value {element}\n")
         return arr, None
     def fun_is_module(self, node, input_nodes):
         if 0 != len(input_nodes):
@@ -1781,6 +1792,7 @@ execute unless score #type {SCOREBOARD_NAME} matches 4 run ")
         return filename
 
     def write(self, txt):
+        if txt[0] != "$" and "$(" in txt: return self.macro("$" + txt)
         file = open(self.current_dir + self.current_file, "a", encoding="utf-8")
         file.write(txt)
         file.close()
@@ -2178,7 +2190,7 @@ def reset_temp():
     temp_cnt = 0
     used_temp = []
 if __name__ == "__main__":
-    # generate_datapack("./rpg/main.planet", "1.20.6", "./", "pack")
+    # generate_datapack("./rpg/camera.planet", "1.20.6", "./", "pack")
     # generate_datapack("./example/test.planet", "1.20.6", "./", "pack")
     # exit()
 
