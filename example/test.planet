@@ -1,3 +1,9 @@
-var arr
-print(arr[0][1 + 0 * 2])
-1 + 2 * 3
+var camera_paths
+execute(unless data camera_paths[0][1]){
+    /scoreboard players set @s 40planet_camera_is_playing 0
+}
+
+var id = get_data("entity", "@s", "UUID")
+execute(if data storage "temp:test" id){
+    # 아이디 추가하는 구문
+}

@@ -672,13 +672,16 @@ class Function:
 #######################################
 
 def make_basic_files(version, file_dir, namespace = "pack"):
-    if os.path.exists(file_dir + f"{namespace}"): shutil.rmtree(file_dir + f"{namespace}")
-
     function_folder = "function"
     if version[:4] == "1.20": function_folder = "functions"
 
-    os.makedirs(file_dir + f"{namespace}/data/minecraft/tags/{function_folder}")
-    os.makedirs(file_dir + f"{namespace}/data/{namespace}/{function_folder}")
+    # if os.path.exists(file_dir + f"{namespace}/data/{namespace}/{function_folder}"): shutil.rmtree(file_dir + f"{namespace}/data/{namespace}/{function_folder}")
+    if os.path.exists(file_dir + f"{namespace}"): shutil.rmtree(file_dir + f"{namespace}")
+
+    tag_folder_dir = file_dir + f"{namespace}/data/minecraft/tags/{function_folder}"
+    function_folder_dir = file_dir + f"{namespace}/data/{namespace}/{function_folder}"
+    if not os.path.exists(tag_folder_dir): os.makedirs(tag_folder_dir)
+    if not os.path.exists(function_folder_dir): os.makedirs(function_folder_dir)
 
     file = open(file_dir + f"{namespace}/data/minecraft/tags/{function_folder}/load.json", "w+")
     file.write(f"{{\"values\": [\"{namespace}:load\"]}}")
@@ -1109,9 +1112,10 @@ class Interpreter:
     def break_and_return(self, node):
         for temp in self.used_return:
             self.write(f"execute if score #{temp} {SCOREBOARD_NAME} matches 1 run return run data get storage {STORAGE_NAME} {self.used_return[temp]}\n")
-
+            self.write_first(f"scoreboard players set #{temp} {SCOREBOARD_NAME} 0\n")
         for temp in self.used_break:
             self.write(f"execute if score #{temp} {SCOREBOARD_NAME} matches 1 run return 0")
+            self.write_first(f"scoreboard players set #{temp} {SCOREBOARD_NAME} 0\n")
         
         while node.name != "root":
             node = node.parent
@@ -1120,6 +1124,17 @@ class Interpreter:
             elif node.name == "while":
                 self.used_break = []
             elif node.name == "if" or node.name == "execute": return
+
+    def write_first(self, txt):
+        file = open(self.current_dir + self.current_file, "r", encoding="utf-8")
+        file_contents = file.read()
+        file.close()
+        file = open(self.current_dir + self.current_file, "w", encoding="utf-8")
+        if txt[0] != "$" and "$(" in txt: self.macro("$" + txt)
+        else: file.write(txt)
+        file.close()
+        self.write(file_contents)
+
 
 
     def operator_equal(self, node):
@@ -1229,8 +1244,10 @@ execute store rsult storage {STORAGE_NAME} {temp} byte 1 run scoreboard players 
             index = operator.children[2].name
             if index in INTERPRETE_THESE:
                 index, error = self.interprete(operator.children[2])
-                if error: return None, error
+                if error:
+                    return None, error
             if index in self.variables: arr += f"[$({index})]"
+            elif index[0] == "\"": arr += f"[{index[1:-1]}]"
             else: arr += f"[{index}]"
             operator = operator.parent
 
@@ -1249,7 +1266,7 @@ execute store rsult storage {STORAGE_NAME} {temp} byte 1 run scoreboard players 
 
 
         var1 = var1_node.name
-        if var1 == "operator":
+        if var1 in INTERPRETE_THESE:
             var1, error = self.interprete(var1_node)
             if error: return None, error
         var2 = var2_node.name
@@ -1274,7 +1291,7 @@ execute store rsult storage {STORAGE_NAME} {temp} byte 1 run scoreboard players 
                     )
                 return result, None
         elif var1 in self.variables: # 인스턴스
-            result = f"{var1}.{var2}"
+            result = f"{self.variables[var1][-1].temp}.{var2}"
             if result not in self.variables:
                 self.variables[result] = [Variable(result, "asdf", False, result)]
             return result, None
@@ -1288,7 +1305,6 @@ execute store rsult storage {STORAGE_NAME} {temp} byte 1 run scoreboard players 
 
     def fun_print(self, node, input_nodes):
         result_arr = []
-        current_file = self.current_file
         dump_file = None
         for input_node in input_nodes:
             temp = input_node.children[0].name
@@ -1310,11 +1326,8 @@ execute store rsult storage {STORAGE_NAME} {temp} byte 1 run scoreboard players 
         for string in result_arr:
             result += string + ",\" \", "
         result = "tellraw @a [" + result[:-6] + "]\n"
-        if dump_file: result = "$" + result
-        self.write(result)
-        if dump_file:
-            self.current_file = current_file
-            self.write(f"function {self.namespace}:{self.get_folder_dir()}{dump_file[:-11]} with storage {STORAGE_NAME}\n")
+        if dump_file: self.macro("$" + result)
+        else: self.write(result)
         self.add_used_temp(temp)
         return "0", None
     def fun_random(self, node, input_nodes):
@@ -1699,29 +1712,20 @@ execute unless score #type {SCOREBOARD_NAME} matches 4 run ")
                 self.filename,
                 f"del must have only 1 parameters"
             )
-        var = input_nodes[0].children[0]
-        if var.name != "operator" or var.children[0].name != "member":
-            return None, InvalidSyntaxError(
-                node.children[0].token,
-                self.filename,
-                f"parameter must be member operator"
-            )
-        var1 = var.children[1].name
-        var2 = var.children[2].name
-        if var2 in INTERPRETE_THESE:
-            var2, error = self.interprete(var.children[2])
+        var = input_nodes[0].children[0].name
+        if var in INTERPRETE_THESE:
+            var, error = self.interprete(input_nodes[0].children[0])
             if error: return None, error
 
-        if var1 not in self.variables:
+        if var not in self.variables:
             return None, InvalidSyntaxError(
                 node.children[0].token,
                 self.filename,
-                f"{var1} is not defined"
+                f"{var} is not defined"
             )
 
-        if var2 in self.variables: self.macro(f"$data remove storage {STORAGE_NAME} {var1}[$({var2})]\n")
-        else: self.write(f"data remove storage {STORAGE_NAME} {var1}[{var2}]\n")
-        return var1, None
+        self.write(f"data remove storage {STORAGE_NAME} {var}\n")
+        return var, None
     def fun_append(self, node, input_nodes):
         if 2 != len(input_nodes):
             return None, InvalidSyntaxError(
@@ -1962,7 +1966,7 @@ class Execute:
     def execute_on(self):
         return self.set_parameters("on", ("attacker", "controller", "leasher", "origin", "owner", "passengers", "target", "vehicle"))
     def execute_if(self, if_or_unless = "if"):
-        error = self.set_parameters(if_or_unless, ("block", "blocks", "entity", "score", "biome", "dimension", "function", "loaded", "predicate", "items"))
+        error = self.set_parameters(if_or_unless, ("block", "blocks", "entity", "score", "biome", "dimension", "function", "loaded", "predicate", "items", "data"))
         if error: return error
         node = self.current_node
         if node == "block" or node == "biome":
@@ -2009,7 +2013,7 @@ class Execute:
             if error: return error
             self.result += f"{pos} "
         elif node == "items":
-            if self.interpreter.version == "1.20.4":
+            if self.interpreter.version[:4] == "1.20":
                 return InvalidSyntaxError(
                     self.token,
                     self.interpreter.filename,
@@ -2033,6 +2037,43 @@ class Execute:
                     f'\"<if|unless> items\" must be followed by one of ("entity", "block")'
                 )
             self.result += f"{self.advance()} {self.advance()} "
+        elif node == "data":
+            variables = self.interpreter.variables
+            node = self.advance()
+            if node in variables:
+                node = variables[node][-1].temp
+                self.result += f"storage {STORAGE_NAME} "
+            elif node in ("block", "entity", "storage"):
+                self.result += f"{node} "
+
+                error = self.add_string()
+                if error: return error
+                error = self.add_string()
+                if error: return error
+
+                return None
+            elif "[" in node:
+                node = node.split("[")
+                if node[0] not in variables:
+                    return InvalidSyntaxError(
+                        self.token,
+                        self.interpreter.filename,
+                        f'\"{node}\" is not defined'
+                    )
+                self.result += f"storage {STORAGE_NAME} {variables[node[0]][-1].temp}"
+                del(node[0])
+                for index in node:
+                    index = index[:-1]
+                    if index in variables: self.result += f"[$({variables[index][-1].temp})]"
+                    else: self.result += f"[{index}]"
+                node = ""
+            else:
+                return InvalidSyntaxError(
+                    self.token,
+                    self.interpreter.filename,
+                    f'\"{node}\" is not defined'
+                )
+            self.result += f"{node} "
         else:
             return InvalidSyntaxError(
                 self.token,
@@ -2190,9 +2231,9 @@ def reset_temp():
     temp_cnt = 0
     used_temp = []
 if __name__ == "__main__":
-    # generate_datapack("./rpg/camera.planet", "1.20.6", "./", "pack")
-    # generate_datapack("./example/test.planet", "1.20.6", "./", "pack")
-    # exit()
+    generate_datapack("./rpg/camera.planet", "1.21", "./", "pack")
+    # generate_datapack("./example/test.planet", "1.21", "./", "pack")
+    exit()
 
 
     tk = Tk()

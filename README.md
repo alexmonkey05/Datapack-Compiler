@@ -261,6 +261,20 @@ execute ( as player at @s ){...}
 ```
 ### if score
 `execute( if score <string name> <string objective> ... )`의 형태로 사용 가능하다
+### if data
+- `if data <변수>`의 형태로 사용 가능하다
+```
+execute(unless data camera_paths[0][1]){
+    /scoreboard players set @s 40planet_camera_is_playing 0
+}
+```
+- `if data <storage|entity|block> <string path>`의 형태로 사용 가능하다
+```
+var id = get_data("entity", "@s", "UUID")
+execute(if data storage "temp:test" id){
+    # 아이디 추가하는 구문
+}
+```
 
 ### 주의할 점
 문자열을 거의 그대로 넣는 방식이므로 execute에서 버그가 나면 찾기 굉장히 힘들겁니다
@@ -288,7 +302,7 @@ print(a)
 ### random()
 0~1000 사이의 랜덤한 정수를 반환한다
 ```
-ranadom()
+random()
 ```
 ### type(any a)
 `a`의 자료형을 문자열로 반환한다
@@ -399,7 +413,7 @@ print(float(1))
 ```
 1.0f
 ```
-### doble(any a)
+### double(any a)
 `a`를 `double`로 변환해준다
 ```
 print(double(1))
