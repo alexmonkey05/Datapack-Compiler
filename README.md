@@ -384,6 +384,13 @@ var test = 2
 append(arr, test)
 print(arr)
 ```
+### del(any var)
+- 저장소에서 `var`을 지웁니다
+- 예) `del(arr[1])`
+- `/data remove storage 40planet:values {var}`와 같은 역할이다
+### len(any var)
+- 배열 또는 string 타입만 받습니다
+- `var`의 길이를 반환합니다
 ### is_module()
 - 해당 파일이 모듈로써 불러와진 것인지 판단해준다
 - 파이썬의 `__name__ == "__main__"` 조건문 역할을 해준다.

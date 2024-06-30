@@ -105,7 +105,7 @@ OPERATOR_ID = {
 
 INTERPRETE_THESE = ("operator", "call_function", "make_array", "make_nbt", "make_selector", "define_var")
 
-BUILT_IN_FUNCTION = ("print", "random", "type", "get_score", "get_data", "set_score", "set_data", "round", "del", "append", "is_module") + TYPES
+BUILT_IN_FUNCTION = ("print", "random", "type", "get_score", "get_data", "set_score", "set_data", "round", "del", "append", "is_module", "len") + TYPES
 
 EXECUTE_KEYWORDS = ( "as", "at", "if", "positioned" )
 
@@ -147,7 +147,10 @@ class Parser:
         self.filename = filename
         self.tok_idx = -1
         self.advance()
-        self.variables = {}
+        self.variables = {
+            "false":[Variable("false","byte",True,"false")],
+            "true":[Variable("true","byte",True,"true")]
+        }
         self.functions = {}
 
     def advance(self):
@@ -714,7 +717,11 @@ class Interpreter:
         self.namespace = namespace
         self.current_dir = result_dir + f"{self.namespace}/data/{self.namespace}/{self.function_folder}/" + current_dir
         self.current_file = "load.mcfunction"
-        self.variables = {}
+        self.variables = {
+            "false":[Variable("false","byte",True,"false")],
+            "true":[Variable("true","byte",True,"true")],
+            "var_temp":[Variable("var_temp","byte",True,"var_temp")]
+        }
         self.functions = {}
         self.modules = {}
 
@@ -838,7 +845,7 @@ class Interpreter:
                 temp, error = self.interprete(value)
                 if error: return None, error
             if temp in self.variables:
-                self.write(f"data modify storage {STORAGE_NAME} {var.temp} set from storage {STORAGE_NAME} {temp}\n")
+                self.write(f"data modify storage {STORAGE_NAME} {var.temp} set from storage {STORAGE_NAME} {self.variables[temp][-1].temp}\n")
             else:
                 self.write(f"data modify storage {STORAGE_NAME} {var.temp} set value {temp}\n")
 
@@ -1241,12 +1248,19 @@ execute store rsult storage {STORAGE_NAME} {temp} byte 1 run scoreboard players 
             )
         arr = self.variables[arr][-1].temp
         while operator != node.parent:
+            if len(operator.children) == 2:
+                return None, InvalidSyntaxError(
+                    node.children[0].token,
+                    self.filename,
+                    f"index is lost"
+                )
+
             index = operator.children[2].name
             if index in INTERPRETE_THESE:
                 index, error = self.interprete(operator.children[2])
                 if error:
                     return None, error
-            if index in self.variables: arr += f"[$({index})]"
+            if index in self.variables: arr += f"[$({self.variables[index][-1].temp})]"
             elif index[0] == "\"": arr += f"[{index[1:-1]}]"
             else: arr += f"[{index}]"
             operator = operator.parent
@@ -1536,9 +1550,9 @@ execute store result storage {STORAGE_NAME} {temp} int 1 run data get storage {S
         elif var3[0] == "\"": var3 = var3[1:-1]
         if var4 in self.variables:
             if is_var:
-                self.macro(f"$data modify {var1} {var2} {var3} set from storage {STORAGE_NAME} {var4}\n")
+                self.macro(f"$data modify {var1} {var2} {var3} set from storage {STORAGE_NAME} {self.variables[var4][-1].temp}\n")
             else:
-                self.write(f"data modify {var1} {var2} {var3} set from storage {STORAGE_NAME} {var4}\n")
+                self.write(f"data modify {var1} {var2} {var3} set from storage {STORAGE_NAME} {self.variables[var4][-1].temp}\n")
         else:
             if is_var:
                 self.macro(f"$data modify {var1} {var2} {var3} set value {var4}\n")
@@ -1724,8 +1738,11 @@ execute unless score #type {SCOREBOARD_NAME} matches 4 run ")
                 f"{var} is not defined"
             )
 
+        temp = get_temp()
+        self.write(f"data modify storage {STORAGE_NAME} {temp} set from storage {STORAGE_NAME} {var}\n")
         self.write(f"data remove storage {STORAGE_NAME} {var}\n")
-        return var, None
+        self.add_var(temp, "del_return", False, temp)
+        return temp, None
     def fun_append(self, node, input_nodes):
         if 2 != len(input_nodes):
             return None, InvalidSyntaxError(
@@ -1768,6 +1785,30 @@ execute unless score #type {SCOREBOARD_NAME} matches 4 run ")
         else:
             self.write(f"data modify storage {STORAGE_NAME} {temp} set value 0b\n")
         return temp, None
+    def fun_len(self, node, input_nodes):
+        if 1 != len(input_nodes):
+            return None, InvalidSyntaxError(
+                node.children[0].token,
+                self.filename,
+                f"len must have only 1 parameters"
+            )
+        var = input_nodes[0].children[0].name
+        if var in INTERPRETE_THESE:
+            var, error = self.interprete(input_nodes[0].children[0])
+            if error: return None, error
+
+        if var not in self.variables:
+            return None, InvalidSyntaxError(
+                node.children[0].token,
+                self.filename,
+                f"{var} is not defined"
+            )
+
+        temp = get_temp()
+        self.write(f"execute store result storage {STORAGE_NAME} {temp} int 1 run data get storage {STORAGE_NAME} {self.variables[var][-1].temp}")
+        self.add_var(temp, "len", False, temp)
+        return temp, None
+        
 
     def get_folder_dir(self):
         dir_arr = self.current_dir.split("/")
@@ -2183,7 +2224,7 @@ def interprete(filename, version, result_dir, namespace, is_modul = False, token
     if len(filename) < 7 or filename[-7:] != ".planet": filename += ".planet"
     token_arr = []
     if not os.path.isfile(filename):
-        return None, Error(token, f"\"{filename}\" does not exist", filename)
+        return None, Error(token, f"\"{filename}\" does not exist", filename, "")
     with tokenize.open(filename) as f:
         tokens = tokenize.generate_tokens(f.readline)
         for token in tokens:
@@ -2232,7 +2273,7 @@ def reset_temp():
     used_temp = []
 if __name__ == "__main__":
     # generate_datapack("./rpg/camera.planet", "1.21", "./", "pack")
-    # generate_datapack("./example/test.planet", "1.21", "./", "pack")
+    # generate_datapack("./example/test.planet", "1.20.4", "./", "pack")
     # exit()
 
 
