@@ -3,6 +3,10 @@
 이 프로젝트는 마인크래프트 컴파일러를 만드는 프로젝트입니다.   
 40행성(40planet)에 의해 제작되었으며, 출처만 표기한다면 자유로운 사용을 허가합니다.
 
+## 하이라이터
+[VSC Marketplace Link](https://marketplace.visualstudio.com/items?itemName=alexmonkey05.comet-highlighter)   
+위의 링크로 들어가거나 VSCode를 실행 후 extensions에서 Comet Highlighter를 검색해 다운로드 하여 사용할 수 있습니다   
+해당 익스텐션은 색만 표시해줄 뿐, 자동완성 기능은 없습니다
 ## 사용법
 ### 세팅
 1. `compiler.exe`를 받아 실행한다
@@ -185,18 +189,18 @@ def test(var a, var b){
 - `def load`을 통해 load이라는 이름의 함수를 선언한 경우, 이 함수는 맵이 로딩될 때 1회 실행된다
 - 이렇게 실행되는 `load`와 `tick`은 인수를 받을 수 없다
 ### 함수 호출
-`함수명(인자)`와 같이 작성하여 함수를 호출 할 수 있다   
-이때, 매개변수와 인자의 자료형이 다르면 에러가 발생한다
+`함수명(인자)`와 같이 작성하여 함수를 호출 할 수 있다
 ```
-def dumb_function(var a){
-	return a
+def wa(var a){
+	return "sans"
 }
 
 def load(){
-	dumb_function(3)
+	wa(3)
 }
 ```
 만약 `/function`명령어를 사용해 함수를 호출하고 싶다면 아래와 같이 쓰면 된다   
+이때, 인자는 가장 최근에 사용된 인자를 한번 더 사용한다
 ```
 def dumb_function(var a){
 	return a
