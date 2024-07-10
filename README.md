@@ -3,7 +3,7 @@
 This project is about creating a Minecraft compiler.   
 It was created by 40planet, and free use is permitted as long as the link is indicated.
 
-## 하이라이터
+## Highlighter Extension
 [Comet Highlighter(VSC Marketplace Link)](https://marketplace.visualstudio.com/items?itemName=alexmonkey05.comet-highlighter)   
 You can use the link above or run VSCode and search for Comet Highlighter in extensions to download and use it.   
 This extension only displays colors and does not have an auto-completion feature.
@@ -68,7 +68,7 @@ nbt b = {
 	test: "asdf"
 };
 ```
-### 연산
+### Operations
 Operations are performed in the following order:   
 parenthesis > member > arithmetic > relationship > logic (and, or) > assignment.
 - parenthesis

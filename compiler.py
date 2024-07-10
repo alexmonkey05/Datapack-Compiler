@@ -2292,7 +2292,7 @@ if __name__ == "__main__":
             else:
                 messagebox.showinfo("name", "done!")
         except:
-            messagebox.showinfo("name", "알 수 없는 오류가 발생했습니다.")
+            messagebox.showinfo("name", "Unknown error occurred.")
 
     def select_planet_file():
         tk.file = filedialog.askopenfile(
