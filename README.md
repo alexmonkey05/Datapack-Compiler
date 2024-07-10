@@ -1,59 +1,60 @@
 # Datapack-Compiler
-## 프로젝트 설명
-이 프로젝트는 마인크래프트 컴파일러를 만드는 프로젝트입니다.   
-40행성(40planet)에 의해 제작되었으며, 출처만 표기한다면 자유로운 사용을 허가합니다.
+## Project Description
+This project is about creating a Minecraft compiler.   
+It was created by 40planet, and free use is permitted as long as the link is indicated.
 
 ## 하이라이터
-[VSC Marketplace Link](https://marketplace.visualstudio.com/items?itemName=alexmonkey05.comet-highlighter)   
-위의 링크로 들어가거나 VSCode를 실행 후 extensions에서 Comet Highlighter를 검색해 다운로드 하여 사용할 수 있습니다   
-해당 익스텐션은 색만 표시해줄 뿐, 자동완성 기능은 없습니다
-## 사용법
-### 세팅
-1. `compiler.exe`를 받아 실행한다
-2. `.planet`파일과 데이터팩이 생성될 폴더를 선택한다
-3. 데이터팩의 이름을 입력한다. 
-	1. 입력하지 않는다면 `pack`으로 간주한다.
-	2. 대문자를 입력하면 데이터팩이 올바르게 작동하지 않는다
-4. "변환하기" 버튼을 누른다
-5. `datapacks` 폴더 안에 생성된 데이터팩과 `basic.zip`을 넣어준다
-6. 마크 안에서 `/reload`를 실행하여 데이터팩을 새로고침해준다
-## 문법
-### 자료형 목록
+[Comet Highlighter(VSC Marketplace Link)](https://marketplace.visualstudio.com/items?itemName=alexmonkey05.comet-highlighter)   
+You can use the link above or run VSCode and search for Comet Highlighter in extensions to download and use it.   
+This extension only displays colors and does not have an auto-completion feature.
+## How to use
+### Setting
+1. Download `compiler.exe` and execute.
+2. Select `.planet` file and directory where the data pack will be created
+3. Enter the name of the data pack.
+	1. If it's blank, it's same as `pack`.
+	2. Datapack does not work correctly when entering uppercase letters
+4. Press "convert"
+5. Put generated datapack ans `basic_1.21.zip` or `basic_1.20` in the `datapacks` folder in saves
+6. Refresh the data pack by executing `/reload` in the mark.
+7. If you reload your datapack again, go to no.4
+## Syntax
+### Data types
 - int
-	- `1`, `-2`, `100`과 같은 정수 자료형
+	- intager like `1`, `-2`, `100`
 - float, double
-	- `1.0`, `3.14`와 같은 소수 자료형
+	- decimal like `1.0`, `3.14`
 - string
-	- `"This is string"`과 같은 문자열 자료형
+	- string like `"This is string"`
 - entity
-	- `@a[tag=player]`와 같은 선택인자 자료형
+	- selector like `@a[tag=player]`
 - nbt
-	- `{id:"minecraft:block_display",Tags:["temp"]}`와 같은 json 자료형
-### 변수 선언
-`var <변수명>`의 형태로 선언한다
+	- json like `{id:"minecraft:block_display",Tags:["temp"]}`
+### Define variable
+Declared in the form `var <variable name>`
 ```
 var a
 var b = 2.0
 var c = @p[tag=player]
-var d = @p[tag=^b&] # ^b&는 후술할 매크로 기능이다
+var d = @p[tag=^b&] # ^b& is macro
 ```
 
-배열 선언은 다른 변수와 똑같이 선언한다
+Array declarations are declared just like other variables.
 ```
 var array = [1, 2, 3]
 ```
-### 지역변수
+### Local variable
 ```
 var a
-if (조건) {
+if ( condition ) {
 	var a
 }
 ```
-이때, if문 안의 a와 밖의 a는 서로 다른 변수이다.   
-또한, if문 안에서는 a가 선언 되었으므로 밖의 a에 접근하지 못한다다
-### 줄바꿈
-`\n` 또는 `;`를 명령어의 끝으로 생각한다
-- 단, `[`, `{` 등의 몇몇 예외가 있다
+At this time, a inside the if statement and a outside the if statement are different variables.   
+Also, since a is declared inside the if statement, a outside of it cannot be accessed.
+### Line break
+Consider `\n` or `;` as the end of a command
+- However, there are some exceptions such as `[`, `{`, etc.
 ```
 var a
 var b = {
@@ -68,32 +69,33 @@ nbt b = {
 };
 ```
 ### 연산
-괄호 > 멤버 > 산술 > 관계(부등식) > 논리(and, or) > 대입 순으로 연산이 진행된다
-- 괄호
+Operations are performed in the following order:   
+parenthesis > member > arithmetic > relationship > logic (and, or) > assignment.
+- parenthesis
 	- `()`
-- 멤버(배열의 원소에 접근하는 연산)
+- member(Operations to access elements of an array)
 	- `[]`
-- 산술
+- arithmetic
 	- `+`
 	- `-`
 	- `*`
 	- `/`
 	- `%`
-- 관계
+- relationship
 	- `==`
 	- `!=`
 	- `<=`
 	- `>=`
 	- `<`
 	- `>`
-- 논리
+- logic
 	- `and`
 	- `or`
 	- `!`
-- 대입
+- assignment
 	- `=`
-만약 연산의 피연산자들의 자료형이 서로 다른 경우, 에러가 발생한다   
-단, `double`과 `float`의 경우엔 에러가 나지 않는다
+If the data types of the operands of an operation are different, an error occurs.   
+However, in the case of `double` and `float`, no error occurs.
 ```
 1 + 1.0
 ```
@@ -105,11 +107,11 @@ File FILENAME, line 2
     1 + 1.0
       ^
 ```
-`!`의 경우, `!(is_module())`와 같이 뒤에 괄호를 넣어야 한다   
-달리 말하자면 함수처럼 써야 한다는 소리이다
-### 조건문
-`if( <조건> ){ ~~~ }`와 같은 형식으로 작성한다   
-중괄호를 생략하는 경우, 조건 다음의 명령어 한 줄만 실행한다.
+In the case of `!`, you must put parentheses after it, such as `!(is_module())`.   
+In other words, it should be used like a function.
+### if / else
+Write in the format `if( <condition> ){ ~~~ }`   
+If the curly braces are omitted, only one command line following the condition is executed.
 ```
 var a = 0;
 if(a == 0){
@@ -122,8 +124,8 @@ int a = 0
 if(a == 0)
 	a = a + 1
 ```
-`if (...) {...} else {...}`과 같은 형태로 else를 사용할 수 있다   
-마찬가지로 중괄호를 생략하는 경우, 한 줄의 명령어만 실행된다
+You can use else in the form `if (...) {...} else {...}`.   
+Likewise, if you omit the curly braces, only one line of commands is executed.
 ```
 var a = 0
 if(a == 1){
@@ -140,8 +142,8 @@ if(a == 1){
 } else
 	a = a - 1
 ```
-중괄호를 생략하면 다음 한 줄의 명령어만 실행하기 때문에 `else if` 구문도 지원한다   
-그러나 종종 else if를 사용하는 경우 버그가 발생할 수 있으니 되도록 중괄호를 쓰는 것을 권장한다
+The `else if` statement is also supported because if the curly braces are omitted, only the next single line of command is executed.   
+However, bugs may occur when using else if, so it is recommended to use curly braces whenever possible.
 ```
 var a = 0
 if(a == 1){
@@ -150,8 +152,8 @@ if(a == 1){
 	a = a + 2
 }
 ```
-### 반복문
-`while`의 경우, `if`와 같은 형태로 적을 수 있다
+### while
+In the case of `while`, it can be written in the same form as `if`.
 ```
 var a = 0
 while(a < 10){
@@ -164,12 +166,12 @@ var a = 0
 while(a < 10)
 	a = a + 1
 ```
-`break` 키워드를 통해 루프를 멈출 수 있다   
-`continue`와 `for`는 지원하지 않는다
+You can stop the loop using the `break` keyword.   
+`continue` and `for` are not supported
 
-### 함수 선언
-`def <함수명>( [매개변수] ){...}`의 형태로 적어 함수를 선언할 수 있다   
-`[매개변수]`는 필요에 따라 생략해도 된다   
+### Define function
+You can declare a function by writing it in the form `def <function name>( [parameter] ){...}`.   
+`[parameter]` can be omitted if necessary.
 ```
 def tick(){
 	var a = 1
@@ -181,15 +183,15 @@ def test(var a, var b){
     print(a, b)
 }
 ```
-함수 이름에 대문자를 사용하면 마인크래프트는 그 함수를 그냥 없는 것으로 생각한다
-~~멍청이이다~~   
-그러니 함수명에 대문자를 쓰지 않도록 하자   
+If you use capital letters in a function name, Minecraft will assume that the function does not exist.   
+~~Idiot~~   
+So let’s avoid using capital letters in function names.  
    
-- `def tick`을 통해 tick이라는 이름의 함수를 선언한 경우, 이 함수는 매틱 실행된다
-- `def load`을 통해 load이라는 이름의 함수를 선언한 경우, 이 함수는 맵이 로딩될 때 1회 실행된다
-- 이렇게 실행되는 `load`와 `tick`은 인수를 받을 수 없다
-### 함수 호출
-`함수명(인자)`와 같이 작성하여 함수를 호출 할 수 있다
+- If you declare a function named tick through `def tick`, this function is executed as a tick.
+- If you declare a function named load through `def load`, this function is executed once when the map is loaded.
+- `load` and `tick` executed like this cannot accept arguments.
+### Call function
+You can call a function by writing it as `function name (argument)`.
 ```
 def wa(var a){
 	return "sans"
@@ -199,8 +201,8 @@ def load(){
 	wa(3)
 }
 ```
-만약 `/function`명령어를 사용해 함수를 호출하고 싶다면 아래와 같이 쓰면 된다   
-이때, 인자는 가장 최근에 사용된 인자를 한번 더 사용한다
+If you want to call a function using the `/function` command, you can write it as follows:   
+At this time, the most recently used argument is used once again.
 ```
 def dumb_function(var a){
 	return a
@@ -208,16 +210,16 @@ def dumb_function(var a){
 
 /function __namespace__:dumb_function
 ```
-`__namespace__`는 사용자가 입력한 네임스페이스로 바뀐다   
-만약 모듈로서 `import` 되었다면 `__namespace__`는 `namespace:filename/`의 형식으로 바뀌므로 걱정할 필요 없다
-### 마인크래프트 명령어
-`/`를 맨 앞에 쓰면 그것은 마인크래프트 명령어로 인식한다
+`__namespace__` will be replaced with the namespace entered by the user.
+If it was `imported` as a module, `__namespace__` will be changed to the format `namespace:filename/`, so there is no need to worry.
+### Minecraft command
+If you put `/` at the beginning, it will be recognized as a Minecraft command.
 ```
 /say a
 /gamemode creative @a
 ```
    
-`^변수명&`처럼 적으면 매크로처럼 사용 가능하다
+You can use like macro when you wrote like `^variable&`
 ```
 var a = 123
 /say ^a&
@@ -227,74 +229,69 @@ var a = 123
 [@] 123
 ```
 
-### 주석
-`#` 또는 `/#`을 사용해 주석을 달 수 있다
+### Comment
+You can comment using `#` or `/#`
 ```
-# 데이터팩에 적히지 않는 주석
-/# 데이터팩에 적히는 주석
+# Comments not written in the data pack
+/# Comments written in data pack
 ```
-~~사실 `/#`이 필요할까 하긴 싶은데 일단 적어봤습니다~~
+~~Actually, I was wondering if `/#` was necessary, but I wrote it down first~~
 
 ## import
-`import <파일명>`의 형태로 같은 디렉토리에 있는 `파일명.planet`을 가져올 수 있다.
-
-test.planet
+You can import `filename.planet` in the same directory in the form of `import <filename>`.   
+`test.planet`
 ```
 def print_test(){
 	print("test")
 }
 ```
 
-main.planet
+`main.planet`
 ```
 import test
 test.print_test()
 ```
 
-main.planet을 컴파일 했을 때
+When compile `main.planet`
 ```
 test
 ```
 
 ## execute
-1. `if score`를 제외하고는 거의 대부분 마크 문법 그대로 사용해도 된다.
-2. `@a[tag=player]`와 같이 선택인자가 들어가는 자리에는 entity 타입의 변수를 넣어도 된다
+1. Except for `if score`, you can almost always use the mark syntax as is.
+2. You can put an entity type variable in place of the selection argument, such as `@a[tag=player]`.
 ```
 entity player = @a[tag=player]
 execute ( as player at @s ){...}
 ```
 ### if score
-`execute( if score <string name> <string objective> ... )`의 형태로 사용 가능하다
+You can use like `execute( if score <string name> <string objective> ... )`
 ### if data
-- `if data <변수>`의 형태로 사용 가능하다
+- You can use like `if data <변수>`
 ```
 execute(unless data camera_paths[0][1]){
     /scoreboard players set @s 40planet_camera_is_playing 0
 }
 ```
-- `if data <storage|entity|block> <string path>`의 형태로 사용 가능하다
+- You can use like `if data <storage|entity|block> <string path>`
 ```
 var id = get_data("entity", "@s", "UUID")
 execute(if data storage "temp:test" id){
-    # 아이디 추가하는 구문
+    # code for adding id
 }
 ```
 
-### 주의할 점
-문자열을 거의 그대로 넣는 방식이므로 execute에서 버그가 나면 찾기 굉장히 힘들겁니다
+### Things to note
+Since the string is entered almost as is, if there is a bug in execute, it will be very difficult to find.
+   
 
-
-### 기타
-- `def tick`을 통해 tick이라는 이름의 함수를 선언한 경우, 이 함수는 매틱 실행된다
-- `def load`을 통해 load이라는 이름의 함수를 선언한 경우, 이 함수는 맵이 로딩될 때 1회 실행된다
-
-## 내장함수
-### 함수명(자료형 인자, ...)
-`함수명`에 관한 설명   
-`자료형`이 `any`로 적혀있는 경우, 어떤 자료형이든 상관 없다는 얘기이다.   
-`...`이 있는 경우엔 인자가 몇개든 들어갈 수 있다는 것이다
+## Built-in function
+### Function(type arguments, ...)
+Description of `function`   
+If `type` is written as `any`, it means that any data type does not matter.   
+If there is `...`, any number of arguments can be entered.
 ### print(any a1, any a2, ...)
-`a1 a2 ...`의 형태로 채팅창에 출력된다
+It is displayed in the chat window in the form of `a1 a2 ...`
 ```
 int a = 123
 print(a)
@@ -304,12 +301,12 @@ print(a)
 123
 ```
 ### random()
-0~1000 사이의 랜덤한 정수를 반환한다
+Returns a random integer between 0 and 1000.
 ```
 random()
 ```
 ### type(any a)
-`a`의 자료형을 문자열로 반환한다
+Returns the type of `a` as a string.
 ```
 var test = 1.0
 print(type(test))
@@ -319,7 +316,7 @@ print(type(test))
 float
 ```
 ### round(float|double a)
-`float` 또는 `double` 자료형을 반올림하여 `int`로 반환한다
+Rounds the data type `float` or `double` and returns it as `int`.
 ```
 print(round(1.2))
 ```
@@ -328,8 +325,8 @@ print(round(1.2))
 1
 ```
 ### get_score(string player, string objective)
-`player`의 `objective` 점수를 가져온다   
-`/scoreboard players get {player} {objective}`와 같은 역할이다
+Gets the `objective` score of `player`   
+Same as `/scoreboard players get {player} {objective}`
 ```
 /scoreboard objectives add test dummy
 /scoreboard players set asdf test 100
@@ -340,9 +337,9 @@ print(get_score("asdf", "test"))
 100
 ```
 ### set_score(string player, string objective, any var)
-`player`의 `objective`에 `var`의 값을 스코어로 넣는다   
-`/scoreboard players set {player} {objective} {var}`와 같은 역할이다
-`var`를 반환한다
+Inserts the value of `var` into the `objective` of `player` as the score.   
+Same role as `/scoreboard players set {player} {objective} {var}`   
+returns `var`
 ```
 var a = 10
 print(set_score("test", "num", a))
@@ -354,11 +351,10 @@ print(set_score("test", "num", a))
 10
 ```
 ### get_data(string from, string|entity name, string dir)
-- `from`은 `entity`, `block`, `storage` 중 한가지여야 한다.
-- `name`은 블록의 좌표, 저장소의 이름, 엔티티 중 한가지여야 한다
-- `dir`은 가져오고자 하는 nbt의 경로를 뜻한다
-- `type`은 어떤 자료형으로 읽어오고자 하는지를 뜻한다   
-`/data get {from} {name} {dir}`와 같은 역할이다
+- `from` must be one of `entity`, `block`, or `storage`.
+- `name` must be one of block coordinates, storage name, or entity.
+- `dir` refers to the path of the nbt you want to import.
+Same as `/data get {from} {name} {dir}`.
 ```
 /data modify storage minecraft:test test_dir set value "it's test string!"
 print(get_data("storage", "minecraft:test", "test_dir"))
@@ -368,19 +364,18 @@ print(get_data("storage", "minecraft:test", "test_dir"))
 it's test string!
 ```
 ### set_data(string from, string|entity name, string dir, any var)
-- `from`은 `entity`, `block`, `storage` 중 한가지여야 한다.
-- `name`은 블록의 좌표, 저장소의 이름, 엔티티 중 한가지여야 한다
-- `dir`은 가져오고자 하는 nbt의 경로를 뜻한다
-- `type`은 어떤 자료형으로 읽어오고자 하는지를 뜻한다   
-`/data modify {from} {name} {dir} set value {var}`와 같은 역할이다
+- `from` must be one of `entity`, `block`, or `storage`.
+- `name` must be one of block coordinates, storage name, or entity.
+- `dir` refers to the path of the nbt you want to set.
+Same as `/data get {from} {name} {dir}`.
 ```
 set_data("storage", "minecraft:test", "test_dir", "it's test string!")
 print(get_data("storage", "minecraft:test", "test_dir"))
 ```
 ### append(any[] arr, any element)
-- `arr`은 원소를 추가할 배열이다.
-- `element`는 추가할 원소이다
-` `/data modify storage 40planet:values {arr} append value {element}`와 같은 역할이다
+- `arr` is the array to add elements to.
+- `element` is the element to be added
+- Same as `/data modify storage 40planet:values ​​{arr} append value {element}`
 ```
 var arr = []
 append(arr, 1)
@@ -389,22 +384,22 @@ append(arr, test)
 print(arr)
 ```
 ### del(any var)
-- 저장소에서 `var`을 지웁니다
-- 예) `del(arr[1])`
-- `/data remove storage 40planet:values {var}`와 같은 역할이다
+- Delete `var` from the repository
+- example) `del(arr[1])`
+- Same as `/data remove storage 40planet:values ​​{var}`
 ### len(any var)
-- 배열 또는 string 타입만 받습니다
-- `var`의 길이를 반환합니다
+- Only accepts array or string types
+- Returns the length of `var`
 ### is_module()
-- 해당 파일이 모듈로써 불러와진 것인지 판단해준다
-- 파이썬의 `__name__ == "__main__"` 조건문 역할을 해준다.
+- Determines whether the file has been loaded as a module
+- Functions as Python's `__name__ == "__main__"` conditional statement.
 ```
 if(is_module()){
     print("this is not main")
 }
 ```
 ### int(any a)
-`a`를 `int` 자료형으로 변환해준다   
+Converts `a` to `int` 자료형으   
 `float` 또는 `double`의 경우엔 `round(a)`와 같다
 ```
 print(int(1.2))
@@ -416,7 +411,7 @@ print(int("3"))
 3
 ```
 ### float(any a)
-`a`를 `float`로 변환해준다
+Converts `a` to `float`
 ```
 print(float(1))
 ```
@@ -425,7 +420,7 @@ print(float(1))
 1.0f
 ```
 ### double(any a)
-`a`를 `double`로 변환해준다
+Converts `a` to `double`
 ```
 print(double(1))
 ```
@@ -434,7 +429,7 @@ print(double(1))
 1.0d
 ```
 ### byte(any a)
-`a`를 `byte`로 변환해준다
+Converts `a` to `byte`
 ```
 print(byte(100))
 ```
@@ -443,7 +438,7 @@ print(byte(100))
 1
 ```
 ### string(any a)
-`a`를 `string`으로 변환해준다
+Converts `a` to `string`으
 ```
 print(string(1 + 1))
 ```
@@ -452,8 +447,8 @@ print(string(1 + 1))
 2
 ```
 ### entity(string a)
-`a`를 `entity`로 변환해준다   
-**아직 불완전하므로 `"@a"`와 같은 변수만 하는 것을 추천합니다**
+Converts `a` to `entity`   
+**It is still incomplete, so it is recommended to only use variables like `"@a"`**
 ```
 string test = "@s"
 entity self = entity(test)
@@ -463,5 +458,5 @@ def print_self(){
 ```
 
 ```
-<실행한 사람의 닉네임>
+<Nickname of the person who ran it>
 ```
