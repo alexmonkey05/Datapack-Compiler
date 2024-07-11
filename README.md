@@ -63,7 +63,7 @@ var b = {
 ```
 
 ```
-int a;
+var a;
 nbt b = {
 	test: "asdf"
 };
@@ -120,7 +120,7 @@ if(a == 0){
 ```
 
 ```
-int a = 0
+var a = 0
 if(a == 0)
 	a = a + 1
 ```
@@ -261,7 +261,7 @@ test
 1. Except for `if score`, you can almost always use the mark syntax as is.
 2. You can put an entity type variable in place of the selection argument, such as `@a[tag=player]`.
 ```
-entity player = @a[tag=player]
+var player = @a[tag=player]
 execute ( as player at @s ){...}
 ```
 ### if score
@@ -293,7 +293,7 @@ If there is `...`, any number of arguments can be entered.
 ### print(any a1, any a2, ...)
 It is displayed in the chat window in the form of `a1 a2 ...`
 ```
-int a = 123
+var a = 123
 print(a)
 ```
 
@@ -428,10 +428,10 @@ print(double(1))
 ```
 1.0d
 ```
-### byte(any a)
-Converts `a` to `byte`
+### bool(any a)
+Converts `a` to `bool`
 ```
-print(byte(100))
+print(bool(100))
 ```
 
 ```
@@ -450,8 +450,8 @@ print(string(1 + 1))
 Converts `a` to `entity`   
 **It is still incomplete, so it is recommended to only use variables like `"@a"`**
 ```
-string test = "@s"
-entity self = entity(test)
+var test = "@s"
+var self = entity(test)
 def print_self(){
     print(self)
 }

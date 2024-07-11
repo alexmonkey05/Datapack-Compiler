@@ -29,7 +29,7 @@ TERM = ("*", "/", "%")
 FACTOR = ("+", "-")
 BASIC_OPERATOR = FACTOR + TERM + ("=", "==", "!=", ">", "<", ">=", "<=", ".")
 LOGIC_OPERATOR = ("==", "!=", "!", ">", ">=", "<", "<=")
-SCORE_TYPES = ("int", "float", "double", "byte")
+SCORE_TYPES = ("int", "float", "double", "bool")
 TYPES = ("entity", "nbt", "string") + SCORE_TYPES
 MEANS_END = (";", "]", "}")
 SCOREBOARD_NAME = "40planet_num"
@@ -109,7 +109,7 @@ BUILT_IN_FUNCTION = ("print", "random", "type", "get_score", "get_data", "set_sc
 
 EXECUTE_KEYWORDS = ( "as", "at", "if", "positioned" )
 
-MINECRAFT_TYPES = ("byte", "short", "int", "float", "double", "long")
+MINECRAFT_TYPES = ("bool", "short", "int", "float", "double", "long")
 #######################################
 # ERRORS
 #######################################
@@ -148,8 +148,8 @@ class Parser:
         self.tok_idx = -1
         self.advance()
         self.variables = {
-            "false":[Variable("false","byte",True,"false")],
-            "true":[Variable("true","byte",True,"true")]
+            "false":[Variable("false","bool",True,"false")],
+            "true":[Variable("true","bool",True,"true")]
         }
         self.functions = {}
 
@@ -531,7 +531,7 @@ class Parser:
         while True:
             tok = self.advance()
             if tok.string == "b":
-                Node("byte", parent=temp_node, token = self.current_tok)
+                Node("bool", parent=temp_node, token = self.current_tok)
                 tok = self.advance()
             elif tok.string == "d":
                 Node("double", parent=temp_node, token = self.current_tok)
@@ -718,9 +718,9 @@ class Interpreter:
         self.current_dir = result_dir + f"{self.namespace}/data/{self.namespace}/{self.function_folder}/" + current_dir
         self.current_file = "load.mcfunction"
         self.variables = {
-            "false":[Variable("false","byte",True,"false")],
-            "true":[Variable("true","byte",True,"true")],
-            "var_temp":[Variable("var_temp","byte",True,"var_temp")]
+            "false":[Variable("false","bool",True,"false")],
+            "true":[Variable("true","bool",True,"true")],
+            "var_temp":[Variable("var_temp","bool",True,"var_temp")]
         }
         self.functions = {}
         self.modules = {}
@@ -957,7 +957,7 @@ class Interpreter:
         # if "." in var_name and operator != "dot":
         #     var = self.variables[var_name][-1]
         #     if var.type in SCORE_TYPES:
-        #         if var.type == "int" or var.type == "byte": self.write(f"execute store result storage {STORAGE_NAME} {var.temp} int 1 run scoreboard players get #{var.temp} {SCOREBOARD_NAME}\n")
+        #         if var.type == "int" or var.type == "bool": self.write(f"execute store result storage {STORAGE_NAME} {var.temp} int 1 run scoreboard players get #{var.temp} {SCOREBOARD_NAME}\n")
         #         else: self.write(f"execute store result storage {STORAGE_NAME} {var.temp} {var.type[0]} 0.01 run scoreboard players get #{var.temp} {SCOREBOARD_NAME}\n")
         return var_name, error
     def command_(self, node):
@@ -1220,7 +1220,7 @@ class Interpreter:
         self.write(f"\
 execute store result score #{temp1} {SCOREBOARD_NAME} run data get storage {STORAGE_NAME} {var1}\n\
 execute store result score #{temp2} {SCOREBOARD_NAME} run data get storage {STORAGE_NAME} {var2}\n\
-execute store rsult storage {STORAGE_NAME} {temp} byte 1 run scoreboard players operation #{temp1} {SCOREBOARD_NAME} *= #{temp2} {SCOREBOARD_NAME}\n\
+execute store result storage {STORAGE_NAME} {temp} byte 1 run scoreboard players operation #{temp1} {SCOREBOARD_NAME} *= #{temp2} {SCOREBOARD_NAME}\n\
 ")
         self.add_used_temp(var1)
         self.add_used_temp(var2)
@@ -1272,7 +1272,7 @@ execute store rsult storage {STORAGE_NAME} {temp} byte 1 run scoreboard players 
         temp, error = self.interprete(node.children[1])
         if error: return None, error
         self.write(f"execute store result score #{temp} {SCOREBOARD_NAME} run data get storage {STORAGE_NAME} {temp}\nexecute store result storage {STORAGE_NAME} {temp} byte 1 if score #{temp} {SCOREBOARD_NAME} matches ..0\n")
-        self.add_var(temp, "byte", False, temp)
+        self.add_var(temp, "bool", False, temp)
         return temp, None
     def operator_dot(self, node):
         var1_node = node.children[1]
@@ -1371,7 +1371,7 @@ execute if score #{temp} {SCOREBOARD_NAME} matches 1 run data modify storage {ST
 execute if score #{temp} {SCOREBOARD_NAME} matches 2 run data modify storage {STORAGE_NAME} {temp} set value \"float\"\n\
 execute if score #{temp} {SCOREBOARD_NAME} matches 3 run data modify storage {STORAGE_NAME} {temp} set value \"double\"\n\
 execute if score #{temp} {SCOREBOARD_NAME} matches 4 run data modify storage {STORAGE_NAME} {temp} set value \"string\"\n\
-execute if score #{temp} {SCOREBOARD_NAME} matches 5 run data modify storage {STORAGE_NAME} {temp} set value \"byte\"\n\
+execute if score #{temp} {SCOREBOARD_NAME} matches 5 run data modify storage {STORAGE_NAME} {temp} set value \"bool\"\n\
 ")
         self.add_var(temp, "string", False, temp)
         return temp, None
@@ -1598,12 +1598,12 @@ data modify storage {STORAGE_NAME} {temp} set from storage {STORAGE_NAME} var1\n
         self.add_used_temp(var)
         self.add_var(temp, "int", False, temp)
         return temp, None
-    def fun_byte(self, node, input_nodes):
+    def fun_bool(self, node, input_nodes):
         if 1 != len(input_nodes):
             return None, InvalidSyntaxError(
                 node.children[0].token,
                 self.filename,
-                f"byte must have only 1 parameters"
+                f"bool must have only 1 parameters"
             )
         input_node = input_nodes[0].children[0]
         var = input_node.name
@@ -2273,8 +2273,8 @@ def reset_temp():
     used_temp = []
 if __name__ == "__main__":
     # generate_datapack("./rpg/camera.planet", "1.21", "./", "pack")
-    # generate_datapack("./example/test.planet", "1.20.4", "./", "pack")
-    # exit()
+    generate_datapack("./example/test.planet", "1.20.4", "./", "pack")
+    exit()
 
 
     tk = Tk()

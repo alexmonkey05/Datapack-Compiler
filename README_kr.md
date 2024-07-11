@@ -62,7 +62,7 @@ var b = {
 ```
 
 ```
-int a;
+var a;
 nbt b = {
 	test: "asdf"
 };
@@ -118,7 +118,7 @@ if(a == 0){
 ```
 
 ```
-int a = 0
+var a = 0
 if(a == 0)
 	a = a + 1
 ```
@@ -260,7 +260,7 @@ test
 1. `if score`를 제외하고는 거의 대부분 마크 문법 그대로 사용해도 된다.
 2. `@a[tag=player]`와 같이 선택인자가 들어가는 자리에는 entity 타입의 변수를 넣어도 된다
 ```
-entity player = @a[tag=player]
+var player = @a[tag=player]
 execute ( as player at @s ){...}
 ```
 ### if score
@@ -292,7 +292,7 @@ execute(if data storage "temp:test" id){
 ### print(any a1, any a2, ...)
 `a1 a2 ...`의 형태로 채팅창에 출력된다
 ```
-int a = 123
+var a = 123
 print(a)
 ```
 
@@ -428,10 +428,10 @@ print(double(1))
 ```
 1.0d
 ```
-### byte(any a)
-`a`를 `byte`로 변환해준다
+### bool(any a)
+`a`를 `bool`로 변환해준다
 ```
-print(byte(100))
+print(bool(100))
 ```
 
 ```
@@ -450,8 +450,8 @@ print(string(1 + 1))
 `a`를 `entity`로 변환해준다   
 **아직 불완전하므로 `"@a"`와 같은 변수만 하는 것을 추천합니다**
 ```
-string test = "@s"
-entity self = entity(test)
+var test = "@s"
+var self = entity(test)
 def print_self(){
     print(self)
 }
