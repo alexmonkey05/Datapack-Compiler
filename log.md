@@ -110,3 +110,6 @@ if(is_module()){
   -멤버연산 `[]`
 - `false`, `true` 추가
 - `len` 추가
+# 2024/07/10 2.10.1
+- `README.md` 영어로 변경
+- `README_kr.md` 추가
