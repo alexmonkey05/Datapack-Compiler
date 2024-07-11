@@ -1,5 +1,1 @@
-print("Hello World!") # string 주석
-print(1) # int
-print(2.0) # float, double
-print(@a) # entity
-print({ test : 3 }) # nbt
+set_data("block", "-35 -38 59", "Items[0].count", 30)

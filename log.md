@@ -113,3 +113,4 @@ if(is_module()){
 # 2024/07/10 2.10.1
 - `README.md` 영어로 변경
 - `README_kr.md` 추가
+- `README.md`의 `random` 내용 변경
