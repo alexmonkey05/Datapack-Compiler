@@ -1,1 +1,3 @@
-set_data("block", "-35 -38 59", "Items[0].count", 30)
+var change_inv;
+var slot
+execute(if data change_inv[0].Slot) slot = change_inv[0].Slot;

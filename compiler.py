@@ -2273,8 +2273,8 @@ def reset_temp():
     used_temp = []
 if __name__ == "__main__":
     # generate_datapack("./rpg/camera.planet", "1.21", "./", "pack")
-    generate_datapack("./example/test.planet", "1.20.4", "./", "pack")
-    exit()
+    # generate_datapack("./example/test.planet", "1.20.4", "./", "pack")
+    # exit()
 
 
     tk = Tk()
