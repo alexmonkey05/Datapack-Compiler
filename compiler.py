@@ -450,7 +450,9 @@ class Parser:
             elif self.current_tok.string == ")": paren_cnt -= 1
         error = self.is_next_match("{")
         if error: return None, error
-        return self.make_tree_of_assign(execute_node)
+        temp, error = self.make_tree_of_assign(execute_node)
+        if error: return None, error
+        return execute_node, None
 
     def operator_basic(self, parent, operator = None): # 이항연산
         if not operator: operator = self.current_tok.string
