@@ -152,6 +152,19 @@ if(a == 1){
 	a = a + 2
 }
 ```
+You can just put a variable in the condition without an operation.   
+```
+var a = 1
+if(a){ # true
+	print(a)
+}
+```
+At this time, the standard for judging true/false follows Minecraft's `execute store` syntax.   
+Because of this, if the following values ​​are entered, false may be returned.
+- "" (empty string)
+- 0.4 (decimal number that becomes 0 when rounded)
+- -1 (negative number)
+- [] (empty array)
 ### while
 In the case of `while`, it can be written in the same form as `if`.
 ```

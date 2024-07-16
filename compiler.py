@@ -769,6 +769,9 @@ class Interpreter:
         if current_dir: self.current_dir = current_dir
         if current_file: self.current_file = current_file
 
+        if node.name in self.variables:
+            return self.variables[node.name][-1].temp, None
+
         method = getattr(self, node.name + "_")
         var_name, error = method(node)
         if error: return None, error
@@ -909,15 +912,16 @@ class Interpreter:
     def if_(self, node, type = "if"):
         if_score, error = self.interprete(node.children[0].children[0]) # interprete condition
         if error: return None, error
+        temp = get_temp()
 
         current_file = self.current_file
         dump_function = self.make_dump_function()
-        self.write(f"execute store result score #{if_score} {SCOREBOARD_NAME} run data get storage {STORAGE_NAME} {if_score}\nexecute if score #{if_score} {SCOREBOARD_NAME} matches 1 run function {self.namespace}:{self.get_folder_dir()}{dump_function[:-11]}\n")
+        self.write(f"execute store result score #{temp} {SCOREBOARD_NAME} run data get storage {STORAGE_NAME} {if_score}\nexecute if score #{temp} {SCOREBOARD_NAME} matches 1.. run function {self.namespace}:{self.get_folder_dir()}{dump_function[:-11]}\n")
         self.current_file = dump_function
         self.using_variables.append({})
 
         for child in node.children[1].children:
-            temp, error = self.interprete(child) # interprete assign
+            temp_, error = self.interprete(child) # interprete assign
             if error: return None, error
 
         self.current_file = current_file
@@ -935,7 +939,7 @@ class Interpreter:
         if len(node.children) >= 3:
 
             dump_function = self.make_dump_function()
-            self.write(f"execute unless score #{if_score} {SCOREBOARD_NAME} matches 1 run function {self.namespace}:{self.get_folder_dir()}{dump_function[:-11]}\n")
+            self.write(f"execute unless score #{temp} {SCOREBOARD_NAME} matches 1.. run function {self.namespace}:{self.get_folder_dir()}{dump_function[:-11]}\n")
             current_file = self.current_file
             self.current_file = dump_function
             self.using_variables.append({})
@@ -953,6 +957,7 @@ class Interpreter:
             self.using_variables.pop(-1)
 
         self.add_used_temp(if_score)
+        self.add_used_temp(temp)
         return dump_function, None
     def while_(self, node):
         dump_function, error = self.if_(node, "while")
@@ -2267,7 +2272,7 @@ def interprete(filename, version, result_dir, namespace, is_modul = False, token
     with tokenize.open(filename) as f:
         tokens = tokenize.generate_tokens(f.readline)
         for token in tokens:
-            token_arr.append(token)
+            if token.type != 64: token_arr.append(token)
     parser = Parser(token_arr, filename)
     ast, error = parser.parse()
     if error:
