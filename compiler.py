@@ -188,6 +188,10 @@ class Parser:
         if node.name != "new_line": node.parent = parent
         return node, None
 
+    def is_next_paren(self):
+        next_tok = self.advance()
+        self.reverse()
+        return next_tok.string == "("
     def type_1(self, parent): # NAME type
         if len(parent.children) > 0 and parent.children[0].name == "dot":
             tok = self.advance()
@@ -211,6 +215,15 @@ class Parser:
                 self.filename,
                 f"{self.current_tok.string} was not defined"
             )
+        elif self.is_next_paren():
+            if self.current_tok.string in self.functions or self.current_tok.string in BUILT_IN_FUNCTION:
+                return self.make_tree_of_call_function()
+            else:
+                return None, InvalidSyntaxError(
+                self.current_tok,
+                self.filename,
+                f"{self.current_tok.string} is not a function"
+            )
         elif self.current_tok.string in self.variables:
             node = Node(self.current_tok.string, token = self.current_tok)
             tok = self.advance()
@@ -219,8 +232,6 @@ class Parser:
                 return self.operator_member(parent)
             self.reverse()
             return node, None
-        elif self.current_tok.string in self.functions or self.current_tok.string in BUILT_IN_FUNCTION:
-            return self.make_tree_of_call_function()
         else:
             return None, InvalidSyntaxError(
                 self.current_tok,
@@ -439,8 +450,7 @@ class Parser:
             elif self.current_tok.string == ")": paren_cnt -= 1
         error = self.is_next_match("{")
         if error: return None, error
-        self.make_tree_of_assign(execute_node)
-        return execute_node, None
+        return self.make_tree_of_assign(execute_node)
 
     def operator_basic(self, parent, operator = None): # 이항연산
         if not operator: operator = self.current_tok.string
@@ -2299,9 +2309,9 @@ def reset_temp():
     temp_cnt = 0
     used_temp = []
 if __name__ == "__main__":
-    # generate_datapack("./rpg/main.planet", "1.21", "./", "pack")
+    generate_datapack("./rpg/main.planet", "1.21", "./", "pack")
     # generate_datapack("./example/test.planet", "1.21", "./", "pack")
-    # exit()
+    exit()
 
 
     tk = Tk()
