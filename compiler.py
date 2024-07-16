@@ -67,7 +67,6 @@ OPERATOR_TO_STRING = {
 OPERATOR_PRIORITY = {
     "=":0,
     "return": 0,
-    "member":1,
     "and":2,
     "or":2,
     "!":2,
@@ -83,6 +82,7 @@ OPERATOR_PRIORITY = {
     "/":5,
     "%":5,
     "dot":6,
+    "member":6,
     "paren":100
 }
 
@@ -228,7 +228,13 @@ class Parser:
                 f"{self.current_tok.string} was unexpected"
             )
     def type_2(self, parent): # NUMBER type
-        return Node(self.current_tok.string, token = self.current_tok), None
+        num = self.current_tok.string
+        next_tok = self.advance()
+        if next_tok.string == "b":
+            num += "b"
+        else:
+            self.reverse()
+        return Node(num, token = self.current_tok), None
     def type_3(self, parent): # STRING type
         return Node(self.current_tok.string, token = self.current_tok), None
     def type_4(self, parent): # NEWLINE type (end of the line)
@@ -540,14 +546,17 @@ class Parser:
                 Node("float", parent=temp_node, token = self.current_tok)
                 tok = self.advance()
             while tok.string == "\n" or tok.string == ",": tok = self.advance()
+            tok_name = tok.string
             if tok.string == "}": break
+            elif tok.type == 3:
+                tok_name = tok.string[1:-1]
             elif tok.type != 1:
                 return None, InvalidSyntaxError(
                     tok,
                     self.filename,
                     "name type was expected, but it's not"
                 )
-            temp_node = Node(tok.string, parent=node, token = self.current_tok)
+            temp_node = Node(tok_name, parent=node, token = self.current_tok)
             error = self.is_next_match(":")
             if error: return None, error
             self.advance()
@@ -1322,7 +1331,15 @@ execute store result storage {STORAGE_NAME} {temp} byte 1 run scoreboard players
         dump_file = None
         for input_node in input_nodes:
             temp = input_node.children[0].name
-            if temp in INTERPRETE_THESE:
+            if temp == "make_selector":
+                
+                if "^" in input_node.children[0].children[0].name:
+                    temp, error = self.interprete(input_node.children[0])
+                    dump_file = True
+                    result_arr.append('{"selector":"$(%s)"}' % self.variables[temp][-1].temp)
+                else: result_arr.append('{"selector":"%s"}' % input_node.children[0].children[0].name)
+                continue
+            elif temp in INTERPRETE_THESE:
                 temp, error = self.interprete(input_node.children[0])
                 if error: return None, error
             if temp in self.variables:
@@ -1522,11 +1539,11 @@ execute store result storage {STORAGE_NAME} {temp} int 1 run data get storage {S
             if error: return None, error
         var3 = input_nodes[2].children[0].name
         if var3 in INTERPRETE_THESE:
-            var3, error = self.interprete(input_nodes[1].children[0])
+            var3, error = self.interprete(input_nodes[2].children[0])
             if error: return None, error
         var4 = input_nodes[3].children[0].name
         if var4 in INTERPRETE_THESE:
-            var4, error = self.interprete(input_nodes[1].children[0])
+            var4, error = self.interprete(input_nodes[3].children[0])
             if error: return None, error
 
         if var1 not in self.variables and var1 not in ('"entity"', '"block"', '"storage"'):
@@ -1805,7 +1822,7 @@ execute unless score #type {SCOREBOARD_NAME} matches 4 run ")
             )
 
         temp = get_temp()
-        self.write(f"execute store result storage {STORAGE_NAME} {temp} int 1 run data get storage {STORAGE_NAME} {self.variables[var][-1].temp}")
+        self.write(f"execute store result storage {STORAGE_NAME} {temp} int 1 run data get storage {STORAGE_NAME} {self.variables[var][-1].temp}\n")
         self.add_var(temp, "len", False, temp)
         return temp, None
         
@@ -2094,7 +2111,7 @@ class Execute:
 
                 return None
             elif "[" in node:
-                node = node.split("[")
+                node = node.replace("]", "[").split("[")
                 if node[0] not in variables:
                     return InvalidSyntaxError(
                         self.token,
@@ -2104,10 +2121,20 @@ class Execute:
                 self.result += f"storage {STORAGE_NAME} {variables[node[0]][-1].temp}"
                 del(node[0])
                 for index in node:
-                    index = index[:-1]
-                    if index in variables: self.result += f"[$({variables[index][-1].temp})]"
+                    if index[0] == ".": self.result += index
+                    elif index in variables: self.result += f"[$({variables[index][-1].temp})]"
                     else: self.result += f"[{index}]"
                 node = ""
+            elif "." in node:
+                spilited_node = node.split(".")
+                if spilited_node[0] not in variables: return InvalidSyntaxError(
+                    self.token,
+                    self.interpreter.filename,
+                    f'\"{spilited_node[0]}\" is not defined'
+                )
+                spilited_node[0] = variables[spilited_node[0]][-1].temp
+                self.result += f"storage {STORAGE_NAME} "
+                node = ".".join(spilited_node)
             else:
                 return InvalidSyntaxError(
                     self.token,
@@ -2272,8 +2299,8 @@ def reset_temp():
     temp_cnt = 0
     used_temp = []
 if __name__ == "__main__":
-    # generate_datapack("./rpg/camera.planet", "1.21", "./", "pack")
-    # generate_datapack("./example/test.planet", "1.20.4", "./", "pack")
+    # generate_datapack("./rpg/main.planet", "1.21", "./", "pack")
+    # generate_datapack("./example/test.planet", "1.21", "./", "pack")
     # exit()
 
 
@@ -2291,8 +2318,8 @@ if __name__ == "__main__":
                 messagebox.showinfo("name", error.as_string())
             else:
                 messagebox.showinfo("name", "done!")
-        except:
-            messagebox.showinfo("name", "Unknown error occurred.")
+        except Exception as err:
+            messagebox.showinfo("name", f"Unexpected {err=}, {type(err)=}")
 
     def select_planet_file():
         tk.file = filedialog.askopenfile(

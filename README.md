@@ -64,7 +64,7 @@ var b = {
 
 ```
 var a;
-nbt b = {
+var b = {
 	test: "asdf"
 };
 ```
