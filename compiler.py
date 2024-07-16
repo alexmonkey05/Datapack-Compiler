@@ -2309,9 +2309,9 @@ def reset_temp():
     temp_cnt = 0
     used_temp = []
 if __name__ == "__main__":
-    generate_datapack("./rpg/main.planet", "1.21", "./", "pack")
+    # generate_datapack("./rpg/main.planet", "1.21", "./", "pack")
     # generate_datapack("./example/test.planet", "1.21", "./", "pack")
-    exit()
+    # exit()
 
 
     tk = Tk()
