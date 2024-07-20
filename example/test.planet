@@ -1,1 +1,3 @@
-print(@a)
+var idx = int(get_data("entity", "@s", "UUID[3]")) - 2;
+# 이거 아직 안 고침
+idx = idx - 2;

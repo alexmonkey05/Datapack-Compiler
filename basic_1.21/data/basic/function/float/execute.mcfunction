@@ -7,8 +7,8 @@ execute store result score #var2 40planet_num run data get storage 40planet:valu
 
 execute if score #operator_type 40planet_num matches 1 run return run scoreboard players operation #var1 40planet_num += #var2 40planet_num
 execute if score #operator_type 40planet_num matches 2 run return run scoreboard players operation #var1 40planet_num -= #var2 40planet_num
-execute if score #operator_type 40planet_num matches 3 run return run scoreboard players operation #var1 40planet_num *= #var2 40planet_num
-execute if score #operator_type 40planet_num matches 3 run scoreboard players operation #var1 40planet_num /= 100 40planet_num
+execute if score #operator_type 40planet_num matches 3 run scoreboard players operation #var1 40planet_num *= #var2 40planet_num
+execute if score #operator_type 40planet_num matches 3 run return run scoreboard players operation #var1 40planet_num /= 100 40planet_num
 execute if score #operator_type 40planet_num matches 4 run scoreboard players operation #var1 40planet_num *= 100 40planet_num
 execute if score #operator_type 40planet_num matches 4 run return run scoreboard players operation #var1 40planet_num /= #var2 40planet_num
 execute if score #operator_type 40planet_num matches 5 run return run scoreboard players operation #var1 40planet_num %= #var2 40planet_num

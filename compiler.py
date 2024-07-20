@@ -10,9 +10,8 @@ from tkinter import *
 from tkinter import filedialog
 from tkinter import messagebox
 import tkinter.ttk as ttk
-
-
-
+import sys
+sys.setrecursionlimit(10**7)
 
 
 #######################################
@@ -416,12 +415,6 @@ class Parser:
 
         return node, None
     def make_tree_of_break(self, parent):
-        if parent.name != "assign" or parent.parent.name != "while":
-            return None, InvalidSyntaxError(
-                self.current_tok,
-                self.filename,
-                f"Break must be in loop"
-            )
         return Node("break", token = self.current_tok), None
     def make_tree_of_and(self, parent):
         return self.operator_basic(parent)
@@ -460,8 +453,8 @@ class Parser:
         if operator == ".": operator = "dot"
         elif operator == "-":
             front_tok = self.reverse()
-            if front_tok.type != 1 and front_tok.type != 2: # Not number and not variable
-                self.advance()
+            self.advance()
+            if front_tok.type != 1 and front_tok.type != 2 and front_tok.string != ")": # Not number and not variable and not function
                 tok = self.advance()
                 if tok.type == 2:
                     Node("-", parent=node, token = self.current_tok)
@@ -945,7 +938,7 @@ class Interpreter:
             self.using_variables.append({})
 
             for child in node.children[2].children:
-                temp, error = self.interprete(child) # interprete assign
+                temp_, error = self.interprete(child) # interprete assign
                 if error: return None, error
             self.current_file = current_file
             for var in self.using_variables[-1]:
@@ -969,7 +962,7 @@ class Interpreter:
         if error: return None, error
         for temp in self.used_break:
             self.write(f"scoreboard players set #{temp} {SCOREBOARD_NAME} 0\n")
-        self.write(f"execute store result score #{if_score} {SCOREBOARD_NAME} run data get storage {STORAGE_NAME} {if_score}\nexecute if score #{if_score} {SCOREBOARD_NAME} matches 1 run function {self.namespace}:{self.get_folder_dir()}{self.current_file[:-11]}\n")
+        self.write(f"execute store result score #{if_score} {SCOREBOARD_NAME} run data get storage {STORAGE_NAME} {if_score}\nexecute if score #{if_score} {SCOREBOARD_NAME} matches 1.. run function {self.namespace}:{self.get_folder_dir()}{self.current_file[:-11]}\n")
         self.current_file = current_file
         return None, None
     def operator_(self, node):
@@ -1096,7 +1089,6 @@ class Interpreter:
         self.used_return[temp] = fun.temp
         return fun.temp, None
     def break_(self, node):
-        node.children[0].parent = None
         temp_node = node
         while temp_node.name != "while":
             temp_node = temp_node.parent
@@ -1147,13 +1139,13 @@ class Interpreter:
             self.write(f"execute if score #{temp} {SCOREBOARD_NAME} matches 1 run return run data get storage {STORAGE_NAME} {self.used_return[temp]}\n")
             self.write_first(f"scoreboard players set #{temp} {SCOREBOARD_NAME} 0\n")
         for temp in self.used_break:
-            self.write(f"execute if score #{temp} {SCOREBOARD_NAME} matches 1 run return 0")
+            self.write(f"execute if score #{temp} {SCOREBOARD_NAME} matches 1 run return 0\n")
             self.write_first(f"scoreboard players set #{temp} {SCOREBOARD_NAME} 0\n")
         
         while node.name != "root":
             node = node.parent
             if node.name == "define_function":
-                self.used_return = []
+                self.used_return = {}
             elif node.name == "while":
                 self.used_break = []
             elif node.name == "if" or node.name == "execute": return
@@ -1846,9 +1838,8 @@ execute unless score #type {SCOREBOARD_NAME} matches 4 run ")
 
     def get_folder_dir(self):
         dir_arr = self.current_dir.split("/")
-        folder = ""
-        dir_arr = dir_arr[dir_arr.index(self.namespace):]
-        if len(dir_arr) > 5: folder = "/".join(dir_arr[5:])
+        dir_arr = dir_arr[dir_arr.index(self.function_folder):]
+        folder = "/".join(dir_arr[1:])
         return folder
 
     def to_storage(self, var):
@@ -2332,11 +2323,14 @@ if __name__ == "__main__":
             dir = tk.dir
             temp, error = generate_datapack(name, version, dir, namespace)
             if error:
+                print(error.as_string())
                 messagebox.showinfo("name", error.as_string())
             else:
                 messagebox.showinfo("name", "done!")
         except Exception as err:
+            print(f"Unexpected {err=}, {type(err)=}")
             messagebox.showinfo("name", f"Unexpected {err=}, {type(err)=}")
+        reset_temp()
 
     def select_planet_file():
         tk.file = filedialog.askopenfile(
