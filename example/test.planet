@@ -1,3 +1,7 @@
-var idx = int(get_data("entity", "@s", "UUID[3]")) - 2;
-# 이거 아직 안 고침
-idx = idx - 2;
+var laundry = {
+    arr: [1, 2, 3],
+    temp: 1b
+}
+
+print(laundry.arr[0])
+print(laundry.arr[0].test)

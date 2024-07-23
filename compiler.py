@@ -123,7 +123,7 @@ class Error:
     def as_string(self):
         result = f'{self.error_name}: {self.details}\n'
         try:
-            result += f'File {self.filename}, line {self.token.start[0]}'
+            result += f'File {self.filename}, line {self.token.start[0]}, col {self.token.start[1]}'
             result += "\n\n" + self.token.line
             if self.token.line[-1] != "\n": result += "\n"
             result += " " * self.token.start[1]
@@ -510,16 +510,15 @@ class Parser:
         return node, None
     def operator_make_array(self):
         node = Node("make_array", token = self.current_tok)
-        depth = 1
-        while depth > 0:
+        while True:
             tok = self.advance()
             if tok.string == ",": continue
-            elif tok.string == "]": depth -= 1
-            elif tok.string == "[": depth += 1
+            elif tok.string == "]": break
+            # elif tok.string == "[": depth += 1
             temp, error = self.build_ast(node)
             if error: return None, error
-        self.reverse()
-        return node, error
+        # self.reverse()
+        return node, None
     def operator_member(self, parent):
         pre_node = parent.children[-1]
 
@@ -538,35 +537,39 @@ class Parser:
         return node, error
     def operator_nbt(self, parent):
         node = Node("make_nbt", token = self.current_tok)
-        temp_node = None
+        # temp_node = None
         while True:
             tok = self.advance()
-            if tok.string == "b":
-                Node("bool", parent=temp_node, token = self.current_tok)
-                tok = self.advance()
-            elif tok.string == "d":
-                Node("double", parent=temp_node, token = self.current_tok)
-                tok = self.advance()
-            elif tok.string == "f":
-                Node("float", parent=temp_node, token = self.current_tok)
-                tok = self.advance()
-            while tok.string == "\n" or tok.string == ",": tok = self.advance()
-            tok_name = tok.string
-            if tok.string == "}": break
-            elif tok.type == 3:
-                tok_name = tok.string[1:-1]
-            elif tok.type != 1:
+            while self.current_tok.string == "\n": tok = self.advance()
+            if tok.type != 1 and tok.type != 3:
                 return None, InvalidSyntaxError(
                     tok,
                     self.filename,
                     "name type was expected, but it's not"
                 )
-            temp_node = Node(tok_name, parent=node, token = self.current_tok)
+            key = tok.string
+            if tok.type == 3:
+                key = key[1:-1]
+            key_node = Node(key, parent=node, token = self.current_tok)
             error = self.is_next_match(":")
             if error: return None, error
             self.advance()
-            temp, error = self.build_ast(temp_node)
-            if error: return None, error
+            while self.current_tok.string == "\n": self.advance()
+
+            if self.current_tok.string == "," or self.current_tok.string == "}":
+                return None, InvalidSyntaxError(
+                    self.current_tok,
+                    self.filename,
+                    "value is missing"
+                )
+            
+            while self.current_tok.string != "," and self.current_tok.string != "}":
+                temp, error = self.build_ast(key_node)
+                if error: return None, error
+
+                self.advance()
+            
+            if self.current_tok.string == "}": break
         return node, None
     def operator_entity(self, parent):
         tok = self.advance()
@@ -986,7 +989,7 @@ class Interpreter:
             if self.is_module:
                 namespace += self.filename.split("/")[-1][:-7] + "/"
             command = command.replace(NAMESPACE + ":", namespace)
-        if "^" in command:
+        if "^" in command and "&" in command:
             command, error = self.macro_(command, node.token)
             if error: return None, error
             if command[0] != "$": command = "$" + command
@@ -996,7 +999,7 @@ class Interpreter:
         return None, None
     def macro_(self, command, token):
         global used_temp
-        while "^" in command:
+        while "^" in command and "&" in command:
             var_name = ""
             is_var_name = True
             for char in command:
@@ -1052,7 +1055,7 @@ class Interpreter:
     def make_selector_(self, node):
         temp = get_temp()
         command = node.children[0].name
-        if "^" in command:
+        if "^" in command and "&" in command:
             command = self.macro_(command, node.token)
             self.macro(f"$data modify storage {STORAGE_NAME} {temp} set value \"{command.replace("\"", "\\\"")}\"\n")
         else:
@@ -1246,42 +1249,25 @@ execute store result storage {STORAGE_NAME} {temp} byte 1 run scoreboard players
         self.add_used_temp(temp2)
         return temp, None
     def operator_member(self, node):
-        
-        operator = node.children[1]
-        while operator.name == "operator":
-            if operator.children[0].name != "member":
-                return None, InvalidSyntaxError(
-                    node.children[0].token,
-                    self.filename,
-                    f"{operator.name} operator can not be operated with member operator"
-                )
-            operator = operator.children[1]
-        arr = operator.name
-        operator = operator.parent
+        arr = node.children[1].name
+        if arr in INTERPRETE_THESE:
+            arr, error = self.interprete(node.children[1])
+            if error: return None, error
+
         if arr not in self.variables:
             return None, InvalidSyntaxError(
-                operator.children[1].token,
+                node.children[1].token,
                 self.filename,
                 f"{arr} is not defined"
             )
         arr = self.variables[arr][-1].temp
-        while operator != node.parent:
-            if len(operator.children) == 2:
-                return None, InvalidSyntaxError(
-                    node.children[0].token,
-                    self.filename,
-                    f"index is lost"
-                )
-
-            index = operator.children[2].name
-            if index in INTERPRETE_THESE:
-                index, error = self.interprete(operator.children[2])
-                if error:
-                    return None, error
-            if index in self.variables: arr += f"[$({self.variables[index][-1].temp})]"
-            elif index[0] == "\"": arr += f"[{index[1:-1]}]"
-            else: arr += f"[{index}]"
-            operator = operator.parent
+        index = node.children[2].name
+        if index in INTERPRETE_THESE:
+            index, error = self.interprete(node.children[2])
+            if error: return None, error
+        if index in self.variables: arr += f"[$({self.variables[index][-1].temp})]"
+        elif index[0] == "\"": arr += f"[{index[1:-1]}]"
+        else: arr += f"[{index}]"
 
         self.add_var(arr, "type", False, arr)
         self.add_used_temp(index)
@@ -1850,7 +1836,7 @@ execute unless score #type {SCOREBOARD_NAME} matches 4 run ")
         return temp
 
     def add_used_temp(self, var):
-        if var[:4] == "temp":
+        if var[:4] == "temp" and len(var) > 4:
             used_temp.append(var)
             if var in self.variables: del(self.variables[var])
 
