@@ -1,0 +1,59 @@
+
+/scoreboard objectives add 40planet_health dummy
+/scoreboard objectives add 40planet_pre_health dummy
+/scoreboard objectives add 40planet_max_health dummy
+
+
+def tick(){
+    /execute as @e[tag=40planet_health_bar] run function __namespace__:tick_entity
+    execute(as @e[tag=health_bar_display]){
+        /scoreboard players set test 40planet_num 0
+        /execute on vehicle if entity @s[tag=40planet_health_bar] run scoreboard players set test 40planet_num 1
+        execute(if score "test" "40planet_num" matches 0 at @s){
+            /execute on passengers run kill @s
+            /kill @s
+        }
+    } 
+}
+
+def detect(){
+    /scoreboard players set test 40planet_num 0
+    /execute on passengers on passengers if entity @s[tag=green] run scoreboard players set test 40planet_num 1
+    execute(if score "test" "40planet_num" matches 0 at @s){
+        /summon interaction ~ ~ ~ {Tags:["health_bar_display","unset"],height:0,width:0,Passengers:[{billboard:"vertical",transformation:{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],translation:[-1f,0.8f,0f],scale:[80f,8f,8f]},background:-16122112,Tags:["green"],id:"text_display",interpolation_duration:2,start_interpolation:0},{billboard:"vertical",transformation:{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],translation:[-1f,0.8f,-0.001f],scale:[80f,7.9f,7.9f]},background:-65536,Tags:["red"],id:"text_display"},{billboard:"vertical",transformation:{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],translation:[0f,1f,0f],scale:[1.5f,1.5f,1.5f]},background:0,Tags:["text"],shadow:1b,id:"text_display"}]}
+        /ride @n[tag=unset] mount @s
+        /execute on passengers run tag @s remove unset
+    }
+}
+
+def set_health(){
+    /execute store result score @s 40planet_health run data get entity @s Health
+    execute(unless score "@s" "40planet_health" = "@s" "40planet_pre_health"){
+        /execute store result storage 40planet:value health_bar.max_health float 0.01 run attribute @s minecraft:generic.max_health get 100
+        var max_health = get_data("storage", "40planet:value", "health_bar.max_health")
+        var health = get_data("entity", "@s", "Health")
+        var percentage = health / max_health
+        execute(on passengers on passengers){
+            execute(if entity @s[tag=green]){
+                /data modify entity @s start_interpolation set value 0
+                set_data("entity", "@s", "transformation.scale[0]", percentage * float(80))
+            }
+            execute(if entity @s[tag=text]){
+                set_score("@s", "40planet_health", health)
+                set_score("@s", "40planet_max_health", max_health)
+                /data merge entity @s {text:'["",{"score":{"name":"@s","objective":"40planet_health"},"color":"green"},{"text":"/","color":"green"},{"score":{"name":"@s","objective":"40planet_max_health"},"color":"green"}]'}
+            }
+        }
+    }
+
+    /scoreboard players operation @s 40planet_pre_health = @s 40planet_health
+}
+
+def tick_entity(){
+    execute(if entity @s[type=player]){
+        /tellraw @s {"text":"플레이어에게는 체력바를 표시할 수 없습니다", "color":"red"}
+        return 0
+    }
+    detect()
+    set_health()
+}

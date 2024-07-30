@@ -159,3 +159,11 @@ var laundry = {
 print(laundry.arr[0])
 print(laundry.arr[0].test)
 ```
+# 아직 push 안 함
+- `README`의 `execute if data` 부분의 오류 수정
+```
+execute(if data storage "temp:test" id){
+```
+```
+execute(if data storage "temp:test" "id"){
+```

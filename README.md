@@ -289,7 +289,7 @@ execute(unless data camera_paths[0][1]){
 - You can use like `if data <storage|entity|block> <string path>`
 ```
 var id = get_data("entity", "@s", "UUID")
-execute(if data storage "temp:test" id){
+execute(if data storage "temp:test" "id"){
     # code for adding id
 }
 ```

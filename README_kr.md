@@ -288,7 +288,7 @@ execute(unless data camera_paths[0][1]){
 - `if data <storage|entity|block> <string path>`의 형태로 사용 가능하다
 ```
 var id = get_data("entity", "@s", "UUID")
-execute(if data storage "temp:test" id){
+execute(if data storage "temp:test" "id"){
     # 아이디 추가하는 구문
 }
 ```
