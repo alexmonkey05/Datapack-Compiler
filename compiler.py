@@ -541,6 +541,7 @@ class Parser:
         while True:
             tok = self.advance()
             while self.current_tok.string == "\n": tok = self.advance()
+            if tok.string == "}": return node, None # 종료조건
             if tok.type != 1 and tok.type != 3:
                 return None, InvalidSyntaxError(
                     tok,
@@ -564,6 +565,12 @@ class Parser:
                 )
             
             while self.current_tok.string != "," and self.current_tok.string != "}":
+                if self.current_tok.string == ":":
+                    return None, InvalidSyntaxError(
+                        self.current_tok,
+                        self.filename,
+                        "prior \",\" is missing"
+                    )
                 temp, error = self.build_ast(key_node)
                 if error: return None, error
 

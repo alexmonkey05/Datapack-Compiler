@@ -159,11 +159,19 @@ var laundry = {
 print(laundry.arr[0])
 print(laundry.arr[0].test)
 ```
-# 아직 push 안 함
+# 2024/08/05 2.11.3
 - `README`의 `execute if data` 부분의 오류 수정
 ```
 execute(if data storage "temp:test" id){
 ```
 ```
 execute(if data storage "temp:test" "id"){
+```
+- nbt를 만들 때 빈 값(`{}`)이 들어가면 에러가 나던 현상 해결
+- nbt를 만들 때 `,`가 없을 때의 에러메시지 수정
+```
+Invalid Syntax: : was not defined operator
+```
+```
+Invalid Syntax: prior "," is missing
 ```
