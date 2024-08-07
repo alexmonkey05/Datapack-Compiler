@@ -175,3 +175,15 @@ Invalid Syntax: : was not defined operator
 ```
 Invalid Syntax: prior "," is missing
 ```
+# 2024/08/08 2.11.4
+- `if`, `else` 등을 중괄호 없이 적었을 때 제대로 인식이 안 되던 오류 수정
+```
+if(num == 1)
+    print(1)
+else if(num == 2)
+    print(2)
+else if(num == 3)
+    print(3)
+else
+    print("예측 실패")
+```

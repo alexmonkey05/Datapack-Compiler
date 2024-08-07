@@ -294,21 +294,17 @@ class Parser:
             self.advance()
         self.advance()
         while self.current_tok.string == "\n" or self.current_tok.type == 4: self.advance()
-        if self.current_tok.string != "{":
-            assign_node = Node("assign", parent=node, token = None)
-            while True:
-                temp, error = self.build_ast(assign_node)
-                if error: return None, error
-                elif temp.name == 'new_line':
-                    self.reverse()
-                    break
-                self.advance()
-            return node, None
-        else:
-            assign_node, error = self.make_tree_of_assign(node)
+        assign_node, error = self.make_tree_of_assign(node)
+        if error: return None, error
+        assign_node.parent = node
+        next_tok = self.advance()
+        while next_tok.string == "\n" or next_tok.string == "": next_tok = self.advance()
+        if next_tok.string == "else":
+            node.parent = parent
+            else_tree, error = self.make_tree_of_else(parent)
             if error: return None, error
-            assign_node.parent = node
-            return node, None
+        else: self.reverse()
+        return node, None
     def make_tree_of_else(self, parent):
         if len(parent.children) == 0: return None, InvalidSyntaxError(
             self.current_tok,
@@ -323,21 +319,10 @@ class Parser:
         )
         self.advance()
         while self.current_tok.string == "\n" or self.current_tok.type == 4: self.advance()
-        if self.current_tok.string != "{":
-            node = Node("assign", parent=if_node, token = None)
-            while True:
-                temp, error = self.build_ast(node)
-                if error: return None, error
-                elif temp.name == 'new_line':
-                    self.reverse()
-                    break
-                self.advance()
-            return if_node, None
-        else:
-            assign_node, error = self.make_tree_of_assign()
-            if error: return None, error
-            assign_node.parent = if_node
-            return if_node, None
+        assign_node, error = self.make_tree_of_assign()
+        if error: return None, error
+        assign_node.parent = if_node
+        return if_node, None
     def make_tree_of_while(self, parent):
         return self.make_tree_of_if(parent, True)
     def make_tree_of_import(self, parent):
@@ -406,12 +391,23 @@ class Parser:
         return node, None
     def make_tree_of_assign(self, parent = None):
         node = Node("assign", token = None, parent=parent)
-        if self.current_tok.string == "{": self.advance()
 
-        while self.current_tok.string != "}":
-            temp, error = self.build_ast(node)
-            if error: return None, error
+        if self.current_tok.string != "{":
+            while True:
+                temp, error = self.build_ast(node)
+                # print(temp.children[-1].name)
+                # print_tree(temp)
+                if error: return None, error
+                elif temp.name == 'new_line' or (len(temp.children) > 0 and temp.children[-1].name == "assign"):
+                    break
+                self.advance()
+            return node, None
+        else:
             self.advance()
+            while self.current_tok.string != "}":
+                temp, error = self.build_ast(node)
+                if error: return None, error
+                self.advance()
 
         return node, None
     def make_tree_of_break(self, parent):
@@ -537,7 +533,6 @@ class Parser:
         return node, error
     def operator_nbt(self, parent):
         node = Node("make_nbt", token = self.current_tok)
-        # temp_node = None
         while True:
             tok = self.advance()
             while self.current_tok.string == "\n": tok = self.advance()
@@ -2122,6 +2117,7 @@ class Execute:
                 self.result += f"storage {STORAGE_NAME} {variables[node[0]][-1].temp}"
                 del(node[0])
                 for index in node:
+                    if index == "": continue
                     if index[0] == ".": self.result += index
                     elif index in variables: self.result += f"[$({variables[index][-1].temp})]"
                     else: self.result += f"[{index}]"
