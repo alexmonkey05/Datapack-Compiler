@@ -719,7 +719,13 @@ def make_basic_files(version, file_dir, namespace = "pack"):
     file = open(file_dir + f"{namespace}/data/{namespace}/{function_folder}/tick.mcfunction", "w+")
     file.close()
     file = open(file_dir + f"{namespace}/pack.mcmeta", "w+")
-    file.write('{ "pack": {"pack_format": 9, "description": "by 40planet"} }')
+    datapack_versions = {
+        "1.20.4": 26,
+        "1.20.6": 41,
+        "1.21": 48,
+        "1.21.1": 48
+    }
+    file.write('{ "pack": {"pack_format": ' + datapack_versions[version] + ', "description": "by 40planet"} }')
     file.close()
 
 class Interpreter:
@@ -2225,17 +2231,6 @@ def get_var_temp():
 
 
 
-#######################################
-# OPTIMIZER
-#######################################
-
-class Optimizer:
-    def __init__(self, interpreter) -> None:
-        self.interpreter = interpreter
-
-    def optimize(self):
-        pass
-
 def print_tree(ast):
     for pre, fill, node in RenderTree(ast):
         if node.token:
@@ -2269,8 +2264,6 @@ def interprete(filename, version, result_dir, namespace, is_modul = False, token
         print("\n\n" + error.as_string())
         return None, error
 
-    # optimizer = Optimizer(interpreter)
-    # optimizer.optimize()
     return {"variables":interpreter.variables, "functions":interpreter.functions}, None
 
 def generate_datapack(filename, version, result_dir = "./", namespace = "pack"):
@@ -2296,7 +2289,7 @@ def reset_temp():
     temp_cnt = 0
     used_temp = []
 if __name__ == "__main__":
-    # generate_datapack("./rpg/main.planet", "1.21", "./", "pack")
+    # generate_datapack("./rpg_planet/main.planet", "1.21", "./", "rpg")
     # generate_datapack("./example/test.planet", "1.21", "./", "pack")
     # exit()
 
@@ -2349,7 +2342,7 @@ if __name__ == "__main__":
     btn2 = Button(tk,text='Select',command=select_folder).grid(row=1,column=1)
     btn3 = Button(tk,text='Compile',command=event).grid(row=3,column=1)
 
-    values = ["1.20.4", "1.20.6", "1.21"]
+    values = ["1.20.4", "1.20.6", "1.21", "1.21.1"]
     combobox = ttk.Combobox(tk,values=values,state="readonly")
     combobox.grid(row=3,column=0)
     combobox.set("1.21")
