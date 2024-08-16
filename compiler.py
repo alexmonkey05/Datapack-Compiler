@@ -720,10 +720,10 @@ def make_basic_files(version, file_dir, namespace = "pack"):
     file.close()
     file = open(file_dir + f"{namespace}/pack.mcmeta", "w+")
     datapack_versions = {
-        "1.20.4": 26,
-        "1.20.6": 41,
-        "1.21": 48,
-        "1.21.1": 48
+        "1.20.4": "26",
+        "1.20.6": "41",
+        "1.21": "48",
+        "1.21.1": "48"
     }
     file.write('{ "pack": {"pack_format": ' + datapack_versions[version] + ', "description": "by 40planet"} }')
     file.close()
