@@ -1,6 +1,6 @@
 
-execute unless score #var1_type 40planet_num matches 3 run tellraw @a {"text": "Operands must be of the same data type","color": "red"}
-execute unless score #var1_type 40planet_num matches 3 run return fail
+execute unless score #var1_type 40planet_num matches 1..3 run tellraw @a {"text": "Operands must be of the same data type","color": "red"}
+execute unless score #var1_type 40planet_num matches 1..3 run return fail
 
 execute store result score #var1 40planet_num run data get storage 40planet:value var1 100
 execute store result score #var2 40planet_num run data get storage 40planet:value var2 100

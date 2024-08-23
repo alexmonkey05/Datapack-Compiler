@@ -293,12 +293,12 @@ class Parser:
             if error: return None, error
             self.advance()
         self.advance()
-        while self.current_tok.string == "\n" or self.current_tok.type == 4: self.advance()
+        while self.current_tok.string == "\n" or self.current_tok.type == 4 and self.current_tok.type != 0: self.advance()
         assign_node, error = self.make_tree_of_assign(node)
         if error: return None, error
         assign_node.parent = node
         next_tok = self.advance()
-        while next_tok.string == "\n" or next_tok.string == "": next_tok = self.advance()
+        while next_tok.string == "\n" or next_tok.string == "" and next_tok.type != 0: next_tok = self.advance()
         if next_tok.string == "else":
             node.parent = parent
             else_tree, error = self.make_tree_of_else(parent)
@@ -318,7 +318,7 @@ class Parser:
             "\"else\" must be located behind \"if\""
         )
         self.advance()
-        while self.current_tok.string == "\n" or self.current_tok.type == 4: self.advance()
+        while self.current_tok.string == "\n" or self.current_tok.type == 4 and self.current_tok.type != 0: self.advance()
         assign_node, error = self.make_tree_of_assign()
         if error: return None, error
         assign_node.parent = if_node
@@ -658,7 +658,7 @@ class Parser:
 
     def is_next_match(self, target):
         tok = self.advance()
-        while tok.string == "\n" or tok.type == 4: tok = self.advance()
+        while tok.string == "\n" or tok.type == 4 and tok.type != 0: tok = self.advance()
         if tok.string != target: return InvalidSyntaxError(
             self.current_tok,
             self.filename,
