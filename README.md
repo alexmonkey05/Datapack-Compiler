@@ -293,6 +293,16 @@ execute(if data storage "temp:test" "id"){
     # code for adding id
 }
 ```
+### if function
+- If you have defined a function, it can be used in the form of `execute(if function __namespace__:test)`
+- It can also be used in the form below without defining a function
+```
+execute(if function {
+    return 1
+} positioned "0 0 0"){
+    print("성공!")
+}
+```
 
 ### Things to note
 Since the string is entered almost as is, if there is a bug in execute, it will be very difficult to find.
@@ -410,6 +420,18 @@ print(arr)
 if(is_module()){
     print("this is not main")
 }
+```
+### devide(int|float|double var, int|float|double var2)
+- Calculates `var / var2` to 5 decimal places.
+- Return value's type is `float`
+```
+print(devide(1, 2))
+```
+### multiply(int|float|double var, int|float|double var2)
+- Calculates `var * var2` to 5 decimal places.
+- Return value's type is `float`
+```
+print(multiply(2, 3))
 ```
 ### int(any a)
 Converts `a` to `int` 자료형으   

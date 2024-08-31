@@ -195,3 +195,35 @@ else
 # 2024/08/23 2.13
 - `int`, `float`, `double`끼리의 연산이 가능해짐
 - `{}`로 묶인 부분이 파일의 마지막 글자일 때, 무한 로딩이 걸리던 버그를 해결함
+# 2024/08/31 2.14
+- `if block`이 문법을 제대로 지켜도 에러가 나던 현상을 해결함
+- `devide`, `multiply` 추가
+- 스토리지에 저장되는 정보에 네임스페이스를 추가함
+  - ex) `pack_var_temp10`
+- 스토리지에 저장되는 경로가 data 아래로 옮겨짐
+- `execute` 구문 내의 모든 좌표는 문자열로 적어야 합니다
+```
+execute(positioned 0 0 0){...}
+```
+```
+execute(positioned "0 0 0"){...}
+```
+- `execute` 구문을 한 줄에 적을 필요가 없게 됨
+```
+execute(as
+@a){
+  /say a
+}
+```
+- `execute` 구문의 `if function` 성능이 강화됨
+```
+def test(){
+    return 1
+}
+
+execute(if function {
+    return test()
+}){
+    print("성공!")
+}
+```

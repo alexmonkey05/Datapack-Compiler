@@ -272,6 +272,7 @@ test
 ## execute
 1. `if score`를 제외하고는 거의 대부분 마크 문법 그대로 사용해도 된다.
 2. `@a[tag=player]`와 같이 선택인자가 들어가는 자리에는 entity 타입의 변수를 넣어도 된다
+3. 좌표를 입력하기 위해서는 `0 0 0`이 아닌 `"0 0 0"`과 같이 문자열로 입력해야 한다. (시야각도 마찬가지이다)
 ```
 var player = @a[tag=player]
 execute ( as player at @s ){...}
@@ -290,6 +291,16 @@ execute(unless data camera_paths[0][1]){
 var id = get_data("entity", "@s", "UUID")
 execute(if data storage "temp:test" "id"){
     # 아이디 추가하는 구문
+}
+```
+### if function
+- 함수를 정의했다면 `execute(if function __namespace__:test)`의 형태로 사용 가능하다
+- 함수를 정의하지 않고 아래와 같은 형태로도 사용 가능하다
+```
+execute(if function {
+    return 1
+} positioned "0 0 0"){
+    print("성공!")
 }
 ```
 
@@ -410,6 +421,18 @@ print(arr)
 if(is_module()){
     print("this is not main")
 }
+```
+### devide(int|float|double var, int|float|double var2)
+- `var / var2`를 소수점 아래 5자리까지 계산해준다
+- 반환값의 타입은 `float`이다
+```
+print(devide(1, 2))
+```
+### multiply(int|float|double var, int|float|double var2)
+- `var * var2`를 소수점 아래 5자리까지 계산해준다
+- 반환값의 타입은 `float`이다
+```
+print(multiply(2, 3))
 ```
 ### int(any a)
 `a`를 `int` 자료형으로 변환해준다   

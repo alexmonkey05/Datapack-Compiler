@@ -1,5 +1,14 @@
-var a = 1
+def test(){
+    return 1
+}
 
-if(a == 1){
-    print("a는 1이야!")
+execute(if function {
+    return test()
+} positioned "0 0 0"){
+    print("성공!")
+}
+
+execute(as
+@a){
+  /say a
 }

@@ -104,7 +104,7 @@ OPERATOR_ID = {
 
 INTERPRETE_THESE = ("operator", "call_function", "make_array", "make_nbt", "make_selector", "define_var")
 
-BUILT_IN_FUNCTION = ("print", "random", "type", "get_score", "get_data", "set_score", "set_data", "round", "del", "append", "is_module", "len") + TYPES
+BUILT_IN_FUNCTION = ("print", "random", "type", "get_score", "get_data", "set_score", "set_data", "round", "del", "append", "is_module", "len", "devide", "multiply") + TYPES
 
 EXECUTE_KEYWORDS = ( "as", "at", "if", "positioned" )
 
@@ -168,7 +168,7 @@ class Parser:
 
     def parse(self):
 
-        root = Node("root", token = None)
+        root = Node("root", token = "")
 
         while self.current_tok.type != 0:
             node, error = self.build_ast(root)
@@ -283,7 +283,7 @@ class Parser:
     def make_tree_of_if(self, parent, is_while = False):
         node = Node("if", token = self.current_tok)
         if is_while: node = Node("while", token = self.current_tok)
-        condition_node = Node("condition", parent=node, token = None)
+        condition_node = Node("condition", parent=node, token = "")
         error = self.is_next_match("(")
         if error: return None, error
 
@@ -344,7 +344,7 @@ class Parser:
             Node(name, parent=node, token = self.current_tok)
         else:
             name = tok.string
-            Node(type_, parent=node, token = None)
+            Node(type_, parent=node, token = "")
             Node(name, parent=node, token = self.current_tok)
         self.functions[name] = {"type": type_, "inputs":[]}
 
@@ -395,8 +395,6 @@ class Parser:
         if self.current_tok.string != "{":
             while True:
                 temp, error = self.build_ast(node)
-                # print(temp.children[-1].name)
-                # print_tree(temp)
                 if error: return None, error
                 elif temp.name == 'new_line' or (len(temp.children) > 0 and temp.children[-1].name == "assign"):
                     break
@@ -427,16 +425,19 @@ class Parser:
         execute_node = Node("execute", token = self.current_tok)
         node = Node("condition", token = None, parent=execute_node)
         error = self.is_next_match("(")
-        tok = self.current_tok
-        condition = tok.line[tok.start[1] + 1:]
-        condition = condition[:condition.find(")")]
-        Node(condition, parent=node, token = None)
         if error: return None, error
         paren_cnt = 1
         while paren_cnt > 0:
-            self.advance()
+            tok = self.advance()
             if self.current_tok.string == "(": paren_cnt += 1
             elif self.current_tok.string == ")": paren_cnt -= 1
+            else:
+                temp_node = Node(tok.string, parent=node, token = tok)
+                if tok.string == "function":
+                    if self.advance().string == "{":
+                        assign_node, error = self.make_tree_of_assign(temp_node)
+                        if error: return error
+                    else: self.reverse()
         error = self.is_next_match("{")
         if error: return None, error
         temp, error = self.make_tree_of_assign(execute_node)
@@ -593,7 +594,7 @@ class Parser:
         self.reverse()
         return node, None
     def operator_not(self, parent):
-        node = Node("operator", token=None)
+        node = Node("operator", token="")
         Node("!", parent=node, token=self.current_tok)
         tok = self.advance()
         if tok.string != "(":
@@ -1024,7 +1025,7 @@ class Interpreter:
                     self.filename,
                     f"\"{var_name}\" was not defined"
                 )
-            command = command.replace("^" + var_name + "&", f"$({self.variables[var_name][-1].temp})")
+            command = command.replace("^" + var_name + "&", f"$({self.variables[var_name][-1].temp[5:]})")
         return command, None
     def make_array_(self, node):
         temp = get_temp()
@@ -1077,7 +1078,7 @@ class Interpreter:
         temp = get_temp()
         if fun_name not in self.functions:
             temp_node = node
-            while temp_node.name != "define_function":
+            while temp_node.name != "define_function" and temp_node.name != "function":
                 temp_node = temp_node.parent
                 if temp_node.name == "root":
                     return None, InvalidSyntaxError(
@@ -1086,19 +1087,26 @@ class Interpreter:
                         f"\"return\" must in function"
                     )
             fun_name = temp_node.children[1].name
-        fun = self.functions[fun_name]
         return_node = node.children[0]
         return_value = return_node.name
         if return_value in INTERPRETE_THESE:
             return_value, error = self.interprete(return_node)
             if error: return None, error
+        if temp_node and temp_node.name == "define_function":
+            fun = self.functions[fun_name]
 
-        if return_value in self.variables:
-            self.write(f"data modify storage {STORAGE_NAME} {fun.temp} set from storage {STORAGE_NAME} {self.variables[return_value][-1].temp}\nscoreboard players set #{temp} {SCOREBOARD_NAME} 1\nreturn run data get storage {STORAGE_NAME} {fun.temp}\n")
+            if return_value in self.variables:
+                self.write(f"data modify storage {STORAGE_NAME} {fun.temp} set from storage {STORAGE_NAME} {self.variables[return_value][-1].temp}\nscoreboard players set #{temp} {SCOREBOARD_NAME} 1\nreturn run data get storage {STORAGE_NAME} {fun.temp}\n")
+            else:
+                self.write(f"data modify storage {STORAGE_NAME} {fun.temp} set value {return_value}\nscoreboard players set #{temp} {SCOREBOARD_NAME} 1\nreturn {return_value}\n")
+            self.used_return[temp] = fun.temp
+            return fun.temp, None
         else:
-            self.write(f"data modify storage {STORAGE_NAME} {fun.temp} set value {return_value}\nscoreboard players set #{temp} {SCOREBOARD_NAME} 1\nreturn {return_value}\n")
-        self.used_return[temp] = fun.temp
-        return fun.temp, None
+            if return_value in self.variables:
+                self.write(f"data modify storage {STORAGE_NAME} data.{fun_name} set from storage {STORAGE_NAME} {self.variables[return_value][-1].temp}\nscoreboard players set #{temp} {SCOREBOARD_NAME} 1\nreturn run data get storage {STORAGE_NAME} data.{fun_name}\n")
+            else:
+                self.write(f"data modify storage {STORAGE_NAME} data.{fun_name} set value {return_value}\nscoreboard players set #{temp} {SCOREBOARD_NAME} 1\nreturn {return_value}\n")
+            return fun_name, None
     def break_(self, node):
         temp_node = node
         while temp_node.name != "while":
@@ -1114,7 +1122,7 @@ class Interpreter:
         self.used_break.append(temp)
         return None, None
     def execute_(self, node):
-        execute = Execute(node.children[0].children[0].name, self, node.token)
+        execute = Execute(node.children[0], self, node.token)
         command, error = execute.interprete()
         if error: return None, error
 
@@ -1273,7 +1281,7 @@ execute store result storage {STORAGE_NAME} {temp} byte 1 run scoreboard players
         if index in INTERPRETE_THESE:
             index, error = self.interprete(node.children[2])
             if error: return None, error
-        if index in self.variables: arr += f"[$({self.variables[index][-1].temp})]"
+        if index in self.variables: arr += f"[$({self.variables[index][-1].temp[5:]})]"
         elif index[0] == "\"": arr += f"[{index[1:-1]}]"
         else: arr += f"[{index}]"
 
@@ -1430,11 +1438,11 @@ execute store result storage {STORAGE_NAME} {temp} int 1 run data get storage {S
             if error: return None, error
         is_var = False
         if var1 in self.variables:
-            var1 = f"$({self.variables[var1][-1].temp})"
+            var1 = f"$({self.variables[var1][-1].temp[5:]})"
             is_var = True
         elif var1[0] == "\"": var1 = var1[1:-1]
         if var2 in self.variables:
-            var2 = f"$({self.variables[var2][-1].temp})"
+            var2 = f"$({self.variables[var2][-1].temp[5:]})"
             is_var = True
         elif var2[0] == "\"": var2 = var2[1:-1]
         if is_var:
@@ -1468,15 +1476,15 @@ execute store result storage {STORAGE_NAME} {temp} int 1 run data get storage {S
 
         is_var = False
         if var1 in self.variables:
-            var1 = f"$({self.variables[var1][-1].temp})"
+            var1 = f"$({self.variables[var1][-1].temp[5:]})"
             is_var = True
         elif var1[0] == "\"": var1 = var1[1:-1]
         if var2 in self.variables:
-            var2 = f"$({self.variables[var2][-1].temp})"
+            var2 = f"$({self.variables[var2][-1].temp[5:]})"
             is_var = True
         elif var2[0] == "\"": var2 = var2[1:-1]
         if var3 in self.variables:
-            var3 = f"$({self.variables[var3][-1].temp})"
+            var3 = f"$({self.variables[var3][-1].temp[5:]})"
             is_var = True
         elif var3[0] == "\"": var3 = var3[1:-1]
         if is_var:
@@ -1511,11 +1519,11 @@ execute store result storage {STORAGE_NAME} {temp} int 1 run data get storage {S
         is_var = False
         if var1 in self.variables:
             is_var = True
-            var1 = f"$({self.variables[var1][-1].temp})"
+            var1 = f"$({self.variables[var1][-1].temp[5:]})"
         elif var1[0] == "\"": var1 = var1[1:-1]
         if var2 in self.variables:
             is_var = True
-            var2 = f"$({self.variables[var2][-1].temp})"
+            var2 = f"$({self.variables[var2][-1].temp[5:]})"
         elif var2[0] == "\"": var2 = var2[1:-1]
         if var3 not in self.variables:
             if is_var: self.macro(f"$scoreboard players set {var1} {var2} {var3}\n")
@@ -1557,15 +1565,15 @@ execute store result storage {STORAGE_NAME} {temp} int 1 run data get storage {S
                 )
         is_var = False
         if var1 in self.variables:
-            var1 = f"$({self.variables[var1][-1].temp})"
+            var1 = f"$({self.variables[var1][-1].temp[5:]})"
             is_var = True
         elif var1[0] == "\"": var1 = var1[1:-1]
         if var2 in self.variables:
-            var1 = f"$({self.variables[var2][-1].temp})"
+            var1 = f"$({self.variables[var2][-1].temp[5:]})"
             is_var = True
         elif var2[0] == "\"": var2 = var2[1:-1]
         if var3 in self.variables:
-            var3 = f"$({self.variables[var3][-1].temp})"
+            var3 = f"$({self.variables[var3][-1].temp[5:]})"
             is_var = True
         elif var3[0] == "\"": var3 = var3[1:-1]
         if var4 in self.variables:
@@ -1702,7 +1710,7 @@ data modify storage {STORAGE_NAME} {temp} set from storage {STORAGE_NAME} var1\n
 execute store result score #type {SCOREBOARD_NAME} run function basic:get_type_score\n\
 execute if score #type {SCOREBOARD_NAME} matches 4 run data modify storage {STORAGE_NAME} {temp} set from storage {STORAGE_NAME} type_var\n\
 execute unless score #type {SCOREBOARD_NAME} matches 4 run ")
-            self.macro(f"$data modify storage {STORAGE_NAME} {temp} set value \"$({self.variables[var][-1].temp})\"\n")
+            self.macro(f"$data modify storage {STORAGE_NAME} {temp} set value \"$({self.variables[var][-1].temp[5:]})\"\n")
         else:
             if var[0] == "\"":
                 var = var[1:-1]
@@ -1734,7 +1742,7 @@ execute unless score #type {SCOREBOARD_NAME} matches 4 run ")
         #         f"\"{var_type}\" can not be \"entity\""
         #     )
         # if var in self.variables:
-        #     self.macro(f"$data modify storage {STORAGE_NAME} {temp} set value $({self.variables[var][-1].temp})")
+        #     self.macro(f"$data modify storage {STORAGE_NAME} {temp} set value $({self.variables[var][-1].temp[5:]})")
         # else:
         #     self.macro(f"$data modify storage {STORAGE_NAME} {temp} set value {var}")
         # self.add_used_temp(var)
@@ -1828,7 +1836,107 @@ execute unless score #type {SCOREBOARD_NAME} matches 4 run ")
         self.write(f"execute store result storage {STORAGE_NAME} {temp} int 1 run data get storage {STORAGE_NAME} {self.variables[var][-1].temp}\n")
         self.add_var(temp, "len", False, temp)
         return temp, None
-        
+    def fun_devide(self, node, input_nodes):
+        if 2 != len(input_nodes):
+            return None, InvalidSyntaxError(
+                node.children[0].token,
+                self.filename,
+                f"devide must have only 2 parameters"
+            )
+        var = input_nodes[0].children[0].name
+        if var in INTERPRETE_THESE:
+            var, error = self.interprete(input_nodes[0].children[0])
+            if error: return None, error
+        var2 = input_nodes[1].children[0].name
+        if var2 in INTERPRETE_THESE:
+            var2, error = self.interprete(input_nodes[0].children[0])
+            if error: return None, error
+
+        if var in self.variables:
+            var = self.variables[var][-1].temp
+        else:
+            var = self.to_storage(var)
+        if var2 in self.variables:
+            var2 = self.variables[var2][-1].temp
+        else:
+            var2 = self.to_storage(var2)
+
+        temp = get_temp()
+        self.write(f"data modify storage 40planet:calc list set value [0f,0f,0f,0f, 0f,0f,0f,0f, 0f,0f,0f,0f, 0f,0f,0f,0f]\n\
+execute store result storage 40planet:calc list[0] float 0.00001 run data get storage {STORAGE_NAME} {var} 100000\n\
+execute store result storage 40planet:calc list[-1] float 0.00001 run data get storage {STORAGE_NAME} {var2} 100000\n\
+data modify entity 0-0-0-0-a transformation set from storage 40planet:calc list\n\
+data modify storage {STORAGE_NAME} {temp} set from entity 0-0-0-0-a transformation.scale[0]\n")
+        self.add_var(temp, "len", False, temp)
+        return temp, None
+    def fun_multiply(self, node, input_nodes):
+        if 2 != len(input_nodes):
+            return None, InvalidSyntaxError(
+                node.children[0].token,
+                self.filename,
+                f"multiply must have only 2 parameters"
+            )
+        var = input_nodes[0].children[0].name
+        if var in INTERPRETE_THESE:
+            var, error = self.interprete(input_nodes[0].children[0])
+            if error: return None, error
+        var2 = input_nodes[1].children[0].name
+        if var2 in INTERPRETE_THESE:
+            var2, error = self.interprete(input_nodes[0].children[0])
+            if error: return None, error
+
+        if var in self.variables:
+            var = self.variables[var][-1].temp
+        else:
+            var = self.to_storage(var)
+        if var2 in self.variables:
+            var2 = self.variables[var2][-1].temp
+        else:
+            var2 = self.to_storage(var2)
+
+        temp = get_temp()
+        self.write(f"data modify storage 40planet:calc list set value [0f,0f,0f,0f, 0f,0f,0f,0f, 0f,0f,0f,0f, 0f,0f,0f,0f]\n\
+data modify storage 40planet:calc list[0] set value 1f\n\
+execute store result storage 40planet:calc list[-1] float 0.00001 run data get storage {STORAGE_NAME} {var} 100000\n\
+data modify entity 0-0-0-0-a transformation set from storage 40planet:calc list\n\
+\
+data modify storage 40planet:calc list set value [0f,0f,0f,0f, 0f,0f,0f,0f, 0f,0f,0f,0f, 0f,0f,0f,0f]\n\
+execute store result storage 40planet:calc list[0] float 0.00001 run data get storage {STORAGE_NAME} {var2} 100000\n\
+data modify storage 40planet:calc list[-1] set from entity 0-0-0-0-a transformation.scale[0]\n\
+data modify entity 0-0-0-0-a transformation set from storage 40planet:calc list\n\
+data modify storage {STORAGE_NAME} {temp} set from entity 0-0-0-0-a transformation.scale[0]\n")
+        self.add_var(temp, "len", False, temp)
+        return temp, None
+    # def fun_sum(self, node, input_nodes):
+    #     if 2 != len(input_nodes):
+    #         return None, InvalidSyntaxError(
+    #             node.children[0].token,
+    #             self.filename,
+    #             f"sum must have only 2 parameters"
+    #         )
+    #     var = input_nodes[0].children[0].name
+    #     if var in INTERPRETE_THESE:
+    #         var, error = self.interprete(input_nodes[0].children[0])
+    #         if error: return None, error
+    #     if var in self.variables:
+    #         var = self.variables[var][-1].temp
+    #     else:
+    #         var = self.to_storage(var)
+    #     var2 = input_nodes[1].children[0].name
+    #     if var2 in INTERPRETE_THESE:
+    #         var2, error = self.interprete(input_nodes[0].children[0])
+    #         if error: return None, error
+
+    #     self.write(f"data modify entity 0-0-0-0-a Pos[1] set from storage {STORAGE_NAME} {var}\n")
+    #     if var2 in self.variables:
+    #         self.macro(f"$execute as 0-0-0-0-a at @s run tp @s ~ ~$({var2}) ~\n")
+    #     else:
+    #         self.write(f"execute as 0-0-0-0-a at @s run tp @s ~ ~{var2} ~\n")
+    #     temp = get_temp()
+    #     self.add_var(temp, "sum", False, temp)
+    #     self.write(f"data modify storage {STORAGE_NAME} {temp} set from entity 0-0-0-0-a Pos[1]\n")
+    #     return temp, None
+
 
     def get_folder_dir(self):
         dir_arr = self.current_dir.split("/")
@@ -1867,7 +1975,7 @@ execute unless score #type {SCOREBOARD_NAME} matches 4 run ")
         self.current_file = dump_file
         self.write(txt)
         self.current_file = current_file
-        self.write(f"function {self.namespace}:{self.get_folder_dir()}{dump_file[:-11]} with storage {STORAGE_NAME}\n")
+        self.write(f"function {self.namespace}:{self.get_folder_dir()}{dump_file[:-11]} with storage {STORAGE_NAME} data\n")
 
     def add_var(self, name, type, is_const, temp, details = None):
         if name not in self.variables: self.variables[name] = []
@@ -1875,91 +1983,150 @@ execute unless score #type {SCOREBOARD_NAME} matches 4 run ")
 
 class Execute:
     def __init__(self, condition, interpreter, token) -> None:
+        Node(" ", parent=condition, token="")
         self.condition = condition
-        self.arr = self.condition.split(" ")
+        self.arr = self.condition.children
         self.idx = 0
         self.result = "execute "
         self.current_node = self.arr[0]
         self.interpreter = interpreter
         self.len = len(self.arr)
-        self.token = token
 
-    def interprete(self):
+        self.selectors = ["p", "a", "r", "s", "e"]
+        if float(interpreter.version[:4]) > 1.21:
+            self.selectors.append("n")
+
+    def interprete(self) -> string:
         while self.len > self.idx:
-            if self.current_node == "":
+            if self.current_node.name == " ":
                 self.advance()
                 if self.len <= self.idx:
                     break
                 continue
-            method_name = f'execute_{self.current_node}'
+            method_name = f'execute_{self.current_node.name}'
             method = getattr(self, method_name)
             error = method()
             if error: return None, error
             self.advance()
         return self.result, None
 
-    def advance(self):
+    def advance(self) -> Node:
         self.idx += 1
         if self.len <= self.idx: return self.current_node
         self.current_node = self.arr[self.idx]
+        while self.current_node.name == "\n":
+            self.idx += 1
+            if self.len <= self.idx: return self.current_node
+            self.current_node = self.arr[self.idx]
         return self.current_node
 
-    def reverse(self):
+    def reverse(self) -> Node:
         self.idx -= 1
         if 0 > self.idx: return self.current_node
         self.current_node = self.arr[self.idx]
+        while self.current_node.name == "\n":
+            self.idx -= 1
+            if 0 > self.idx: return self.current_node
+            self.current_node = self.arr[self.idx]
         return self.current_node
 
-    def entity(self, node):
-
+    def entity(self, node) -> string:
+        if node.name != "@":
+            return None, InvalidSyntaxError(
+                self.current_node.token,
+                self.interpreter.filename,
+                f'\"entity\" must be started with \"@\"'
+            )
         result = ""
 
         if node in self.interpreter.variables:
-            result = f"$({self.interpreter.variables[node][-1].temp})"
+            result = f"$({self.interpreter.variables[node][-1].temp[5:]})"
             if self.result[0] != "$": self.result = "$" + self.result
         else:
-            result = node
+            result = node.name
+            current_node = self.advance()
+            if current_node.name not in self.selectors: return None, InvalidSyntaxError(
+                    current_node.token,
+                    self.interpreter.filename,
+                    f'\"entity\" must be followed one of {self.selectors}'
+                )
+            result += current_node.name
+            current_node = self.advance()
+            if current_node.name == "[":
+                paren_cnt = 1
+                result += "["
+                while paren_cnt > 0:
+                    current_node = self.advance()
+                    if current_node.name == "[": paren_cnt += 1
+                    elif current_node.name == "]": paren_cnt -= 1
+                    result += current_node.name
+            else: self.reverse()
         return result, None
-    def position(self):
-        pos1 = self.current_node
-        pos2 = self.advance()
-        pos3 = self.advance()
-        if {pos1[0], pos2[0], pos3[0]} == {"^", "~"}:
-            return None, InvalidSyntaxError(
-                self.token,
-                self.interpreter.filename,
-                f'"^" and "~" can not be used at once'
-            )
-        return f"{pos1} {pos2} {pos3}", None
-    def set_parameters(self, command, parameters):
-        node = self.advance()
+    def set_parameters(self, command, parameters) -> InvalidSyntaxError:
+        node = self.advance().name
         if node not in parameters:
             return InvalidSyntaxError(
-                self.token,
+                self.current_node.token,
                 self.interpreter.filename,
                 f'\"{command}\" must be followed by one of {parameters}'
             )
         self.result += f"{command} {node} "
-    def add_string(self):
+    def add_string(self) -> InvalidSyntaxError:
         node = self.advance()
-        if node[0] == "\"" or node[0] == "'":
-            if node[-1] != node[0]:
-                return InvalidSyntaxError(
-                    self.token,
-                    self.interpreter.filename,
-                    f'expected {node[0]} but it\'s not. At the end of {node}'
-                )
-            self.result += f"{node[1:-1]} "
-        elif node not in self.interpreter.variables:
+        if node.token.type == 3:
+            self.result += f"{node.name[1:-1]} "
+        elif node.name not in self.interpreter.variables:
             return InvalidSyntaxError(
-                self.token,
+                node.token,
                 self.interpreter.filename,
-                f'\"{node}\" is not defined'
+                f'\"{node.name}\" is not defined'
             )
-
         else:
-            self.result += f"$({self.interpreter.variables[node][-1].temp}) "
+            self.result += f"$({self.interpreter.variables[node.name][-1].temp[5:]}) "
             if self.result[0] != "$": self.result = "$" + self.result
+    def namespace(self) -> Node:
+        namespace = self.advance().name
+        if namespace == NAMESPACE: namespace = self.interpreter.namespace
+        is_colon = self.advance().name == ":"
+        item = ""
+        if is_colon:
+            item = f"{namespace}:{self.advance().name}"
+        else:
+            item = f"minecraft:{namespace}"
+            self.reverse()
+        return item
+    def variable(self, node) -> string:
+        var_temp = get_temp()
+        variables = self.interpreter.variables
+        node = variables[node][-1].temp
+        # TODO 점 연산, 멤버 연산 추가
+        current_node = self.advance()
+        if current_node.name[0] == "." or current_node.name == "[":
+            while current_node.name[0] == "." or current_node.name == "[":
+                if current_node.name[0] == ".":
+                    if current_node.token.type == 2: node += current_node.name
+                    else: node += f".{self.advance().name}"
+                else:
+                    variable_name = self.advance()
+                    if variable_name.name in variables:
+                        var, error = self.variable(variable_name.name)
+                        if error: return None, error
+                        node += f"[$({var})]"
+                    elif variable_name.token.type == 2:
+                        node += f"[{variable_name.name}]"
+                    else: return None, InvalidSyntaxError(
+                        variable_name.token,
+                        self.interpreter.filename,
+                        f'\"{variable_name.name}\" is not defined'
+                    )
+                current_node = self.advance()
+
+        else: self.reverse()
+        self.interpreter.write(f"data remove storage {STORAGE_NAME} {var_temp}\n")
+        self.interpreter.write(f"data modify storage {STORAGE_NAME} {var_temp} set from storage {STORAGE_NAME} {node}\n")
+        used_temp.append(var_temp)
+        return var_temp, None
+
 
     def execute_as(self):
         node = self.advance()
@@ -1981,65 +2148,59 @@ class Execute:
             if error: return error
             self.result += f"positioned as {entity} "
         elif node == "over":
+            # set_parameters는 self.result에 추가까지 함
+            # 때문에 그냥 return 해버려도 됨
             return self.set_parameters("positoined", ("world_surface", "motion_blocking", "motion_blocking_no_leaves", "ocean_floor"))
         else:
-            position, error = self.position()
+            self.result += f"positioned "
+            self.reverse()
+            error = self.add_string()
             if error: return error
-            self.result += f"positioned {position} "
     def execute_align(self):
         return self.set_parameters("align", ("x", "y", "z", "xy", "xz", "yz", "xyz"))
     def execute_facing(self):
         node = self.advance()
-        if node == "entity":
+        if node.name == "entity":
             node = self.advance()
             entity, error = self.entity(node)
             if error: return error
-            error = self.set_parameters(f"facing entity {entity}", ("eyes", "feet"))
-            if error: return error
+            return self.set_parameters(f"facing entity {entity}", ("eyes", "feet"))
         else:
-            position, error = self.position()
+            self.result += f"facing "
+            self.reverse()
+            error = self.add_string()
             if error: return error
-            self.result += f"facing {position} "
     def execute_rotated(self):
         node = self.advance()
-        if node == "as":
+        if node.name == "as":
             node = self.advance()
             entity, error = self.entity(node)
             if error: return error
             self.result += f"rotated as {entity} "
         else:
-            pos1 = self.advance()
-            pos2 = self.advance()
-            if {pos1[0], pos2[0]} == {"^", "~"}:
-                return InvalidSyntaxError(
-                    self.token,
-                    self.interpreter.filename,
-                    f'"^" and "~" can not be used at once'
-                )
-            self.result += f"rotated {pos1} {pos2}"
+            self.result += f"rotated "
+            self.reverse()
+            return self.add_string()
     def execute_anchored(self):
         return self.set_parameters("anchored", ("eyes", "feet"))
     def execute_in(self):
-        self.result += f"in {self.advance()} "
+        self.result += f"in {self.namespace()} "
     def execute_summon(self):
-        self.result += f"summon {self.advance()} "
+        self.result += f"summon {self.namespace()} "
     def execute_on(self):
         return self.set_parameters("on", ("attacker", "controller", "leasher", "origin", "owner", "passengers", "target", "vehicle"))
     def execute_if(self, if_or_unless = "if"):
         error = self.set_parameters(if_or_unless, ("block", "blocks", "entity", "score", "biome", "dimension", "function", "loaded", "predicate", "items", "data"))
         if error: return error
-        node = self.current_node
+        node = self.current_node.name
         if node == "block" or node == "biome":
-            self.advance()
-            pos, error = self.position()
+            error = self.add_string()
             if error: return error
-            self.result += f"{pos} {self.advance()} "
+            self.result += f"{self.namespace()} "
         elif node == "blocks":
             for i in range(3):
-                self.advance()
-                pos, error = self.position()
+                error = self.add_string()
                 if error: return error
-                self.result += f"{pos} "
             self.result = self.result[:-1]
             error = self.set_parameters("", ("all", "masked"))
         elif node == "entity":
@@ -2051,8 +2212,20 @@ class Execute:
             if error: return error
             error = self.add_string()
             if error: return error
-            node = self.advance()
-            if node == "matches": self.result += f"matches {self.advance()} "
+            node = self.advance().name
+            if node == "matches":
+                score_range_node = self.advance()
+                score_range = score_range_node.name
+                if "." in score_range_node.name:
+                    next_node = self.advance()
+                    if next_node.name != "." and next_node.token.type != 2:
+                        return InvalidSyntaxError(
+                            next_node.token,
+                            self.interpreter.filename,
+                            f'\"<if|unless> score <target> <scoreboard> matches <range>\" format is wrong'
+                        )
+                    score_range += next_node.name
+                self.result += f"matches {score_range} "
             elif node in ("<", "<=", "=", ">=", ">"):
                 self.result += f"{node} "
                 error = self.add_string()
@@ -2061,47 +2234,92 @@ class Execute:
                 if error: return error
             else:
                 return InvalidSyntaxError(
-                    self.token,
+                    self.current_node.token,
                     self.interpreter.filename,
                     f'\"<if|unless> score <target> <scoreboard>\" must be followed by one of ("<", "<=", "=", ">=", ">", "matches")'
                 )
-        elif node == "dimension" or node == "functoin" or node == "predicate":
-            self.result += f"{self.advance()} "
+        elif node == "dimension" or node == "predicate":
+            self.result += f"{self.namespace()} "
+        elif node == "function":
+            if len(self.current_node.children) > 0:
+                interpreter = self.interpreter
+                current_file = interpreter.current_file
+                dump_file = interpreter.make_dump_function()
+                interpreter.current_file = dump_file
+                assign_node = self.current_node.children[0]
+                Node("void", parent=self.current_node, token="")
+                Node(dump_file[:-11], parent=self.current_node, token="")
+                Node("input", parent=self.current_node, token="")
+                assign_node.parent = None
+                assign_node.parent = self.current_node
+                print_tree(self.current_node)
+                for child in assign_node.children:
+                    temp_, error = interpreter.interprete(child) # interprete assign
+                    if error: return error
+                interpreter.current_file = current_file
+                self.result += f"{interpreter.namespace}:{interpreter.get_folder_dir()}{dump_file[:-11]} "
+            else: self.result += f"{self.namespace()} "
         elif node == "loaded":
-            self.advance()
-            pos, error = self.position()
+            error = self.add_string()
             if error: return error
-            self.result += f"{pos} "
         elif node == "items":
             if self.interpreter.version[:4] == "1.20":
                 return InvalidSyntaxError(
-                    self.token,
+                    self.current_node.token,
                     self.interpreter.filename,
                     f'\"execute if items\" is available since version 1.21'
                 )
-            node = self.advance()
+            node = self.advance().name
             self.result += node + " "
             if node == "entity":
                 entity, error = self.entity(self.advance())
                 if error: return error
                 self.result += f"{entity} "
             elif node == "block":
-                self.advance()
-                pos, error = self.position()
+                error = self.add_string()
                 if error: return error
-                self.result += f"{pos} "
             else:
                 return InvalidSyntaxError(
-                    self.token,
+                    self.current_node.token,
                     self.interpreter.filename,
                     f'\"<if|unless> items\" must be followed by one of ("entity", "block")'
                 )
-            self.result += f"{self.advance()} {self.advance()} "
+            slot = self.advance().name
+            if slot != "weapon":
+                current_node = self.advance()
+                if current_node.name[0] != ".": return InvalidSyntaxError(
+                    current_node.token,
+                    self.interpreter.filename,
+                    f'\".\" must come'
+                )
+                if current_node.token.type == 2: slot += current_node.name
+                elif current_node.name == ".":
+                    
+                    current_node = self.advance()
+                    if current_node.name != "*": return InvalidSyntaxError(
+                        current_node.token,
+                        self.interpreter.filename,
+                        f'\"*\" or number must come'
+                    )
+                    slot += ".*"
+            item = self.namespace()
+            current_node = self.advance()
+            if current_node.name == "[":
+                paren_cnt = 1
+                item += "["
+                while paren_cnt > 0:
+                    current_node = self.advance()
+                    if current_node.name == "[": paren_cnt += 1
+                    elif current_node.name == "]": paren_cnt -= 1
+                    item += current_node.name
+            else: self.reverse()
+            self.result += f"{slot} {item} "
         elif node == "data":
             variables = self.interpreter.variables
-            node = self.advance()
+            node = self.advance().name
             if node in variables:
-                node = variables[node][-1].temp
+                node, error = self.variable(node)
+                if error: return error
                 self.result += f"storage {STORAGE_NAME} "
             elif node in ("block", "entity", "storage"):
                 self.result += f"{node} "
@@ -2112,104 +2330,83 @@ class Execute:
                 if error: return error
 
                 return None
-            elif "[" in node:
-                node = node.replace("]", "[").split("[")
-                if node[0] not in variables:
-                    return InvalidSyntaxError(
-                        self.token,
-                        self.interpreter.filename,
-                        f'\"{node}\" is not defined'
-                    )
-                self.result += f"storage {STORAGE_NAME} {variables[node[0]][-1].temp}"
-                del(node[0])
-                for index in node:
-                    if index == "": continue
-                    if index[0] == ".": self.result += index
-                    elif index in variables: self.result += f"[$({variables[index][-1].temp})]"
-                    else: self.result += f"[{index}]"
-                node = ""
-            elif "." in node:
-                spilited_node = node.split(".")
-                if spilited_node[0] not in variables: return InvalidSyntaxError(
-                    self.token,
-                    self.interpreter.filename,
-                    f'\"{spilited_node[0]}\" is not defined'
-                )
-                spilited_node[0] = variables[spilited_node[0]][-1].temp
-                self.result += f"storage {STORAGE_NAME} "
-                node = ".".join(spilited_node)
             else:
                 return InvalidSyntaxError(
-                    self.token,
+                    self.current_node.token,
                     self.interpreter.filename,
                     f'\"{node}\" is not defined'
                 )
             self.result += f"{node} "
         else:
             return InvalidSyntaxError(
-                self.token,
+                self.current_node.token,
                 self.interpreter.filename,
                 f'unexpected Error in execute'
             )
     def execute_unless(self):
         return self.execute_if("unless")
     def execute_store(self):
-        error = self.set_parameters("store", ("result", "success"))
-        if error: return error
-        node = self.advance()
-        self.result += node + " "
+        # error = self.set_parameters("store", ("result", "success"))
+        # if error: return error
+        # node = self.advance()
+        # self.result += node + " "
 
-        if node == "score":
-            error = self.add_string()
-            if error: return error
-            return self.add_string()
-        elif node == "block":
-            self.advance()
-            pos, error = self.position()
-            if error: return error
-            self.result += f"{pos} {self.advance()}"
-            error = self.store_nbt()
-            if error: return error
-        elif node == "storage":
-            self.result += f"{self.advance()} {self.advance()}"
-            error = self.store_nbt()
-            if error: return error
-        elif node == "entity":
-            entity, error = self.entity(self.advance())
-            if error: return error
-            self.result += f"{entity} {self.advance()}"
-            error = self.store_nbt()
-            if error: return error
-        elif node == "bossbar":
-            pass
-        else:
-            return InvalidSyntaxError(
-                self.token,
-                self.interpreter.filename,
-                f'\"store result|success\" must be followed by one of ("score", "block", "storage", "entity", "bossbar")'
-            )
+        # if node == "score":
+        #     error = self.add_string()
+        #     if error: return error
+        #     return self.add_string()
+        # elif node in ("block", "storage", "entity"):
+        #     if node == "block":
+        #         error = self.add_string()
+        #         if error: return error
+        #     elif node == "storage":
+        #         self.result += f"{self.namespace()} "
+        #     elif node == "entity":
+        #         entity, error = self.entity(self.advance())
+        #         if error: return error
+        #         self.result += f"{entity} "
+
+        #     # TODO 디렉토리의 점연산, 멤버연산 넣기
+        #     directory = self.advance().name
+        #     self.result += f"{directory} "
+        #     return self.store_nbt()
+        # elif node == "bossbar":
+        #     # TODO 구현
+        #     pass
+        # else:
+        #     return InvalidSyntaxError(
+        #         self.current_node.token,
+        #         self.interpreter.filename,
+        #         f'\"store result|success\" must be followed by one of ("score", "block", "storage", "entity", "bossbar")'
+        #     )
+        return InvalidSyntaxError(
+            self.current_node.token,
+            self.interpreter.filename,
+            f'\"store\" syntax cannot be used in Comet'
+        )
 
     def store_nbt(self):
-
         error = self.set_parameters(f"", MINECRAFT_TYPES)
         if error: return error
         node = self.advance()
-        if not node[0].isdigit():
+        if node.token.type != 2:
             return InvalidSyntaxError(
-                self.token,
+                node.token,
                 self.interpreter.filename,
-                f'\"{node}\" is not decimal'
+                f'\"{node.name}\" is not decimal'
             )
-        self.result += node + " "
+        self.result += node.name + " "
 
 
 temp_cnt = 0
 used_temp = []
+temp_namespace = ""
 def get_temp():
     global temp_cnt
+    global temp_namespace
     if used_temp.__len__() == 0:
         temp_cnt += 1
-        temp = "temp%d" % temp_cnt
+        temp = "data.%s_temp%d" % (temp_namespace, temp_cnt)
     else:
         temp = used_temp.pop()
     return temp
@@ -2217,21 +2414,24 @@ def get_temp():
 fun_temp_cnt = 0
 def get_fun_temp():
     global fun_temp_cnt
+    global temp_namespace
     fun_temp_cnt += 1
-    temp = "fun_temp%d" % fun_temp_cnt
+    temp = "data.%s_fun_temp%d" % (temp_namespace, fun_temp_cnt)
     return temp
 
 var_temp_cnt = 0
 used_var_temp = []
 def get_var_temp():
     global var_temp_cnt
+    global temp_namespace
     var_temp_cnt += 1
-    temp = "var_temp%d" % var_temp_cnt
+    temp = "data.%s_var_temp%d" % (temp_namespace, var_temp_cnt)
     return temp
 
 
 
 def print_tree(ast):
+    print(ast)
     for pre, fill, node in RenderTree(ast):
         if node.token:
             print("%s%s" % (pre, node.name), end=" | tok: ")
@@ -2267,8 +2467,10 @@ def interprete(filename, version, result_dir, namespace, is_modul = False, token
     return {"variables":interpreter.variables, "functions":interpreter.functions}, None
 
 def generate_datapack(filename, version, result_dir = "./", namespace = "pack"):
+    global temp_namespace
     result_dir = result_dir.strip()
     namespace = namespace.strip()
+    temp_namespace = namespace
     if result_dir == "" or namespace == "":
         print("\n\nresult directory and namespace can not be empty string\n")
         return
@@ -2345,6 +2547,6 @@ if __name__ == "__main__":
     values = ["1.20.4", "1.20.6", "1.21", "1.21.1"]
     combobox = ttk.Combobox(tk,values=values,state="readonly")
     combobox.grid(row=3,column=0)
-    combobox.set("1.21")
+    combobox.set("1.21.1")
 
     tk.mainloop()
