@@ -1,0 +1,383 @@
+/scoreboard objectives add 40planet_rpg_success_per dummy
+/scoreboard objectives add 40planet_rpg_fail_per dummy
+/scoreboard objectives add 40planet_rpg_destroy_per dummy
+/scoreboard players set 10 40planet_num 10
+
+var reinforce_cnt;
+var success_per = [
+    [100.0, 0.0, 0.0], # 0
+    [90.0, 10.0, 0.0], # 1
+    [85.0, 15.0, 0.0], # 2
+    [85.0, 15.0, 0.0], # 3
+    [80.0, 20.0, 0.0], # 4
+    [75.0, 25.0, 0.0], # 5
+    [70.0, 30.0, 0.0], # 6
+    [65.0, 35.0, 0.0], # 7
+    [60.0, 40.0, 0.0], # 8
+    [55.0, 45.0, 0.0], # 9
+    [50.0, 50.0, 0.0], # 10
+    [45.0, 55.0, 0.0], # 11
+    [40.0, 60.0, 0.0], # 12
+    [35.0, 65.0, 0.0], # 13
+    [30.0, 70.0, 0.0], # 14
+    [30.0, 67.9, 2.1], # 15
+    [30.0, 67.9, 2.1], # 16
+    [30.0, 67.9, 2.1], # 17
+    [30.0, 67.2, 2.8], # 18
+    [30.0, 67.2, 2.8], # 19
+    [30.0, 63.0, 7.0], # 20
+    [30.0, 63.0, 7.0], # 21
+    [3.0, 77.6, 19.4], # 22
+    [2.0, 68.6, 29.4], # 23
+    [1.0, 59.6, 39.4], # 24
+    [-1.0, -1.0, -1.0], # 25
+]
+
+def tick(){
+    /execute unless entity @e[tag=reinforce_table] run scoreboard players set $reinforce_table_id 40planet_id 0
+    execute(as @e[tag=40planet_rpg_entity]){
+        execute (if entity @s[tag=summon_reinforce_table] at @s align xyz positioned "~.5 ~1 ~.5"){
+            /kill @s
+            /setblock ~ ~-.1 ~ minecraft:blackstone
+            /scoreboard players add $reinforce_table_id 40planet_id 1
+            /summon item_display ~ ~ ~ {Passengers:[{alignment:"left",background:0,id:"minecraft:text_display",shadow:1b,text:'""',transformation:{left_rotation:[0f,1f,0f,0f],right_rotation:[0f,0f,0f,1f],scale:[1f,1f,1f],translation:[0f,0.1775f,0.375f]}},{alignment:"left",background:0,id:"minecraft:text_display",shadow:1b,text:'""',transformation:{left_rotation:[0f,1f,0f,0f],right_rotation:[0f,0f,0f,1f],scale:[1f,1f,1f],translation:[0f,0.1775f,0.375f]},Rotation:[180f,0f]}],Tags:["reinforce_table","40planet_rpg_entity","unset"],item:{components:{"minecraft:enchantments":{levels:{"minecraft:sharpness":1}}},count:1,id:"minecraft:smithing_table"},transformation:{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],scale:[1.01f,1.01f,1.01f],translation:[0f,-0.5f,0f]}}
+            /summon item_display ~ ~.01 ~-.1875 {Tags:["unset","40planet_rpg_entity","reinforce_table_slot","reinforce_table_weapon"],Passengers:[{id:"interaction",response:1b,height:.1,width:.3}],item:{count:1,id:"minecraft:structure_void",components:{"minecraft:custom_data":{40planet_ui:1b}}},transformation:{left_rotation:[0.7071068f,0f,0f,0.7071068f],right_rotation:[0f,0f,0f,1f],scale:[0.31250003f,0.3125001f,0.43750042f],translation:[0f,0f,0f]}}
+            /summon item_display ~-.25 ~.01 ~.1875 {Tags:["unset","40planet_rpg_entity","reinforce_table_slot"],Passengers:[{id:"interaction",response:1b,height:.1,width:.3}],item:{count:1,id:"minecraft:structure_void",components:{"minecraft:custom_data":{40planet_ui:1b}}},transformation:{left_rotation:[0.7071068f,0f,0f,0.7071068f],right_rotation:[0f,0f,0f,1f],scale:[0.31250003f,0.3125001f,0.43750042f],translation:[0f,0f,0f]}}
+            /summon item_display ~.25 ~.01 ~.1875 {Tags:["unset","40planet_rpg_entity","reinforce_table_slot"],Passengers:[{id:"interaction",response:1b,height:.1,width:.3}],item:{count:1,id:"minecraft:structure_void",components:{"minecraft:custom_data":{40planet_ui:1b}}},transformation:{left_rotation:[0.7071068f,0f,0f,0.7071068f],right_rotation:[0f,0f,0f,1f],scale:[0.31250003f,0.3125001f,0.43750042f],translation:[0f,0f,0f]}}
+            execute(as @e[distance=..0.5,tag=unset]){
+                /scoreboard players operation @s 40planet_id = $reinforce_table_id 40planet_id
+                /tag @s remove unset
+            }
+            /playsound minecraft:block.stone.place block @a ~ ~ ~
+        }
+        /execute if entity @s[tag=reinforce_table] at @s run function __namespace__:reinforce_table
+        execute(if entity @s[tag=reinforce_text] at @s){
+            /tp @s ~ ~.05 ~
+            /scoreboard players add @s 40planet_num 1
+            /execute if score @s 40planet_num matches 10 run kill @s
+        }
+    }
+}
+
+var target_attack
+def return_item(){
+    /execute in minecraft:overworld run item replace block 15 -60 15 container.1 from entity @s container.0
+    /execute on passengers on ^target_attack& at @s run summon item ~ ~1.5 ~ {PickupDelay:0s,Item:{id:"stone",count:1b},Tags:["40planet_rpg_item"]}
+    /execute unless items entity @s container.0 *[minecraft:custom_data~{40planet_ui:1b}] on passengers unless data entity @s attack unless data entity @s interaction at @s run summon item ~ ~ ~ {PickupDelay:0s,Item:{id:"stone",count:1b},Tags:["40planet_rpg_item"]}
+    /item replace entity @s container.0 with minecraft:structure_void[minecraft:custom_data={40planet_ui:1b}]
+    execute(as @n[tag=40planet_rpg_item]){
+        /execute in minecraft:overworld run item replace entity @s container.0 from block 15 -60 15 container.1
+        /tag @s remove 40planet_rpg_item
+    }
+}
+
+def update_text(){
+    
+    
+    /scoreboard players operation temp 40planet_num = @s 40planet_id
+    execute(as @e[distance=..0.5,tag=reinforce_table_slot] if score "@s" "40planet_id" = "temp" "40planet_num"){
+        /execute if items entity @s container.0 *[custom_data~{40planet_ui:1b}] run return 0
+        execute(if entity @s[tag=reinforce_table_weapon]){
+            execute(if data entity "@s" 'item.components."minecraft:custom_data".percent'){
+                /execute store result score success 40planet_num run data get entity @s item.components."minecraft:custom_data".percent[0] 10
+                /execute store result score fail 40planet_num run data get entity @s item.components."minecraft:custom_data".percent[1] 10
+                /execute store result score destroy 40planet_num run data get entity @s item.components."minecraft:custom_data".percent[2] 10
+            }
+            execute(unless data entity "@s" 'item.components."minecraft:custom_data".percent'){
+                /data modify entity @s item.components."minecraft:custom_data".percent set value [100.0, .0, .0]
+                /scoreboard players set success 40planet_num 1000
+                /scoreboard players set fail 40planet_num 0
+                /scoreboard players set destroy 40planet_num 0
+            }
+        }
+        execute(unless entity @s[tag=reinforce_table_weapon] if items entity @s container.0 *[custom_data~{40planet_rpg_stone:1b}]){
+            /execute store result score temp 40planet_num run data get entity @s item.components."minecraft:custom_data".percent 10
+            /scoreboard players operation success 40planet_num += temp 40planet_num
+            /scoreboard players operation fail 40planet_num -= temp 40planet_num
+            execute(if score "fail" "40planet_num" matches ..-1){
+                /scoreboard players operation destroy 40planet_num += fail 40planet_num
+                /scoreboard players set fail 40planet_num 0
+                /execute if score destroy 40planet_num matches ..-1 run scoreboard players set destroy 40planet_num 0
+            }
+        }
+    }
+
+    execute (if score "success" "40planet_num" matches 0 if score "fail" "40planet_num" matches 0 if score "destroy" "40planet_num" matches 0){
+        /execute on passengers run data modify entity @s text set value '""'
+        return 0
+    }
+
+    /scoreboard players operation @s 40planet_rpg_success_per = success 40planet_num
+    /scoreboard players operation @s 40planet_rpg_fail_per = fail 40planet_num
+    /scoreboard players operation @s 40planet_rpg_destroy_per = destroy 40planet_num
+
+    /scoreboard players operation success_ 40planet_num = success 40planet_num
+    /scoreboard players operation fail_ 40planet_num = fail 40planet_num
+    /scoreboard players operation destroy_ 40planet_num = destroy 40planet_num
+
+    /scoreboard players operation success 40planet_num /= 10 40planet_num
+    /scoreboard players operation fail 40planet_num /= 10 40planet_num
+    /scoreboard players operation destroy 40planet_num /= 10 40planet_num
+    /scoreboard players operation success_ 40planet_num %= 10 40planet_num
+    /scoreboard players operation fail_ 40planet_num %= 10 40planet_num
+    /scoreboard players operation destroy_ 40planet_num %= 10 40planet_num
+
+
+    /execute on passengers run data modify entity @s text set value '["",{"text":"성공: ","color":"green"},{"score":{"name":"success","objective":"40planet_num"}},".",{"score":{"name":"success_","objective":"40planet_num"}},{"text":"\\n실패: ","color":"red"},{"score":{"name":"fail","objective":"40planet_num"}},".",{"score":{"name":"fail_","objective":"40planet_num"}},{"text":"\\n파괴: ","color":"dark_red"},{"score":{"name":"destroy","objective":"40planet_num"}},".",{"score":{"name":"destroy_","objective":"40planet_num"}}]'
+}
+
+# 강화석, 스크롤 지우기
+def remove_items(){
+    /data modify storage 40planet:rpg scrolls set value []
+    execute(as @e[distance=..0.5,tag=reinforce_table_slot,tag=!reinforce_table_weapon] if score "@s" "40planet_id" = "temp" "40planet_num"){
+        # 스크롤 정보 저장
+        execute(if items entity @s container.0 *[custom_data~{40planet_rpg_scroll:1b}]){
+            /data modify storage 40planet:rpg scrolls append from entity @s item.components."minecraft:custom_data"
+        }
+        /item replace entity @s container.0 with minecraft:structure_void[minecraft:custom_data={40planet_ui:1b}]
+    }
+}
+
+
+def upgrade(var type, var value){
+    /execute unless data entity @s item.components."minecraft:custom_data".upgrade run data modify entity @s item.components."minecraft:custom_data".upgrade set value [{type:"health",value:0},{type:"strength",value:0},{type:"speed",value:0},{type:"mana",value:0}]
+    /execute store result score value 40planet_num run data get entity @s item.components."minecraft:custom_data".upgrade[{type:"^type&"}].value
+    /execute store result entity @s item.components."minecraft:custom_data".upgrade[{type:"^type&"}].value int 1 run scoreboard players add value 40planet_num ^value&
+
+    while(true){
+        /data remove storage 40planet:rpg temp
+        /data modify storage 40planet:rpg temp.lore set string entity @s item.components."minecraft:lore"[-1] 1 32
+        /execute unless data storage 40planet:rpg temp{lore:"\"color\":\"yellow\",\"italic\":false"} run return 0
+        /data remove entity @s item.components."minecraft:lore"[-1]
+    }
+    var health = get_data("entity", "@s", "item.components.'minecraft:custom_data'.upgrade[0].value")
+    var strength = get_data("entity", "@s", "item.components.'minecraft:custom_data'.upgrade[1].value")
+    var speed = get_data("entity", "@s", "item.components.'minecraft:custom_data'.upgrade[2].value")
+    var mana = get_data("entity", "@s", "item.components.'minecraft:custom_data'.upgrade[3].value")
+    var reinforce_cnt = get_data("entity", "@s", "item.components.'minecraft:custom_data'.reinforce_cnt")
+    /scoreboard players set temp 40planet_num 0
+    /execute unless data entity @s item.components."minecraft:lore" run scoreboard players set temp 40planet_num 1
+    /execute if score temp 40planet_num matches 1 run data modify entity @s item.components."minecraft:lore" set value ["{\"color\":\"yellow\",\"italic\":false,\"text\":\"+^reinforce_cnt&강\"}","{\"color\":\"yellow\",\"italic\":false,\"text\":\"체력 ^health&\"}","{\"color\":\"yellow\",\"italic\":false,\"text\":\"근력 ^strength&\"}","{\"color\":\"yellow\",\"italic\":false,\"text\":\"민첩 ^speed&\"}","{\"color\":\"yellow\",\"italic\":false,\"text\":\"마나 ^mana&\"}"]
+    execute(if score "temp" "40planet_num" matches 0){
+        /data modify entity @s item.components."minecraft:lore" append value "{\"color\":\"yellow\",\"italic\":false,\"text\":\"+^reinforce_cnt&강\"}"
+        /data modify entity @s item.components."minecraft:lore" append value "{\"color\":\"yellow\",\"italic\":false,\"text\":\"체력 ^health&\"}"
+        /data modify entity @s item.components."minecraft:lore" append value "{\"color\":\"yellow\",\"italic\":false,\"text\":\"근력 ^strength&\"}"
+        /data modify entity @s item.components."minecraft:lore" append value "{\"color\":\"yellow\",\"italic\":false,\"text\":\"민첩 ^speed&\"}"
+        /data modify entity @s item.components."minecraft:lore" append value "{\"color\":\"yellow\",\"italic\":false,\"text\":\"마나 ^mana&\"}"
+    }
+}
+
+def success(){
+    /execute at @s run playsound minecraft:block.anvil.use block @a ~ ~ ~ 1 1
+    /execute at @s run particle minecraft:happy_villager ~ ~ ~ .5 .3 .5 2 20
+    reinforce_cnt = reinforce_cnt + 1
+    /execute align xz run summon text_display ~.5 ~.3 ~.5 {text:'{"text":"+^reinforce_cnt&강","color":"green"}',background:0,shadow:1b,billboard:"vertical",Tags:["reinforce_text","40planet_rpg_entity"]}
+    set_data("entity", "@s", "item.components.'minecraft:custom_data'.percent", success_per[reinforce_cnt])
+    set_data("entity", "@s", "item.components.'minecraft:custom_data'.reinforce_cnt", reinforce_cnt)
+    /execute at @s as @n[tag=reinforce_table] run function __namespace__:update_text
+    
+    # 장비별 스텟 추가
+    execute(if data entity "@s" "item.components.'minecraft:custom_data'.40planet_equipment"){
+        # 공격력 추가
+        /scoreboard players set temp 40planet_num 0
+        /execute if data entity @s item.components.'minecraft:attribute_modifiers'.modifiers run scoreboard players set temp 40planet_num 1
+        /execute if data entity @s item.components.'minecraft:attribute_modifiers'.modifiers[{type:'minecraft:generic.attack_damage'}] run scoreboard players set temp 40planet_num 2
+        /execute if score temp 40planet_num matches 1 run data modify entity @s item.components.'minecraft:attribute_modifiers'.modifiers append value {type:"generic.attack_damage",amount:1,slot:mainhand,operation:add_value,id:1524155694201}
+        /execute if score temp 40planet_num matches 0 run data modify entity @s item.components.'minecraft:attribute_modifiers'.modifiers set value [{type:"generic.attack_damage",amount:1,slot:mainhand,operation:add_value,id:1524155694201}]
+        execute(if score "temp" "40planet_num" matches 2){
+            /execute store result score value 40planet_num run data get entity @s item.components.'minecraft:attribute_modifiers'.modifiers[{type:'minecraft:generic.attack_damage'}].amount 10
+            /execute store result entity @s item.components.'minecraft:attribute_modifiers'.modifiers[{type:'minecraft:generic.attack_damage'}].amount double 0.1 run scoreboard players add value 40planet_num 10
+        }
+
+        # lore 설정
+        while(true){
+            /data remove storage 40planet:rpg temp
+            /data modify storage 40planet:rpg temp.lore set string entity @s item.components."minecraft:lore"[0] 1 32
+            /execute unless data storage 40planet:rpg temp{lore:"\"color\":\"yellow\",\"italic\":false"} run return 0
+            /data remove entity @s item.components."minecraft:lore"[0]
+        }
+        /scoreboard players set temp 40planet_num 0
+        /execute unless data entity @s item.components."minecraft:lore" run scoreboard players set temp 40planet_num 1
+        /execute if score temp 40planet_num matches 1 run data modify entity @s item.components."minecraft:lore" set value ["{\"color\":\"yellow\",\"italic\":false,\"text\":\"+^reinforce_cnt&강\"}"]
+        /execute if score temp 40planet_num matches 0 run data modify entity @s item.components."minecraft:lore" prepend value "{\"color\":\"yellow\",\"italic\":false,\"text\":\"+^reinforce_cnt&강\"}"
+    }
+    set_score("type", "40planet_num", 0)
+    /execute if data entity @s item.components.'minecraft:custom_data'.40planet_helmet run scoreboard players set type 40planet_num 1
+    /execute if data entity @s item.components.'minecraft:custom_data'.40planet_chestplate run scoreboard players set type 40planet_num 2
+    execute(if score "type" "40planet_num" matches 1..2){
+        upgrade("health", 1)
+    }
+    execute(if data entity "@s" "item.components.'minecraft:custom_data'.40planet_leggings"){
+        upgrade("strength", 1)
+    }
+    execute(if data entity "@s" "item.components.'minecraft:custom_data'.40planet_boots"){
+        upgrade("speed", 1)
+    }
+    execute(if data entity "@s" "item.components.'minecraft:custom_data'.40planet_ring"){
+        upgrade("mana", 1)
+    }
+    
+    var scrolls = get_data("storage", "40planet:rpg", "scrolls")
+    # print(scrolls)
+    var scrolls_len = len(scrolls)
+    var i = 0;
+    while(i < scrolls_len){
+        execute(if data entity "@s" "item.components.'minecraft:custom_data'.40planet_neck"){
+            upgrade(scrolls[0].type, int(double(scrolls[0].value) * 1.5))
+        }
+        execute(unless data entity "@s" "item.components.'minecraft:custom_data'.40planet_neck"){
+            upgrade(scrolls[0].type, scrolls[0].value)
+        }
+        del(scrolls[0])
+        i = i + 1;
+    }
+}
+
+def fail(){
+    execute(at @s align xz positioned "~.5 ~ ~.5"){
+        /execute as @n[tag=reinforce_table] run function __namespace__:update_text
+        /playsound minecraft:block.anvil.destroy block @a ~ ~ ~ 1 1
+        /particle minecraft:angry_villager ~ ~ ~ .3 .1 .3 1 7
+    }
+}
+
+def destroy(){
+    execute(at @s align xz positioned "~.5 ~ ~.5"){
+        /playsound minecraft:entity.generic.explode block @a ~ ~ ~
+        /particle minecraft:explosion ~ ~ ~ .1 .1 .1 2 5
+    }
+    /item replace entity @s container.0 with minecraft:structure_void[minecraft:custom_data={40planet_ui:1b}]
+    /execute at @s as @n[tag=reinforce_table] run function __namespace__:update_text
+}
+
+def reinforce(){
+    
+    /data modify storage 40planet:rpg selected_item set from entity @s item
+    reinforce_cnt = get_data("storage", "40planet:rpg", "selected_item.components.'minecraft:custom_data'.reinforce_cnt")
+    execute(unless data storage "40planet:rpg" "selected_item.components.'minecraft:custom_data'.reinforce_cnt"){
+        reinforce_cnt = 0
+    }
+
+    set_score("require_level", "40planet_num", reinforce_cnt)
+    execute(if score "require_level" "40planet_num" matches 25 on passengers){
+        /execute on target run tellraw @s [{"text":"더 이상 강화할 수 없습니다.","color":"red"}]
+        /execute on target run playsound minecraft:block.note_block.bass weather @s ~ ~ ~
+        return 0
+    }
+    /execute store result score temp 40planet_num on passengers on target if score require_level 40planet_num <= @s 40planet_level
+    execute(if score "temp" "40planet_num" matches 0 on passengers){
+        /execute on target run tellraw @s [{"text":"레벨이 부족합니다. 요구 레벨: ","color":"red"},{"score":{"name":"require_level","objective":"40planet_num"}}]
+        /execute on target run playsound minecraft:block.note_block.bass weather @s ~ ~ ~
+        return 0
+    }
+
+    /execute on passengers on target run xp add @s -^reinforce_cnt& levels
+    /scoreboard players operation temp 40planet_num = @s 40planet_id
+    remove_items()
+
+    # 확률 가져오기
+    execute(at @s as @n[tag=reinforce_table]){
+        /scoreboard players operation success 40planet_num = @s 40planet_rpg_success_per
+        /scoreboard players operation fail 40planet_num = @s 40planet_rpg_fail_per
+        /scoreboard players operation destroy 40planet_num = @s 40planet_rpg_destroy_per
+    }
+    
+    /execute store result score result 40planet_num run random value 1..1000
+
+    # 성공
+    execute(if score "result" "40planet_num" <= "success" "40planet_num"){
+        success()
+        return 0
+    }
+    /scoreboard players operation result 40planet_num -= success 40planet_num
+
+    # 실패
+    execute(if score "result" "40planet_num" <= "fail" "40planet_num"){
+        fail()
+        return 0
+    }
+
+    # 파괴
+    destroy()
+}
+
+# 강화 작업대 (스크롤 & 강화석으로 장비 강화)
+def reinforce_table(){
+    /scoreboard players operation temp 40planet_num = @s 40planet_id
+    execute(if block "~ ~-.1 ~" air){
+        /execute positioned ~ ~-.5 ~ as @e[distance=..0.5] if items entity @s container.0 blackstone run data modify entity @s Item set value {components:{"minecraft:entity_data":{id:"marker",Tags:["40planet_rpg_entity","summon_reinforce_table"]},"minecraft:custom_name":'{"italic":false,"text":"강화 작업대"}'},id:"ender_dragon_spawn_egg"}
+        /execute on passengers run kill @s
+        /kill @s
+        execute(as @e[distance=..0.5,tag=reinforce_table_slot] if score "@s" "40planet_id" = "temp" "40planet_num"){
+            return_item()
+            /execute on passengers run kill @s
+            /kill @s
+        }
+        return 0
+    }
+    /scoreboard players reset is_weapon_update 40planet_num
+    /scoreboard players set success 40planet_num 0
+    /scoreboard players set fail 40planet_num 0
+    /scoreboard players set destroy 40planet_num 0
+    execute(as @e[distance=..0.5,tag=reinforce_table_slot] if score "@s" "40planet_id" = "temp" "40planet_num"){
+        # 아이템 넣기
+        /scoreboard players set temp 40planet_num 0
+        /execute on passengers on target run scoreboard players set temp 40planet_num 1
+        execute(if score "temp" "40planet_num" matches 1){
+            
+            # target이 웅크리고 있다면 강화하기 함수 실행하는 코드
+            execute(if entity @s[tag=reinforce_table_weapon]){
+                /execute on passengers on target unless predicate rpg:sneaking run return 0
+                /execute if items entity @s container.0 *[custom_data~{40planet_ui:1b}] run return 0
+
+                reinforce()
+
+                /execute on passengers run data remove entity @s interaction
+                return 0
+            }
+
+            /execute on passengers on target run data modify storage 40planet:rpg selected_item set from entity @s SelectedItem
+            /scoreboard players set temp 40planet_num 0
+            execute(if entity @s[tag=reinforce_table_weapon]){ # 무기 슬롯인 경우
+                /execute if data storage 40planet:rpg selected_item.components."minecraft:custom_data".40planet_armor run scoreboard players set temp 40planet_num 1
+                /execute if data storage 40planet:rpg selected_item.components."minecraft:custom_data".40planet_equipment run scoreboard players set temp 40planet_num 1
+            }
+            execute(unless entity @s[tag=reinforce_table_weapon]){ # 강화석, 스크롤 슬롯인 경우
+                /execute if data storage 40planet:rpg selected_item.components."minecraft:custom_data".40planet_rpg_stone run scoreboard players set temp 40planet_num 1
+                /execute if data storage 40planet:rpg selected_item.components."minecraft:custom_data".40planet_rpg_scroll run scoreboard players set temp 40planet_num 1
+            }
+            /execute on passengers on target unless data entity @s SelectedItem run scoreboard players set temp 40planet_num 0
+
+            execute(if score "temp" "40planet_num" matches 1){
+                /execute on passengers on target run item modify entity @s weapon rpg:weapon_minus
+                # 이미 다른 아이템이 있으면 돌려주기
+                target_attack = "target"
+                /execute unless items entity @s container.0 *[minecraft:custom_data~{40planet_ui:1b}] run function __namespace__:return_item
+
+                /data modify storage 40planet:rpg selected_item.count set value 1
+                /data modify entity @s item set from storage 40planet:rpg selected_item
+
+                /scoreboard players set is_weapon_update 40planet_num 1
+            }
+
+
+            /execute on passengers run data remove entity @s interaction
+        }
+
+        # 아이템 빼기
+        /scoreboard players set temp 40planet_num 0
+        /execute on passengers on attacker run scoreboard players set temp 40planet_num 1
+        /execute if items entity @s container.0 *[custom_data~{40planet_ui:1b}] run scoreboard players set temp 40planet_num 0
+        execute(if score "temp" "40planet_num" matches 1){
+            target_attack = "attacker"
+            return_item()
+            /execute on passengers run data remove entity @s attack
+
+            /scoreboard players set is_weapon_update 40planet_num 1
+        }
+    }
+
+    # 무기 슬롯에 변화가 없었다면 종료
+    /execute unless score is_weapon_update 40planet_num = is_weapon_update 40planet_num run return 0
+    update_text()
+}

@@ -1,0 +1,89 @@
+/scoreboard objectives add 40planet_rpg_level dummy
+/scoreboard objectives add 40planet_level level
+/scoreboard objectives add 40planet_stat_point dummy
+/scoreboard objectives add 40planet_rpg_health dummy
+/scoreboard objectives add 40planet_rpg_strength dummy
+/scoreboard objectives add 40planet_rpg_speed dummy
+/scoreboard objectives add 40planet_rpg_mana dummy
+
+/scoreboard players set point_per_level 40planet_num 1
+
+def tick(){
+    execute(as @a){
+        /execute unless score @s 40planet_rpg_level = @s 40planet_rpg_level run function __namespace__:set_scoreboard
+        execute(if score "@s" "40planet_level" > "@s" "40planet_rpg_level"){ # 레벨업
+            /scoreboard players operation temp 40planet_num = @s 40planet_level
+            /scoreboard players operation temp 40planet_num -= @s 40planet_rpg_level
+            /scoreboard players operation temp 40planet_num *= point_per_level 40planet_num
+            /scoreboard players operation @s 40planet_stat_point += temp 40planet_num
+            /scoreboard players operation @s 40planet_rpg_level = @s 40planet_level
+            /function __namespace__:save
+        }
+    }
+}
+
+def update_attribute(){
+    var health = get_score("@s", "40planet_rpg_health") + 20
+    var strength = get_score("@s", "40planet_rpg_strength") + 1
+    /scoreboard players add @s 40planet_rpg_speed 20
+    var speed = multiply(get_score("@s", "40planet_rpg_speed"), 0.005)
+    var mining_speed = multiply(get_score("@s", "40planet_rpg_speed"), 0.05)
+    /scoreboard players remove @s 40planet_rpg_speed 20
+    /attribute @s minecraft:generic.max_health base set ^health&
+    /attribute @s minecraft:generic.attack_damage base set ^strength&
+    /attribute @s minecraft:generic.movement_speed base set ^speed&
+    /attribute @s minecraft:player.block_break_speed base set ^mining_speed&
+}
+
+def set_scoreboard(){
+    var uuid = get_data("entity", "@s", "UUID")
+    /scoreboard players set is_uuid_exist 40planet_num 0
+    /execute if data storage 40planet:stat player."^uuid&".id run scoreboard players set is_uuid_exist 40planet_num 1
+    # uuid가 있을 때
+    execute(if score "is_uuid_exist" "40planet_num" matches 1){
+        /execute store result score @s 40planet_rpg_level run data get storage 40planet:stat player."^uuid&".level
+        /execute store result score @s 40planet_rpg_health run data get storage 40planet:stat player."^uuid&".health
+        /execute store result score @s 40planet_rpg_strength run data get storage 40planet:stat player."^uuid&".strength
+        /execute store result score @s 40planet_rpg_speed run data get storage 40planet:stat player."^uuid&".speed
+        /execute store result score @s 40planet_rpg_mana run data get storage 40planet:stat player."^uuid&".mana
+        /execute store result score @s 40planet_stat_point run data get storage 40planet:stat player."^uuid&".stat_point
+    }
+    # uuid가 없을 때
+    execute(if score "is_uuid_exist" "40planet_num" matches 0){
+        /scoreboard players set @s 40planet_rpg_level 0
+        /scoreboard players set @s 40planet_rpg_health 0
+        /scoreboard players set @s 40planet_rpg_strength 0
+        /scoreboard players set @s 40planet_rpg_speed 0
+        /scoreboard players set @s 40planet_rpg_mana 0
+        /scoreboard players set @s 40planet_stat_point 0
+        /data modify storage 40planet:stat player."^uuid&" set value {health:0,level:0,strength:0,speed:0,mana:0,stat_point:0}
+    }
+}
+
+def save_all(){
+    /execute as @a run function __namespace__:save
+}
+def save(){
+    var uuid = get_data("entity", "@s", "UUID")
+    /execute store result storage 40planet:stat player.uuid.level int 1 run scoreboard players get @s 40planet_rpg_level
+    /execute store result storage 40planet:stat player.uuid.health int 1 run scoreboard players get @s 40planet_rpg_health
+    /execute store result storage 40planet:stat player.uuid.strength int 1 run scoreboard players get @s 40planet_rpg_strength
+    /execute store result storage 40planet:stat player.uuid.speed int 1 run scoreboard players get @s 40planet_rpg_speed
+    /execute store result storage 40planet:stat player.uuid.mana int 1 run scoreboard players get @s 40planet_rpg_mana
+    /execute store result storage 40planet:stat player.uuid.stat_point int 1 run scoreboard players get @s 40planet_stat_point
+    /data modify storage 40planet:stat player."^uuid&" set from storage 40planet:stat player.uuid
+}
+
+def reset(){
+    var uuid = get_data("entity", "@s", "UUID")
+    /data remove storage 40planet:stat player."^uuid&"
+    /scoreboard players set @s 40planet_rpg_level 0
+    /scoreboard players set @s 40planet_rpg_health 0
+    /scoreboard players set @s 40planet_rpg_strength 0
+    /scoreboard players set @s 40planet_rpg_speed 0
+    /scoreboard players set @s 40planet_rpg_mana 0
+    /scoreboard players set @s 40planet_stat_point 0
+    /data modify storage 40planet:stat player."^uuid&" set value {health:0,level:0,strength:0,speed:0,mana:0,stat_point:0}
+    update_attribute()
+    save()
+}

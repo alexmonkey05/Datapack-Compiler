@@ -5,6 +5,14 @@ import os
 import string
 import shutil
 import json
+import re
+
+# 정규식 패턴 정의
+PATTERN = r'^(?:\-*[0-9]*\.{0,2}|\.\.\-*[0-9]*|\-*[0-9]*\.\.\-*[0-9]*|\-*[0-9]*|\.{0,2})$'
+
+def is_score_range(input_string):
+    # 정규식 패턴에 맞는지 검사
+    return re.match(PATTERN, input_string) is not None
 
 from tkinter import *
 from tkinter import filedialog
@@ -689,6 +697,8 @@ class Function:
         self.type = type_
         self.inputs = inputs
         self.temp = temp
+    def __repr__(self) -> str:
+        return f"name: {self.name}, temp: {self.temp}, inputs: {self.inputs}"
 
 #######################################
 # INTERPRETER
@@ -1029,12 +1039,21 @@ class Interpreter:
         return command, None
     def make_array_(self, node):
         temp = get_temp()
-        self.write(f"data modify storage {STORAGE_NAME} {temp} set value []\n")
+        is_first = True
+        elements = ""
         for child in node.children:
             temp2 = child.name
             if temp2 in INTERPRETE_THESE:
                 temp2, error = self.interprete(child)
                 if error: return None, error
+            if is_first:
+                if temp2 in self.variables:
+                    is_first = False
+                    self.write(f"data modify storage {STORAGE_NAME} {temp} set value [{elements[2:]}]\n")
+                else:
+                    elements += f", {temp2}"
+                    continue
+            
             temp2 = self.to_storage(temp2)
             self.write(f"data modify storage {STORAGE_NAME} {temp} append from storage {STORAGE_NAME} {temp2}\n")
             self.add_used_temp(temp2)
@@ -1044,6 +1063,7 @@ class Interpreter:
         return temp, None
     def make_nbt_(self, node):
         temp = get_temp()
+        elements = "{"
         self.write(f"data remove storage {STORAGE_NAME} {temp}\ndata modify storage {STORAGE_NAME} {temp} set value {{}}\n")
         keys = []
         for child in node.children:
@@ -1053,12 +1073,20 @@ class Interpreter:
                 value, error = self.interprete(child.children[0])
                 if error: return None, error
             # value = value.replace("\"", "\\\"")
-            var_temp = self.to_storage(value)
-            self.write(f"data modify storage {STORAGE_NAME} {temp}.{key} set from storage {STORAGE_NAME} {var_temp}\n")
-            if value in self.variables:
-                self.add_var(f"{temp}.{key}", "var_type", self.variables[value][-1].is_const, value)
-            else: self.add_var(f"{temp}.{key}", "asdf", False, var_temp)
             keys.append(f"{temp}.{key}")
+            if value in self.variables:
+                var_temp = self.to_storage(value)
+                self.write(f"data modify storage {STORAGE_NAME} {temp}.{key} set from storage {STORAGE_NAME} {var_temp}\n")
+                if value in self.variables:
+                    self.add_var(f"{temp}.{key}", "var_type", self.variables[value][-1].is_const, value)
+                else: self.add_var(f"{temp}.{key}", "asdf", False, var_temp)
+            else:
+                elements += f"\"{key}\":{value},"
+
+        if len(elements) > 1: elements = elements[:-1] 
+        elements += "}"
+        self.write(f"data modify storage {STORAGE_NAME} {temp} set value {elements}\n")
+
         self.add_var(temp, "nbt", False, temp, keys)
         return temp, None
     def make_selector_(self, node):
@@ -1102,10 +1130,11 @@ class Interpreter:
             self.used_return[temp] = fun.temp
             return fun.temp, None
         else:
+            fun = self.functions[fun_name]
             if return_value in self.variables:
-                self.write(f"data modify storage {STORAGE_NAME} data.{fun_name} set from storage {STORAGE_NAME} {self.variables[return_value][-1].temp}\nscoreboard players set #{temp} {SCOREBOARD_NAME} 1\nreturn run data get storage {STORAGE_NAME} data.{fun_name}\n")
+                self.write(f"data modify storage {STORAGE_NAME} {fun.temp} set from storage {STORAGE_NAME} {self.variables[return_value][-1].temp}\nscoreboard players set #{temp} {SCOREBOARD_NAME} 1\nreturn run data get storage {STORAGE_NAME} {fun.temp}\n")
             else:
-                self.write(f"data modify storage {STORAGE_NAME} data.{fun_name} set value {return_value}\nscoreboard players set #{temp} {SCOREBOARD_NAME} 1\nreturn {return_value}\n")
+                self.write(f"data modify storage {STORAGE_NAME} {fun.temp} set value {return_value}\nscoreboard players set #{temp} {SCOREBOARD_NAME} 1\nreturn {return_value}\n")
             return fun_name, None
     def break_(self, node):
         temp_node = node
@@ -1993,7 +2022,7 @@ class Execute:
         self.len = len(self.arr)
 
         self.selectors = ["p", "a", "r", "s", "e"]
-        if float(interpreter.version[:4]) > 1.21:
+        if float(interpreter.version[:4]) >= 1.21:
             self.selectors.append("n")
 
     def interprete(self) -> string:
@@ -2091,6 +2120,9 @@ class Execute:
         item = ""
         if is_colon:
             item = f"{namespace}:{self.advance().name}"
+        elif namespace[0] == "*":
+            item = namespace
+            self.reverse()
         else:
             item = f"minecraft:{namespace}"
             self.reverse()
@@ -2099,7 +2131,6 @@ class Execute:
         var_temp = get_temp()
         variables = self.interpreter.variables
         node = variables[node][-1].temp
-        # TODO 점 연산, 멤버 연산 추가
         current_node = self.advance()
         if current_node.name[0] == "." or current_node.name == "[":
             while current_node.name[0] == "." or current_node.name == "[":
@@ -2119,6 +2150,7 @@ class Execute:
                         self.interpreter.filename,
                         f'\"{variable_name.name}\" is not defined'
                     )
+                    self.advance()
                 current_node = self.advance()
 
         else: self.reverse()
@@ -2216,16 +2248,16 @@ class Execute:
             if node == "matches":
                 score_range_node = self.advance()
                 score_range = score_range_node.name
-                if "." in score_range_node.name:
-                    next_node = self.advance()
-                    if next_node.name != "." and next_node.token.type != 2:
-                        return InvalidSyntaxError(
-                            next_node.token,
-                            self.interpreter.filename,
-                            f'\"<if|unless> score <target> <scoreboard> matches <range>\" format is wrong'
-                        )
-                    score_range += next_node.name
-                self.result += f"matches {score_range} "
+                result_score_range = score_range
+                while is_score_range(score_range):
+                    if self.idx >= self.len:
+                        break
+                    result_score_range = score_range
+                    score_range += self.advance().name
+                else:
+                    self.reverse()
+
+                self.result += f"matches {result_score_range} "
             elif node in ("<", "<=", "=", ">=", ">"):
                 self.result += f"{node} "
                 error = self.add_string()
@@ -2245,6 +2277,7 @@ class Execute:
                 interpreter = self.interpreter
                 current_file = interpreter.current_file
                 dump_file = interpreter.make_dump_function()
+                interpreter.functions[dump_file[:-11]] = Function(dump_file[:-11], "execute if", [], get_fun_temp())
                 interpreter.current_file = dump_file
                 assign_node = self.current_node.children[0]
                 Node("void", parent=self.current_node, token="")
@@ -2252,7 +2285,6 @@ class Execute:
                 Node("input", parent=self.current_node, token="")
                 assign_node.parent = None
                 assign_node.parent = self.current_node
-                print_tree(self.current_node)
                 for child in assign_node.children:
                     temp_, error = interpreter.interprete(child) # interprete assign
                     if error: return error
@@ -2346,39 +2378,6 @@ class Execute:
     def execute_unless(self):
         return self.execute_if("unless")
     def execute_store(self):
-        # error = self.set_parameters("store", ("result", "success"))
-        # if error: return error
-        # node = self.advance()
-        # self.result += node + " "
-
-        # if node == "score":
-        #     error = self.add_string()
-        #     if error: return error
-        #     return self.add_string()
-        # elif node in ("block", "storage", "entity"):
-        #     if node == "block":
-        #         error = self.add_string()
-        #         if error: return error
-        #     elif node == "storage":
-        #         self.result += f"{self.namespace()} "
-        #     elif node == "entity":
-        #         entity, error = self.entity(self.advance())
-        #         if error: return error
-        #         self.result += f"{entity} "
-
-        #     # TODO 디렉토리의 점연산, 멤버연산 넣기
-        #     directory = self.advance().name
-        #     self.result += f"{directory} "
-        #     return self.store_nbt()
-        # elif node == "bossbar":
-        #     # TODO 구현
-        #     pass
-        # else:
-        #     return InvalidSyntaxError(
-        #         self.current_node.token,
-        #         self.interpreter.filename,
-        #         f'\"store result|success\" must be followed by one of ("score", "block", "storage", "entity", "bossbar")'
-        #     )
         return InvalidSyntaxError(
             self.current_node.token,
             self.interpreter.filename,
@@ -2431,7 +2430,6 @@ def get_var_temp():
 
 
 def print_tree(ast):
-    print(ast)
     for pre, fill, node in RenderTree(ast):
         if node.token:
             print("%s%s" % (pre, node.name), end=" | tok: ")
@@ -2492,6 +2490,7 @@ def reset_temp():
     used_temp = []
 if __name__ == "__main__":
     # generate_datapack("./rpg_planet/main.planet", "1.21", "./", "rpg")
+    # generate_datapack("./rpg_planet/skills.planet", "1.21", "./", "skill")
     # generate_datapack("./example/test.planet", "1.21", "./", "pack")
     # exit()
 

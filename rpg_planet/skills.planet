@@ -1,0 +1,44 @@
+/scoreboard objectives add dash_cool dummy
+
+def dash(){
+
+
+    # "f35ac18d-c25b-4091-8e16-83071bd82518" 아이템 디티티
+    # "4aa462f2-b7e4-4435-ad1f-995d09fd60f8" 마커1
+    # "10856e46-c224-41bb-961d-5c25c45b3122" 마커2
+    # "c6ce5480-f883-49e6-86e7-cdff30fae2c1" 눈덩이
+    /summon item_display ~ ~10 ~ {UUID:[I;-212156019,-1034207087,-1911127289,467150104],width:0f,height:0f,Tags:[dash.6626.item,dash.6626.entity],Passengers:[{id:"minecraft:snowball",UUID:[I;-959556480,-125613594,-2031628801,821748417],Tags:[dash.6626.snow,dash.6626.entity],Passengers:[{id:"minecraft:marker",Tags:[dash.6626.circ,dash.6626.circ1,dash.6626.entity],UUID:[I;1252287218,-1209777099,-1390438051,167600376]},{id:"minecraft:marker",Tags:[dash.6626.circ,dash.6626.circ2,dash.6626.entity],UUID:[I;277179974,-1037811269,-1776460763,-1000656606]}]}],item:{id:"minecraft:grass_block",count:1,components:{"minecraft:custom_data":{ejalepdlxj:1}}}}
+    /execute positioned ~ ~10 ~ facing ^ ^1 ^ run tp "4aa462f2-b7e4-4435-ad1f-995d09fd60f8" ~ ~ ~ ~ ~
+    /execute positioned ~ ~10 ~ facing ^ ^1 ^ facing ^ ^ ^-1 run tp "10856e46-c224-41bb-961d-5c25c45b3122" ~ ~ ~ ~ ~
+    /execute positioned ~ ~10 ~ as "c6ce5480-f883-49e6-86e7-cdff30fae2c1" on passengers at @s positioned ^ ^ ^1 on vehicle on passengers rotated as @s positioned ^1 ^ ^ facing entity @s feet positioned as @s positioned ^ ^ ^1 on vehicle on passengers rotated as @s positioned ^ ^ ^1 facing entity @s feet positioned as @s positioned ^ ^ ^1 on vehicle on passengers rotated as @s positioned ^ ^ ^1 facing entity @s feet positioned as @s positioned ^ ^ ^1 on vehicle on passengers rotated as @s positioned ^ ^ ^1 facing entity @s feet positioned as @s positioned ^ ^ ^1 positioned as @s positioned ~ ~-10 ~ run particle minecraft:end_rod ~ ~ ~ ^ ^ ^100000000 .000000001 0
+    /execute as "f35ac18d-c25b-4091-8e16-83071bd82518" on passengers on passengers run kill @s
+    /execute as "f35ac18d-c25b-4091-8e16-83071bd82518" on passengers run kill @s
+    /kill "f35ac18d-c25b-4091-8e16-83071bd82518"
+
+    /execute if entity @s[gamemode=survival] run scoreboard players set gamemode 40planet_num 0
+    /execute if entity @s[gamemode=creative] run scoreboard players set gamemode 40planet_num 1
+    /execute if entity @s[gamemode=adventure] run scoreboard players set gamemode 40planet_num 2
+    /gamemode creative
+    /tp @s ~ ~1000 ~
+    /execute at @s anchored eyes positioned ^ ^ ^-1 summon minecraft:end_crystal run damage @s 10
+    /tp @s ~ ~ ~
+
+
+    /execute if score gamemode 40planet_num matches 0 run gamemode survival
+    /execute if score gamemode 40planet_num matches 1 run gamemode creative
+    /execute if score gamemode 40planet_num matches 2 run gamemode adventure
+}
+
+def heal(){
+    /effect give @s minecraft:instant_health 1 0 true
+}
+def resistance(){
+    /effect give @s minecraft:resistance 5 0 true
+}
+def absorption(){
+    /effect give @s minecraft:absorption 20 1 true
+}
+def berserker(){
+    /damage @s 10 minecraft:out_of_world
+    /effect give @s strength 10 1 true
+}

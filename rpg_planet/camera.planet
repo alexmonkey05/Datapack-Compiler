@@ -1,0 +1,160 @@
+
+var camera_paths
+var selected_path
+/scoreboard players set rot_x 40planet_camera_num 200
+/scoreboard players set rot_y 40planet_camera_num 200
+
+def get_wand(){
+    /give @p minecraft:stick[minecraft:custom_data={40planet_wand:1b},minecraft:food={nutrition:0,saturation:0,can_always_eat:true,eat_seconds:2147483647}]
+}
+
+def first_load(){
+    /scoreboard objectives add 40planet_camera_num dummy
+    /scoreboard objectives add 40planet_camera_timer dummy
+    /scoreboard objectives add 40planet_camera_is_playing dummy
+    /scoreboard objectives add 40planet_camera_point_num dummy
+    /scoreboard objectives add 40planet_id dummy
+    camera_paths = []
+    /scoreboard players set is_selected 40planet_camera_num 0
+    /execute as @a store result score @s 40planet_id run scoreboard players add #first 40planet_id 1
+    /scoreboard objectives add 40planet_camera_stick_drop minecraft.dropped:minecraft.stick
+    /scoreboard players set rot_x 40planet_camera_num 200
+    /scoreboard players set rot_y 40planet_camera_num 200
+    selected_path = 0
+}
+
+def play(var idx){
+    var camera_path = camera_paths[idx]
+    /scoreboard players set @s 40planet_camera_is_playing 1
+    /scoreboard players set @s 40planet_camera_point_num 0
+    set_score("@s", "40planet_camera_timer", camera_path[0][3])
+}
+
+def add_path(){ append(camera_paths, []) }
+def remove_path(var num){ del(camera_paths[num]) }
+def add_point(var x, var y, var z, var r1, var r2, var t){ append(camera_paths[selected_path], [x, y, z, r1, r2, t]) }
+def remove_point(var num, var num2){ del(camera_paths[num][num2]) }
+
+def summon_point(){
+    execute( positioned ~ ~1.5 ~ summon item_display){
+        /data merge entity @s {item:{id:"dropper",Count:1b},Tags:["40planet_camera_marker"]}
+        var point_idx = len(camera_paths[selected_path])
+        print(point_idx)
+        set_data("entity", "@s", "item.components.minecraft:custom_data.point_idx", point_idx)
+    }
+    add_point(get_data("entity", "@s", "Pos[0]"), get_data("entity", "@s", "Pos[1]") + 1.5, get_data("entity", "@s", "Pos[2]"), get_data("entity", "@s", "Rotation[0]"), get_data("entity", "@s", "Rotation[1]"), 20)
+}
+
+def next_point(){
+    /scoreboard players add @s 40planet_camera_point_num 1
+    var point_idx = get_score("@s", "40planet_camera_point_num")
+    var path_idx = get_score("@s", "40planet_camera_num")
+    execute(unless data camera_paths[path_idx][point_idx]){
+        /scoreboard players set @s 40planet_camera_is_playing 0
+        return 0
+    }
+    var point = camera_paths[path_idx][point_idx]
+    print(point)
+}
+
+
+def unselect_all(){
+    execute(as @e[tag=40planet_camera_selected_marker]){
+        /tag @s remove 40planet_camera_selected_marker
+        /data modify entity @s Glowing set value 0
+    }
+    /scoreboard players set is_selected 40planet_camera_num 0
+}
+
+
+def tick_player(){
+    execute(if score "@s" "40planet_camera_is_playing" matches 1){ # 재생 중인 플레이어라면
+        /scoreboard players remove @s 40planet_camera_timer 1
+        /execute if score @s 40planet_camera_timer matches ..0 run function __namespace__:next_point
+    }
+
+    execute(if items entity @s weapon.mainhand minecraft:stick[minecraft:custom_data={40planet_wand:1b}]){
+        execute( unless entity @s[tag=40planet_click_wand] ) {
+            /scoreboard players set rot_x 40planet_camera_num 200
+        }
+        /execute if entity @s[tag=40planet_click_wand] run tag @s remove 40planet_click_wand
+    }
+
+    execute(if items entity @s weapon.offhand minecraft:stick[minecraft:custom_data={40planet_wand:1b}]){
+        /item replace entity @s weapon.mainhand from entity @s weapon.offhand
+        /item replace entity @s weapon.offhand with air
+        execute(as @e[tag=40planet_camera_selected_marker]){
+            var point_idx = get_data("entity", "@s", "item.components.minecraft:custom_data.point_idx")
+            #print(point_idx)
+            del(camera_paths[selected_path][point_idx])
+            /kill @s
+            /scoreboard players set is_selected 40planet_camera_num 0
+        }
+    }
+
+    execute(if score "@s" "40planet_camera_stick_drop" matches 1..){
+        execute(as @e[tag=40planet_camera_selected_marker]){
+            var point_idx = get_data("entity", "@s", "item.components.minecraft:custom_data.point_idx")
+            var rotation = get_data("entity", "@s", "Rotation")
+            camera_paths[selected_path][point_idx][3] = rotation[0]
+            camera_paths[selected_path][point_idx][4] = rotation[1]
+
+        }
+        unselect_all()
+        get_wand()
+        /kill @e[type=item,nbt={Item:{components:{"minecraft:custom_data":{40planet_wand:1b}}}}]
+        /scoreboard players set @s 40planet_camera_stick_drop 0
+    }
+}
+
+/advancement revoke @s only __namespace__:using_wand
+def click_wand(){
+    /advancement revoke @s only __namespace__:using_wand
+    /execute unless items entity @s weapon.mainhand minecraft:stick[minecraft:custom_data={40planet_wand:1b}] run return 0
+    /tag @s add 40planet_click_wand
+    execute( if score "is_selected" "40planet_camera_num" matches 0 ){ # 바라보고 있는 마커 선택
+        unselect_all()
+        /scoreboard players set #temp 40planet_camera_num 0
+        /tag @s add this
+        execute( as @e[tag=40planet_camera_marker] positioned as @s facing entity @p[tag=this] feet positioned ^ ^ ^1 rotated as @p[tag=this] positioned ^ ^ ^1 if entity @s[distance=..0.5] ){
+            /execute if score #temp 40planet_camera_num matches 1 run return 0
+            /tag @s add 40planet_camera_selected_marker
+            /data modify entity @s Glowing set value 1b
+            /scoreboard players set is_selected 40planet_camera_num 1
+            /scoreboard players set #temp 40planet_camera_num 1
+        }
+        /tag @s remove this
+        return 0
+    }
+    /execute store result score player_x 40planet_camera_num run data get entity @s Rotation[0]
+    /execute store result score player_y 40planet_camera_num run data get entity @s Rotation[1]
+    execute( if score "rot_x" "40planet_camera_num" matches 200 ){
+        execute( as @e[tag=40planet_camera_selected_marker] ){
+            /execute store result score rot_x 40planet_camera_num run data get entity @s Rotation[0]
+            /execute store result score rot_y 40planet_camera_num run data get entity @s Rotation[1]
+        }
+        /scoreboard players operation rot_x 40planet_camera_num -= player_x 40planet_camera_num
+        /scoreboard players operation rot_y 40planet_camera_num -= player_y 40planet_camera_num
+    }
+    execute( as @e[tag=40planet_camera_selected_marker] ){
+        /execute store result entity @s Rotation[0] float 1 run scoreboard players operation player_x 40planet_camera_num += rot_x 40planet_camera_num
+        /execute store result entity @s Rotation[1] float 1 run scoreboard players operation player_y 40planet_camera_num += rot_y 40planet_camera_num
+    }
+}
+
+def tick(){
+    if( is_module() ){ return 0 }
+    execute(as @a){ tick_player() }
+}
+
+
+
+
+if( !(is_module()) ){
+    /execute unless score #first 40planet_id = #first 40planet_id run function __namespace__:first_load
+}
+
+def test(){
+    /scoreboard players set @s 40planet_camera_num 1
+    play(get_score("@s", "40planet_camera_num"))
+}

@@ -1,4 +1,4 @@
-execute if score #operator_type 40planet_num matches 2..11 run tellraw @a {"text": "Array only can operate \"add\"","color": "red"}
+execute if score #operator_type 40planet_num matches 2..11 run tellraw @a {"text": "Runtime Error : Array only can operate \"add\"","color": "red"}
 execute if score #operator_type 40planet_num matches 2..11 run return fail
 
 execute if score #operator_type 40planet_num matches 1 run return run function basic:array/add

@@ -300,7 +300,7 @@ execute(if data storage "temp:test" "id"){
 execute(if function {
     return 1
 } positioned "0 0 0"){
-    print("성공!")
+    print("success!")
 }
 ```
 

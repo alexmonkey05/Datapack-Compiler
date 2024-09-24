@@ -1,0 +1,29 @@
+/scoreboard objectives add 40planet_id dummy
+
+def set_id(){
+
+    var uuid = get_data("entity", "@s", "UUID")
+    /scoreboard players set is_uuid_exist 40planet_num 0
+    /execute if data storage 40planet:id player."^uuid&".id run scoreboard players set is_uuid_exist 40planet_num 1
+    # uuid가 있을 때
+    /execute if score is_uuid_exist 40planet_num matches 1 store result score @s 40planet_id run data get storage 40planet:id player."^uuid&".id
+    # uuid가 없을 때
+    execute(if score "is_uuid_exist" "40planet_num" matches 0){
+        /execute store result score @s 40planet_id run scoreboard players add $first 40planet_id 1
+        /execute store result storage 40planet:id player."^uuid&".id int 1 run scoreboard players get $first 40planet_id
+    }
+    return get_score("@s", "40planet_id")
+}
+
+def tick(){
+    /execute as @a unless score @s 40planet_id = @s 40planet_id run function __namespace__:set_id
+
+    # if(is_module()){ return 0 }
+}
+
+def get_id(){
+    return get_score("@s", "40planet_id")
+}
+
+
+/execute unless score $first 40planet_id = $first 40planet_id run scoreboard players set $first 40planet_id -2147483647

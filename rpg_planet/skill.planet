@@ -1,0 +1,120 @@
+
+# /scoreboard objectives add 40planet_mana_regeneration dummy
+/scoreboard objectives add 40planet_real_mana dummy
+/scoreboard objectives add 40planet_mana dummy
+/scoreboard objectives add 40planet_rpg_max_mana dummy
+/scoreboard objectives add 40planet_rpg_rightclick dummy
+
+/scoreboard players set 20 40planet_num 20
+/scoreboard players set 200 40planet_num 200
+
+def execute_function(var skill_slot){
+    /item replace block 15 -60 15 container.0 from entity @s weapon
+    /data modify storage 40planet:rpg skill set from block 15 -60 15 Items[0].components.'minecraft:custom_data'.skill.^skill_slot&
+
+    /execute store result score current_game_tick 40planet_num run time query gametime
+    /execute store result score recent_used 40planet_num run data get storage 40planet:rpg skill.components.'minecraft:custom_data'.recent_used
+    /execute store result score cooltime 40planet_num run data get storage 40planet:rpg skill.components.'minecraft:custom_data'.cooltime
+
+    /scoreboard players operation current_game_tick 40planet_num -= recent_used 40planet_num
+    execute(if score "current_game_tick" "40planet_num" < "cooltime" "40planet_num"){
+        /tellraw @s {"text":"쿨타임이 남았습니다","color":"red"}
+        return 0
+    }
+
+    /execute store result score require_mana 40planet_num run data get storage 40planet:rpg skill.components.'minecraft:custom_data'.mana
+    execute(if score "@s" "40planet_mana" < "require_mana" "40planet_num"){
+        /tellraw @s {"text":"마나가 부족합니다","color":"red"}
+        return 0
+    }
+
+
+    /execute store result storage 40planet:rpg skill.components.'minecraft:custom_data'.recent_used int 1 run time query gametime
+    /scoreboard players operation @s 40planet_mana -= require_mana 40planet_num
+    /data modify block 15 -60 15 Items[0].components.'minecraft:custom_data'.skill.^skill_slot& set from storage 40planet:rpg skill
+    /item replace entity @s weapon from block 15 -60 15 container.0
+    var function = get_data("storage", "40planet:rpg", "skill.components.'minecraft:custom_data'.function")
+    # print(function)
+    /execute at @s run function ^function&
+}
+
+def weapon_f(){
+    /item replace block 15 -60 15 container.0 from entity @s weapon.offhand
+    /scoreboard players set temp 40planet_num 0
+    /execute if items entity @s weapon *[minecraft:custom_data~{40planet_equipment:1b}] run scoreboard players set temp 40planet_num 1
+    execute(if score "temp" "40planet_num" matches 1){
+        /item replace block 15 -60 15 container.1 from entity @s weapon
+        /item replace entity @s weapon from entity @s weapon.offhand
+        /item replace entity @s weapon.offhand with air
+        /execute at @s run summon item ~ ~1.5 ~ {PickupDelay:0s,Item:{id:"stone",count:1b},Tags:["40planet_rpg_item"]}
+        execute(as @e[tag=40planet_rpg_item,limit=1]){
+            /item replace entity @s container.0 from block 15 -60 15 container.1
+            /tag @s remove 40planet_rpg_item
+        }
+    }
+    execute(if score "temp" "40planet_num" matches 0){
+        /item replace entity @s weapon.offhand from entity @s weapon
+        /item replace entity @s weapon from block 15 -60 15 container.0
+    }
+
+    execute(if data entity "@s" "SelectedItem.components.'minecraft:custom_data'.skill.f.components.'minecraft:custom_data'.function"){
+        execute_function("f")
+    }
+}
+
+def rightclick_advancement(){
+    /scoreboard players set @s 40planet_rpg_rightclick 1
+    /advancement revoke @s only rpg:rightclick
+}
+
+def rightclick(){
+    /execute unless items entity @s weapon *[minecraft:custom_data~{40planet_equipment:1b}] run return fail
+    /tag @s add rightclick
+
+    execute(if predicate rpg:sneaking if data entity "@s" "SelectedItem.components.'minecraft:custom_data'.skill.sneak_click.components.'minecraft:custom_data'.function"){
+        execute_function("sneak_click")
+        # var function = get_data("entity", "@s", "SelectedItem.components.'minecraft:custom_data'.skill.sneak_click.components.'minecraft:custom_data'.function")
+        # /execute at @s run function ^function&
+    }
+    execute(unless predicate rpg:sneaking if data entity "@s" "SelectedItem.components.'minecraft:custom_data'.skill.click.components.'minecraft:custom_data'.function"){
+        execute_function("click")
+        # var function = get_data("entity", "@s", "SelectedItem.components.'minecraft:custom_data'.skill.click.components.'minecraft:custom_data'.function")
+        # /execute at @s run function ^function&
+    }
+}
+
+
+
+def tick(){
+    execute(as @a){
+        # F 스킬 감지
+        /execute if items entity @s weapon.offhand *[minecraft:custom_data~{40planet_equipment:1b}] run function __namespace__:weapon_f
+        # 우클릭 감지
+        /execute if score @s[tag=!rightclick] 40planet_rpg_rightclick matches 1 run function __namespace__:rightclick
+        /execute if score @s 40planet_rpg_rightclick matches 0 run tag @s remove rightclick
+
+        # 마나 회복
+        # 마나 스텟 1 = 10 최대마나, 1초당 1 마나 회복 = 1틱 당 1/20 마나 회복 = 틱당 1 real_mana 회복
+        # real_mana = mana * 20
+        # /scoreboard players operation @s 40planet_mana_regeneration = @s 40planet_rpg_mana
+        /scoreboard players operation @s 40planet_rpg_max_mana = @s 40planet_rpg_mana
+        /scoreboard players operation @s 40planet_rpg_max_mana += @s 40planet_rpg_equipment_mana
+        /scoreboard players operation @s 40planet_rpg_max_mana *= 200 40planet_num
+
+        /scoreboard players operation temp 40planet_mana = @s 40planet_real_mana
+        /scoreboard players operation temp 40planet_mana /= 20 40planet_num
+        execute(unless score "temp" "40planet_mana" = "@s" "40planet_mana"){
+            /scoreboard players operation @s 40planet_real_mana = @s 40planet_mana
+            /scoreboard players operation @s 40planet_real_mana *= 20 40planet_num
+        }
+        # /scoreboard players operation @s 40planet_real_mana += @s 40planet_mana_regeneration
+        /scoreboard players operation @s 40planet_real_mana += @s 40planet_rpg_mana
+        /scoreboard players operation @s 40planet_real_mana += @s 40planet_rpg_equipment_mana
+        /execute if score @s 40planet_real_mana > @s 40planet_rpg_max_mana run scoreboard players operation @s 40planet_real_mana = @s 40planet_rpg_max_mana
+        /scoreboard players operation @s 40planet_mana = @s 40planet_real_mana
+        /scoreboard players operation @s 40planet_mana /= 20 40planet_num
+        
+        /execute if entity @s[tag=show_mana] run title @s actionbar [{"text":"현재 마나: ","color":"aqua"},{"score":{"objective":"40planet_mana","name":"@s"}}]
+    }
+    /scoreboard players set @a 40planet_rpg_rightclick 0
+}

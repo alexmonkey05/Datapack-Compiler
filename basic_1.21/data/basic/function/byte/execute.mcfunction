@@ -1,5 +1,5 @@
 
-execute unless score #var1_type 40planet_num matches 5 run tellraw @a {"text": "Operands must be of the same data type","color": "red"}
+execute unless score #var1_type 40planet_num matches 5 run tellraw @a {"text": "Runtime Error : Operands must be of the same data type","color": "red"}
 execute unless score #var1_type 40planet_num matches 5 run return fail
 
 execute store result score #var1 40planet_num run data get storage 40planet:value var1

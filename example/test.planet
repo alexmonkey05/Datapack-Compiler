@@ -1,14 +1,13 @@
-def test(){
-    return 1
-}
-
-execute(if function {
-    return test()
-} positioned "0 0 0"){
-    print("성공!")
-}
-
-execute(as
-@a){
-  /say a
+var a = 4
+var arr = [1, 2, 3, a, 5]
+/
+/
+/
+/
+var b = "asdf"
+var nbt = {
+    test:"test",
+    qwer:4,
+    b:b,
+    asdf:456
 }

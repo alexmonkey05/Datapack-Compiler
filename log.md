@@ -227,3 +227,9 @@ execute(if function {
     print("성공!")
 }
 ```
+# 2024/09/24 2.14.1
+- `execute if score <플레이어> <스코어보드> matches`의 범위가 제대로 인식되지 않던 오류 수정
+- `execute if items`에서 아이템의 아이디 대신 `*`을 넣었을 경우, 에러가 나던 현상 해결
+- 함수의 `return`이 제대로 작동하지 않던 오류 해결
+- 실행 중 나오는 에러메시지에 `Runtime Error : ` 문구 추가
+- nbt와 배열을 생성할 때의 성능 개선
