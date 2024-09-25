@@ -107,6 +107,8 @@ File FILENAME, line 2
     1 + 1.0
       ^
 ```
+- The result of an operation follows the last operand.
+  - ex) 0.3 * 1 = 0
 In the case of `!`, you must put parentheses after it, such as `!(is_module())`.   
 In other words, it should be used like a function.
 ### if / else
