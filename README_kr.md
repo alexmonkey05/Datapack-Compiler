@@ -17,6 +17,7 @@
 4. "변환하기" 버튼을 누른다
 5. `datapacks` 폴더 안에 생성된 데이터팩과 `basic.zip`을 넣어준다
 6. 마크 안에서 `/reload`를 실행하여 데이터팩을 새로고침해준다
+[혜성 튜토리얼(Youtube Link)](https://youtu.be/vzlmWR5MqCY)   
 ## 문법
 ### 자료형 목록
 - int
@@ -79,6 +80,7 @@ var b = {
 	- `*`
 	- `/`
 	- `%`
+	- `double`과 `float`의 경우, 소수점 아래 2자리까지만 값이 보존된다. 더 정확한 값을 얻고 싶다면 `devide`와 `multiply` 함수를 사용하는 것이 좋다.
 - 관계
 	- `==`
 	- `!=`
@@ -93,17 +95,13 @@ var b = {
 - 대입
 	- `=`
 만약 연산의 피연산자들의 자료형이 서로 다른 경우, 에러가 발생한다   
-단, `double`과 `float`의 경우엔 에러가 나지 않는다
+단, `double`과 `float`, `int`의 경우엔 에러가 나지 않는다
 ```
-1 + 1.0
+1 + "1"
 ```
 
 ```
-Runtime Error: Diffrent Type
-File FILENAME, line 2
-
-    1 + 1.0
-      ^
+Runtime Error: Operand must have same type
 ```
 연산의 결과는 연산자의 뒤쪽 피연산자를 따라갑니다   
 ex) 0.3 * 1 = 0      

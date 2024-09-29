@@ -1057,6 +1057,7 @@ class Interpreter:
             temp2 = self.to_storage(temp2)
             self.write(f"data modify storage {STORAGE_NAME} {temp} append from storage {STORAGE_NAME} {temp2}\n")
             self.add_used_temp(temp2)
+        if is_first: self.write(f"data modify storage {STORAGE_NAME} {temp} set value [{elements[2:]}]\n")
 
         if temp not in self.variables: self.variables[temp] = []
         self.variables[temp].append(Variable(temp, "arr", True, temp))
@@ -1094,9 +1095,9 @@ class Interpreter:
         command = node.children[0].name
         if "^" in command and "&" in command:
             command = self.macro_(command, node.token)
-            self.macro(f"$data modify storage {STORAGE_NAME} {temp} set value \"{command.replace("\"", "\\\"")}\"\n")
+            self.macro(f"$data modify storage {STORAGE_NAME} {temp} set value \"" + command.replace("\"", "\\\"") + "\"\n")
         else:
-            self.write(f"data modify storage {STORAGE_NAME} {temp} set value \"{command.replace("\"", "\\\"")}\"\n")
+            self.write(f"data modify storage {STORAGE_NAME} {temp} set value \"" + command.replace("\"", "\\\"") + "\"\n")
         self.add_var(temp, "entity", False, temp)
         return temp, None
     def operator_return(self, node):

@@ -18,6 +18,7 @@ This extension only displays colors and does not have an auto-completion feature
 5. Put generated datapack ans `basic_1.21.zip` or `basic_1.20` in the `datapacks` folder in saves
 6. Refresh the data pack by executing `/reload` in the mark.
 7. If you reload your datapack again, go to no.4
+[Comet Tutorial(Youtube Link)](https://youtu.be/vzlmWR5MqCY)   
 ## Syntax
 ### Data types
 - int
@@ -81,6 +82,7 @@ parenthesis > member > arithmetic > relationship > logic (and, or) > assignment.
 	- `*`
 	- `/`
 	- `%`
+	- In the case of `double` and `float`, the value is preserved only up to 2 digits after the decimal point. If you want to get more accurate values, it is better to use the `devide` and `multiply` functions.
 - relationship
 	- `==`
 	- `!=`
@@ -95,17 +97,13 @@ parenthesis > member > arithmetic > relationship > logic (and, or) > assignment.
 - assignment
 	- `=`
 If the data types of the operands of an operation are different, an error occurs.   
-However, in the case of `double` and `float`, no error occurs.
+However, in the case of `double`, `int` and `float`, no error occurs.
 ```
-1 + 1.0
+1 + "1"
 ```
 
 ```
-Runtime Error: Diffrent Type
-File FILENAME, line 2
-
-    1 + 1.0
-      ^
+Runtime Error: Operand must have same type
 ```
 The result of an operation follows the last operand.   
 ex) 0.3 * 1 = 0      
