@@ -17,7 +17,7 @@ This extension only displays colors and does not have an auto-completion feature
 4. Press "convert"
 5. Put generated datapack ans `basic_1.21.zip` or `basic_1.20` in the `datapacks` folder in saves
 6. Refresh the data pack by executing `/reload` in the mark.
-7. If you reload your datapack again, go to no.4
+7. If you reload your datapack again, go to no.4   
 [Comet Tutorial(Youtube Link)](https://youtu.be/vzlmWR5MqCY)   
 ## Syntax
 ### Data types
