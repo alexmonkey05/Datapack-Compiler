@@ -1079,11 +1079,11 @@ class Interpreter:
                     self.add_var(f"{temp}.{key}", "var_type", self.variables[value][-1].is_const, value)
                 else: self.add_var(f"{temp}.{key}", "asdf", False, var_temp)
             else:
-                elements += f"\"{key}\":{value},"
+                self.write(f"data modify storage {STORAGE_NAME} {temp}.{key} set value {value}\n")
+        #         elements += f"\"{key}\":{value},"
 
-        if len(elements) > 1: elements = elements[:-1] 
-        elements += "}"
-        self.write(f"data modify storage {STORAGE_NAME} {temp} set value {elements}\n")
+        # if len(elements) > 1: elements = elements[:-1] 
+        # elements += "}"
 
         self.add_var(temp, "nbt", False, temp, keys)
         return temp, None
@@ -1220,6 +1220,7 @@ class Interpreter:
 
 
         var2 = node.children[2].name
+        var2_tok = node.children[2].token
         if var2 in INTERPRETE_THESE:
             var2, error = self.interprete(node.children[2])
             if error: return None, error
@@ -1236,7 +1237,7 @@ class Interpreter:
 
         if var2 in self.variables:
             self.write(f"data modify storage {STORAGE_NAME} {self.variables[var1][-1].temp} set from storage {STORAGE_NAME} {self.variables[var2][-1].temp}\n")
-        elif "." in var2:
+        elif "." in var2 and var2_tok.type != 2:
             self.write(f"data modify storage {STORAGE_NAME} {self.variables[var1][-1].temp} set from storage {STORAGE_NAME} {var2}\n")
         else:
             self.write(f"data modify storage {STORAGE_NAME} {self.variables[var1][-1].temp} set value {var2}\n")

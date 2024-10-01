@@ -4,13 +4,16 @@ def mob_tick(){
     
 }
 
+var mob_type = "#minecraft:undead"
+
 def tick(){
     execute(as @e[type=!player]){
         # 엘리트몹 설정
-        # /scoreboard players set is_mob 40planet_num 0
-        # /execute if entity @s[type=#minecraft:undead] run scoreboard players set is_mob 40planet_num 1
-        # execute(if score "is_mob" "40planet_num" matches 1){
-        execute(if entity @s[tag=] if data entity "@s" NoAI){
+        /scoreboard players set is_mob 40planet_num 0
+        /execute if entity @s[tag=,type=^mob_type&] run scoreboard players set is_mob 40planet_num 1
+        # /execute if entity @s[type=husk] run scoreboard players set is_mob 40planet_num 1
+        execute(if score "is_mob" "40planet_num" matches 1){
+        # execute(if entity @s[tag=,type=!item_display,type=!text_display,type=!item,type=!block_display,type=!item_frame,type=!glow_item_frame,type=!villager]){
             /execute store result score temp 40planet_num run random value 1..1000
             execute(if score "temp" "40planet_num" matches ..100){
                 /tag @s add elite_mob
