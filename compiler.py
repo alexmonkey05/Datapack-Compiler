@@ -109,7 +109,7 @@ OPERATOR_ID = {
 
 INTERPRETE_THESE = ("operator", "call_function", "make_array", "make_nbt", "make_selector", "define_var")
 
-BUILT_IN_FUNCTION = ("print", "random", "type", "get_score", "get_data", "set_score", "set_data", "round", "del", "append", "is_module", "len", "devide", "multiply") + TYPES
+BUILT_IN_FUNCTION = ("print", "random", "type", "get_score", "get_data", "set_score", "set_data", "round", "del", "append", "is_module", "len", "divide", "multiply") + TYPES
 
 EXECUTE_KEYWORDS = ( "as", "at", "if", "positioned" )
 
@@ -1864,12 +1864,12 @@ execute unless score #type {SCOREBOARD_NAME} matches 4 run ")
         self.write(f"execute store result storage {STORAGE_NAME} {temp} int 1 run data get storage {STORAGE_NAME} {self.variables[var][-1].temp}\n")
         self.add_var(temp, "len", False, temp)
         return temp, None
-    def fun_devide(self, node, input_nodes):
+    def fun_divide(self, node, input_nodes):
         if 2 != len(input_nodes):
             return None, InvalidSyntaxError(
                 node.children[0].token,
                 self.filename,
-                f"devide must have only 2 parameters"
+                f"divide must have only 2 parameters"
             )
         var = input_nodes[0].children[0].name
         if var in INTERPRETE_THESE:

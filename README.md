@@ -93,7 +93,7 @@ parenthesis > member > arithmetic > relationship > logic (and, or) > assignment.
 	- `*`
 	- `/`
 	- `%`
-	- In the case of `double` and `float`, the value is preserved only up to 2 digits after the decimal point. If you want to get more accurate values, it is better to use the `devide` and `multiply` functions.
+	- In the case of `double` and `float`, the value is preserved only up to 2 digits after the decimal point. If you want to get more accurate values, it is better to use the `divide` and `multiply` functions.
 - relationship
 	- `==`
 	- `!=`
@@ -432,11 +432,11 @@ if(is_module()){
     print("this is not main")
 }
 ```
-### devide(int|float|double var, int|float|double var2)
+### divide(int|float|double var, int|float|double var2)
 - Calculates `var / var2` to 5 decimal places.
 - Return value's type is `float`
 ```
-print(devide(1, 2))
+print(divide(1, 2))
 ```
 ### multiply(int|float|double var, int|float|double var2)
 - Calculates `var * var2` to 5 decimal places.

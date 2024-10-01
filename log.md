@@ -245,3 +245,4 @@ execute(if function {
 - cli 추가 및 `README`에 관련 내용 추가
 # 아직 릴리즈 안 함
 - `var t = 2.5`와 같이 소수가 대입이 제대로 되지 않던 오류 수정
+- `devide` $\to$ `divide` 내장함수 이름 변경

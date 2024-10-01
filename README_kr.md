@@ -91,7 +91,7 @@ var b = {
 	- `*`
 	- `/`
 	- `%`
-	- `double`과 `float`의 경우, 소수점 아래 2자리까지만 값이 보존된다. 더 정확한 값을 얻고 싶다면 `devide`와 `multiply` 함수를 사용하는 것이 좋다.
+	- `double`과 `float`의 경우, 소수점 아래 2자리까지만 값이 보존된다. 더 정확한 값을 얻고 싶다면 `divide`와 `multiply` 함수를 사용하는 것이 좋다.
 - 관계
 	- `==`
 	- `!=`
@@ -401,7 +401,6 @@ it's test string!
 - `from`은 `entity`, `block`, `storage` 중 한가지여야 한다.
 - `name`은 블록의 좌표, 저장소의 이름, 엔티티 중 한가지여야 한다
 - `dir`은 설정하고자 하는 nbt의 경로를 뜻한다
-- `type`은 어떤 자료형으로 읽어오고자 하는지를 뜻한다   
 `/data modify {from} {name} {dir} set value {var}`와 같은 역할이다
 ```
 set_data("storage", "minecraft:test", "test_dir", "it's test string!")
@@ -433,11 +432,11 @@ if(is_module()){
     print("this is not main")
 }
 ```
-### devide(int|float|double var, int|float|double var2)
+### divide(int|float|double var, int|float|double var2)
 - `var / var2`를 소수점 아래 5자리까지 계산해준다
 - 반환값의 타입은 `float`이다
 ```
-print(devide(1, 2))
+print(divide(1, 2))
 ```
 ### multiply(int|float|double var, int|float|double var2)
 - `var * var2`를 소수점 아래 5자리까지 계산해준다
