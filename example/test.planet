@@ -1,14 +1,3 @@
-def test(){
-    return 1
-}
-
-execute(if function {
-    return test()
-} positioned "0 0 0"){
-    print("성공!")
-}
-
-execute(as
-@a){
-  /say a
-}
+var array = [1, 2, 3]
+print(len(array))
+print("Hi")
