@@ -8,7 +8,7 @@ It was created by 40planet, and free use is permitted as long as the link is ind
 You can use the link above or run VSCode and search for Comet Highlighter in extensions to download and use it.   
 This extension only displays colors and does not have an auto-completion feature.
 ## How to use
-### Setting
+### Setting1
 1. Download `compiler.exe` and execute.
 2. Select `.planet` file and directory where the data pack will be created
 3. Enter the name of the data pack.
@@ -18,7 +18,18 @@ This extension only displays colors and does not have an auto-completion feature
 5. Put generated datapack ans `basic_1.21.zip` or `basic_1.20` in the `datapacks` folder in saves
 6. Refresh the data pack by executing `/reload` in the mark.
 7. If you reload your datapack again, go to no.4   
-[Comet Tutorial(Youtube Link)](https://youtu.be/vzlmWR5MqCY)   
+[Comet Tutorial(Youtube Link)](https://youtu.be/vzlmWR5MqCY)  
+### Setting2 (CLI 사용 / cmd에서 사용) 
+1. Download `compiler.exe`.
+2. Place `compiler.exe` in a place where it can be run.
+3. Enter and use as follows:
+```
+compiler.exe --cli --planet ./a.planet --version 1.21 --dist ./world/datapacks --name packpack
+```
+```
+compiler.exe --cli -p ./a.planet -v 1.21 -d ./world/datapacks -n packpack
+```
+- Similarly, if `--name` is not entered, the namespace becomes `pack`.
 ## Syntax
 ### Data types
 - int

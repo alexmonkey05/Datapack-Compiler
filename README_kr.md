@@ -8,7 +8,7 @@
 위의 링크로 들어가거나 VSCode를 실행 후 extensions에서 Comet Highlighter를 검색해 다운로드 하여 사용할 수 있습니다   
 해당 익스텐션은 색만 표시해줄 뿐, 자동완성 기능은 없습니다
 ## 사용법
-### 세팅
+### 세팅1 (CLI/cmd가 익숙치 않은 경우)
 1. `compiler.exe`를 받아 실행한다
 2. `.planet`파일과 데이터팩이 생성될 폴더를 선택한다
 3. 데이터팩의 이름을 입력한다. 
@@ -17,7 +17,18 @@
 4. "변환하기" 버튼을 누른다
 5. `datapacks` 폴더 안에 생성된 데이터팩과 `basic.zip`을 넣어준다
 6. 마크 안에서 `/reload`를 실행하여 데이터팩을 새로고침해준다   
-[혜성 튜토리얼(Youtube Link)](https://youtu.be/vzlmWR5MqCY)   
+[혜성 튜토리얼(Youtube Link)](https://youtu.be/vzlmWR5MqCY)  
+### 세팅2 (CLI 사용 / cmd에서 사용) 
+1. `compiler.exe`를 다운로드 받는다
+2. `compiler.exe`를 실행시킬 수 있는 곳에 놓는다
+3. 아래와 같이 입력하여 사용한다
+```
+compiler.exe --cli --planet ./a.planet --version 1.21 --dist ./world/datapacks --name packpack
+```
+```
+compiler.exe --cli -p ./a.planet -v 1.21 -d ./world/datapacks -n packpack
+```
+- 마찬가지로 만약 `--name`이 입력되지 않았다면 네임스페이스는 `pack`이 된다
 ## 문법
 ### 자료형 목록
 - int

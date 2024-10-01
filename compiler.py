@@ -14,10 +14,7 @@ def is_score_range(input_string):
     # 정규식 패턴에 맞는지 검사
     return re.match(PATTERN, input_string) is not None
 
-from tkinter import *
-from tkinter import filedialog
-from tkinter import messagebox
-import tkinter.ttk as ttk
+
 import sys
 sys.setrecursionlimit(10**7)
 
@@ -2489,11 +2486,55 @@ def reset_temp():
     fun_temp_cnt = 0
     temp_cnt = 0
     used_temp = []
+
+import argparse
+values = ["1.20.4", "1.20.6", "1.21", "1.21.1"]
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+                    prog='comet_compiler',
+                    description='Compile .planet files')
+    parser.add_argument('--cli', action='store_true')      # option that takes a value
+    parser.add_argument('-p', '--planet')
+    parser.add_argument('-v', '--version')
+    parser.add_argument('-d', '--dist')
+    parser.add_argument('-n', '--name')
+    args = parser.parse_args()
+    if args.cli:
+        print("==================")
+        print("Comet Compiler CLI")
+        print("==================")
+        v = args.version
+        if v not in values:
+            print(f"Invalid version: {v} / Required version: {values}")
+            sys.exit(0)
+        p = args.planet
+        d = args.dist
+        if p == None:
+            print("planet file(-p / --planet) is required")
+            sys.exit(0)
+        if d == None:
+            print("dist folder(-d / --dist) is required")
+            sys.exit(0)
+        n = args.name
+        if n == None: n = "pack"
+        
+        interprete_result, error = generate_datapack(p, v, d, n)
+        if error:
+            print(error.as_string())
+        else:
+            print("done!")
+
+
+        sys.exit(0)
     # generate_datapack("./rpg_planet/main.planet", "1.21", "./", "rpg")
     # generate_datapack("./rpg_planet/skills.planet", "1.21", "./", "skill")
     # generate_datapack("./example/test.planet", "1.21", "./", "pack")
-    # exit()
+    
+
+    from tkinter import *
+    from tkinter import filedialog
+    from tkinter import messagebox
+    import tkinter.ttk as ttk
 
 
     tk = Tk()
@@ -2544,7 +2585,6 @@ if __name__ == "__main__":
     btn2 = Button(tk,text='Select',command=select_folder).grid(row=1,column=1)
     btn3 = Button(tk,text='Compile',command=event).grid(row=3,column=1)
 
-    values = ["1.20.4", "1.20.6", "1.21", "1.21.1"]
     combobox = ttk.Combobox(tk,values=values,state="readonly")
     combobox.grid(row=3,column=0)
     combobox.set("1.21.1")

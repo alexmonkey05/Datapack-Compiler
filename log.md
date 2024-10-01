@@ -241,3 +241,5 @@ execute(if function {
 - `README`에 `float`와 `double` 자료형의 경우엔 사칙연산에서 소수점 아래 3번째 자리부터 날라간다는 내용 추가
 - 몇몇 f format으로 쓰인 부분을 + 연산자로 바꿈
 - `README`에 혜성 1강 링크 추가
+# 2024/10/01 2.15
+- cli 추가 및 `README`에 관련 내용 추가
