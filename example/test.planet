@@ -1,2 +1,5 @@
-var y = 2.5
-print(type(y))
+def timer(var a) {
+    if(type(a) == "int") {
+        print("wa! it is int!")
+    }
+}
