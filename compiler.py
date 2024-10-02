@@ -25,6 +25,7 @@ sys.setrecursionlimit(10**7)
 
 import time
 
+# 수가 더 클 수록 더 많이 표시되는 것
 LOGLEVEL = {
     "DEBUG": 256,
     "INFO": 128,
