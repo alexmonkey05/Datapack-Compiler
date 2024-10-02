@@ -6,6 +6,7 @@ import string
 import shutil
 import json
 import re
+import datetime
 
 # 정규식 패턴 정의
 PATTERN = r'^(?:\-*[0-9]*\.{0,2}|\.\.\-*[0-9]*|\-*[0-9]*\.\.\-*[0-9]*|\-*[0-9]*|\.{0,2})$'
@@ -17,6 +18,79 @@ def is_score_range(input_string):
 
 import sys
 sys.setrecursionlimit(10**7)
+
+#######################################
+# LOGGER
+#######################################
+
+import time
+
+LOGLEVEL = {
+    "DEBUG": 256,
+    "INFO": 128,
+    "WARNING": 64,
+    "ERROR": 32,
+    "CRITICAL": 16,
+    "FATAL": 8,
+    "LOG": 4,
+}
+
+verboseLevel = LOGLEVEL["INFO"]
+
+class L:
+    def prCyan(self, skk): return "\033[96m{}\033[00m".format(skk)
+    def prYello(self, skk): return "\033[93m{}\033[00m".format(skk)
+    def prRed(self, skk): return "\033[91m{}\033[00m".format(skk)
+    def prGreen(self, skk): return "\033[92m{}\033[00m".format(skk)
+    def prPurple(self, skk): return "\033[95m{}\033[00m".format(skk)
+    def prGray(self, skk): return "\033[90m{}\033[00m".format(skk)
+
+    def getTimeSTR(self):
+        return time.strftime("%H:%M:%S", time.localtime())
+
+    def print(self, scope: str, message, level: int = LOGLEVEL["DEBUG"]):
+        if level > verboseLevel:
+            return
+        inf = self.prCyan("[INFO    ]")
+        if level == LOGLEVEL["ERROR"]:
+            inf = self.prRed("[ERROR   ]")
+        if level == LOGLEVEL["WARNING"]:
+            inf = self.prYello("[WARNING ]")
+        if level == LOGLEVEL["LOG"]:
+            inf = self.prGreen("[LOG     ]")
+        if level == LOGLEVEL["CRITICAL"]:
+            inf = self.prPurple("[CRITICAL]")
+        if level == LOGLEVEL["DEBUG"]:
+            inf = self.prGray("[DEBUG   ]")
+        
+        yl = self.prYello(f"[{str.ljust(scope, 20)}]")
+        if(message == ""):
+            print(f"[{self.getTimeSTR()}] {inf} {self.prYello("[global              ]")} {scope}")
+        else:
+            print(f"[{self.getTimeSTR()}] {inf} {yl} {message}")
+
+    def debug(self, scope: str, message = ""):
+        self.print(scope, message, level=LOGLEVEL["DEBUG"])
+    def info(self, scope: str, message = ""):
+        self.print(scope, message, level=LOGLEVEL["INFO"])
+    def warning(self, scope: str, message = ""):
+        self.print(scope, message, level=LOGLEVEL["WARNING"])
+    def error(self, scope: str, message = ""):
+        self.print(scope, message, level=LOGLEVEL["ERROR"])
+    def critical(self, scope: str, message = ""):
+        self.print(scope, message, level=LOGLEVEL["CRITICAL"])
+    def log(self, scope: str, message = ""):
+        self.print(scope, message, level=LOGLEVEL["LOG"])
+
+    def fit(self, stri: str, length: int):
+        stri = str(stri)
+        if(len(stri) <= length):
+            return str.ljust(stri, length)
+        else:
+            strlen = len(stri)
+            return "..." + stri[strlen - length + 3:]
+
+logger = L()
 
 
 #######################################
@@ -186,7 +260,11 @@ class Parser:
         if self.current_tok.type == 64: return Node("comment", token=self.current_tok), None
         elif self.current_tok.type == 5: return Node("indent", token=self.current_tok), None
         method_name = f'type_{self.current_tok.type}'
-        method = getattr(self, method_name)
+        try:
+            method = getattr(self, method_name)
+        except Error as e:
+            logger.debug("build_ast", f"<type: {logger.fit(method_name, 10)}>")
+            raise e
         node, error = method(parent)
         if error: return node, error
         if node.name != "new_line": node.parent = parent
@@ -702,6 +780,8 @@ class Function:
 #######################################
 
 def make_basic_files(version, file_dir, namespace = "pack"):
+    logger.debug("make_basic_files", f"version: {version}, file_dir: {file_dir}, namespace: {namespace}")
+
     function_folder = "function"
     if version[:4] == "1.20": function_folder = "functions"
 
@@ -2437,26 +2517,38 @@ def print_tree(ast):
             print("%s%s" % (pre, node.name))
 
 def interprete(filename, version, result_dir, namespace, is_modul = False, token = None):
+    logger.debug("interprete", f"<Filename: {logger.fit(filename, 20)} Is_modul: {logger.prCyan(logger.fit(str(is_modul), 5))}>")
     if len(filename) < 7 or filename[-7:] != ".planet": filename += ".planet"
     token_arr = []
     if not os.path.isfile(filename):
         return None, Error(token, f"\"{filename}\" does not exist", filename, "")
+    
+    now = datetime.datetime.now()
     with tokenize.open(filename) as f:
+        logger.debug("open_file", f"{logger.fit(filename, 20)} took {logger.prYello(int((datetime.datetime.now() - now).total_seconds() * 1000) / 1000)}s")
+        now = datetime.datetime.now()
         tokens = tokenize.generate_tokens(f.readline)
         for token in tokens:
             if token.type != 64: token_arr.append(token)
+        logger.debug("tokenize_file",f"{logger.fit(filename, 20)} took {logger.prYello(int((datetime.datetime.now() - now).total_seconds() * 1000) / 1000)}s")
+        
+    now = datetime.datetime.now()
     parser = Parser(token_arr, filename)
     ast, error = parser.parse()
+    logger.debug("parse_file", f"{logger.fit(filename, 20)} took {logger.prYello(int((datetime.datetime.now() - now).total_seconds() * 1000) / 1000)}s")
     if error:
         if not is_modul: print("\n\n" + error.as_string())
         return None, error
 
     # print_tree(ast)
 
+    now = datetime.datetime.now()
+
     interpreter = None
     if not is_modul: interpreter = Interpreter(version, ast, result_dir=result_dir, namespace=namespace, filename=filename)
     else: interpreter = Interpreter(version, ast, filename.split("/")[-1][:-7] + "/", result_dir=result_dir, namespace=namespace, filename=filename)
     temp, error = interpreter.interprete(ast)
+    logger.debug("interprete_file", f"{logger.fit(filename, 20)} took {logger.prYello(int((datetime.datetime.now() - now).total_seconds() * 1000) / 1000)}s")
     if error:
         print("\n\n" + error.as_string())
         return None, error
@@ -2469,7 +2561,7 @@ def generate_datapack(filename, version, result_dir = "./", namespace = "pack"):
     namespace = namespace.strip()
     temp_namespace = namespace
     if result_dir == "" or namespace == "":
-        print("\n\nresult directory and namespace can not be empty string\n")
+        logger.critical("\n\nresult directory and namespace can not be empty string\n")
         return
     if result_dir[-1] != "/" and result_dir[-1] != "\\":
         result_dir += "/"
@@ -2501,29 +2593,40 @@ if __name__ == "__main__":
     parser.add_argument('-n', '--name')
     args = parser.parse_args()
     if args.cli:
-        print("==================")
-        print("Comet Compiler CLI")
-        print("==================")
+        logger.log("===============================================")
+        logger.log("  ██████╗ ██████╗ ███╗   ███╗███████╗████████╗ ")
+        logger.log(" ██╔════╝██╔═══██╗████╗ ████║██╔════╝╚══██╔══╝ ")
+        logger.log(" ██║     ██║   ██║██╔████╔██║█████╗     ██║    ")
+        logger.log(" ██║     ██║   ██║██║╚██╔╝██║██╔══╝     ██║    ")
+        logger.log(" ╚██████╗╚██████╔╝██║ ╚═╝ ██║███████╗   ██║    ")
+        logger.log("  ╚═════╝ ╚═════╝ ╚═╝     ╚═╝╚══════╝   ╚═╝    ")
+        logger.log("===============================================")
+
+        now = datetime.datetime.now()
+
         v = args.version
-        if v not in values:
-            print(f"Invalid version: {v} / Required version: {values}")
+        if v not in values or v == "":
+            logger.critical(f"Invalid version: {v} / Required version: {values}")
             sys.exit(0)
         p = args.planet
         d = args.dist
         if p == None:
-            print("planet file(-p / --planet) is required")
+            logger.critical("planet file(-p / --planet) is required")
             sys.exit(0)
         if d == None:
-            print("dist folder(-d / --dist) is required")
+            logger.critical("dist folder(-d / --dist) is required")
             sys.exit(0)
         n = args.name
-        if n == None: n = "pack"
+        if n == None: 
+            n = "pack"
+            logger.info("namespace", f"namespace is not defined, using default namespace: {logger.prGreen(n)}")
         
         interprete_result, error = generate_datapack(p, v, d, n)
         if error:
-            print(error.as_string())
+            logger.critical(error.as_string())
         else:
-            print("done!")
+            took = int((datetime.datetime.now() - now).total_seconds() * 1000) / 1000
+            logger.log(f"Done! Took {logger.prYello(took)}s")
 
 
         sys.exit(0)
