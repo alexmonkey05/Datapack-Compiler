@@ -4,6 +4,7 @@ def mob_tick(){
     
 }
 
+# 엘리트 몹이 될 가능성이 있는 몹 타입 태그
 var mob_type = "#minecraft:undead"
 
 def tick(){
