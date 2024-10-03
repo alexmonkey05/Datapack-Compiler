@@ -946,6 +946,11 @@ class Interpreter:
             var_name, error = method(node, input_nodes)
             if error: return None, error
             return var_name, None
+        elif node.children[0].name not in self.functions: return None, InvalidSyntaxError(
+                node.children[0].token,
+                self.filename,
+                f"{node.children[0].name} function was not defined"
+            )
         fun = self.functions[node.children[0].name]
         if len(fun.inputs) != len(input_nodes):
             return None, InvalidSyntaxError(

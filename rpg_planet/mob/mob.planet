@@ -1,0 +1,64 @@
+import test
+import summon
+
+/scoreboard objectives add 40planet_reduced_health dummy
+/scoreboard objectives add 40planet_health dummy
+/scoreboard objectives add 40planet_is_death dummy
+/scoreboard objectives add 40planet_death_animation_len dummy
+/scoreboard players set -5 40planet_num -5
+
+
+def detect_death(){
+    # 체력 가져오기
+    /execute store result score @s 40planet_reduced_health run data get entity @s Health 10
+    /scoreboard players remove @s 40planet_reduced_health 10000
+    /scoreboard players operation @s 40planet_reduced_health *= -5 40planet_num
+    # 죽음 감지
+    /execute if score @s 40planet_reduced_health >= @s 40planet_health run scoreboard players set @s 40planet_is_death 1
+    # 죽음 애니메이션 길이 설정
+    /scoreboard players operation temp 40planet_num = @s 40planet_death_animation_len
+    /execute on passengers run scoreboard players operation @s 40planet_death_animation_len = temp 40planet_num
+}
+
+def mob_tick(){
+    # 죽음 감지
+    detect_death()
+    # 각 몬스터에게 맞는 tick 함수 실행
+    execute(if entity @s[tag=40planet_test]){ test.test_tick() }
+    
+}
+
+def mob_attack(){
+    /say attack
+    # 각 몬스터에게 맞는 attack 함수 실행
+    execute(if entity @s[tag=40planet_test]){ test.attack() }
+
+}
+
+# 엘리트 몹이 될 가능성이 있는 몹 타입 태그
+var mob_type = "#minecraft:undead"
+
+def tick(){
+    execute(as @e[type=!player]){
+        # 엘리트몹 설정
+        /scoreboard players set is_mob 40planet_num 0
+        /execute if entity @s[tag=,type=^mob_type&] run scoreboard players set is_mob 40planet_num 1
+        execute(if score "is_mob" "40planet_num" matches 1){
+            /execute store result score temp 40planet_num run random value 1..1000
+            execute(if score "temp" "40planet_num" matches ..100){
+                /tag @s add elite_mob
+                /attribute @s minecraft:generic.scale base set 1.5
+                /execute store result score temp 40planet_num run random value 1..4
+                var loot_table_num = get_score("temp", "40planet_num")
+                /data modify entity @s DeathLootTable set value "rpg:elite_mob^loot_table_num&"
+                /effect give @s resistance infinite 0 true
+            }
+            /tag @s add at_e
+        }
+        execute(if entity @s[tag=40planet_rpg_mob]){ mob_tick() }
+        execute(if entity @s[tag=40planet_mob_display] unless predicate rpg_mob:vehicle){ 
+            /scoreboard players remove @s 40planet_death_animation_len 1
+            /execute if score @s 40planet_death_animation_len matches ..0 run kill @s
+        }
+    }
+}

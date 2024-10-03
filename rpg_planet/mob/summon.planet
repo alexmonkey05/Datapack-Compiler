@@ -1,0 +1,42 @@
+
+def set_basic(){
+    /effect give @s invisibility infinite 0 true
+    /attribute @s generic.max_health base set 1000
+    /data modify entity @s Health set value 1000f
+    /effect give @s resistance infinite 3 true
+    /tag @s add 40planet_rpg_mob
+    # 나중에 1.21.2 나오면 item_model 공기로 바꿔서 안 보이게 하기
+    /item replace entity @s weapon with stone_button[enchantments={"rpg_mob:detect_attack":1}]
+}
+
+def orange_mushroom(){
+    execute(summon slime){
+        /data merge entity @s {DeathLootTable:"mob:entities/orange_mushroom",Tags:["mob","orange_mushroom","same_rotation"],Size:0,Health:1000f,Passengers:[{Tags:["mob_display"],id:"item_display",item:{id:"carrot_on_a_stick",Count:1b,components:{"minecraft:custom_model_data":1000001}}}]}
+        set_basic()
+        /scoreboard players set @s mob_health -10
+    }
+}
+
+def blue_mushroom(){
+    execute(summon slime){
+        /data merge entity @s {DeathLootTable:"mob:entities/orange_mushroom",Tags:["mob","orange_mushroom","same_rotation"],Size:0,Health:1000f,Passengers:[{Tags:["mob_display"],id:"item_display",item:{id:"carrot_on_a_stick",Count:1b,components:{"minecraft:custom_model_data":1000001}}}]}
+        set_basic()
+        /scoreboard players set @s mob_health -10
+    }
+}
+
+def test(){
+    execute(summon husk){
+        /summon text_display ~ ~ ~ {Tags:["unset","40planet_mob_display"],text:'{"text":"기본"}',billboard:"vertical",transformation:{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],scale:[2f,2f,2f],translation:[0f,.5f,0f]}}
+        /ride @n[distance=..0.01,tag=unset] mount @s
+        /execute on passengers run tag @s remove unset
+        set_basic()
+        /effect clear @s invisibility
+        # 죽음 애니메이션 길이 1초로 설정
+        /scoreboard players set @s 40planet_death_animation_len 20
+        /data modify entity @s DeathLootTable set value ""
+        /tag @s add 40planet_test
+        # 체력 20으로 설정
+        /scoreboard players set @s 40planet_health 200
+    }
+}

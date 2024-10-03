@@ -2,7 +2,6 @@ import id
 import skill
 import stat
 import blocks
-import mob
 
 # camera.test()
 

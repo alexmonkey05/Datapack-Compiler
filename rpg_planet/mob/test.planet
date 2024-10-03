@@ -1,0 +1,22 @@
+def death(){
+    /execute on passengers run data modify entity @s text set value '{"text":"죽음"}'
+    /execute on passengers run ride @s dismount
+    /tp @s ~ ~1000 ~
+    /kill @s
+}
+
+def attack(){
+    /scoreboard players set @s 40planet_num 10
+    /execute on passengers run data modify entity @s text set value '{"text":"공격"}'
+}
+
+def test_tick(){
+    execute(if score "@s" "40planet_is_death" matches 1){
+        death()
+        return 0
+    }
+    /execute if score @s 40planet_num matches 0.. run scoreboard players remove @s 40planet_num 1
+    execute(if score "@s" "40planet_num" matches 0){
+        /execute on passengers run data modify entity @s text set value '{"text":"기본"}'
+    }
+}
