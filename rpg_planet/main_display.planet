@@ -17,6 +17,38 @@ var inv_ui;
 var player_id;
 var inv_ui_len;
 
+def summon_window(){
+    execute(summon minecraft:block_display){
+        /data merge entity @s {Tags:["rpg_window_marker","unset"]}
+        /tp @s ~ ~ ~ ~180 0
+    }
+    execute(summon minecraft:text_display){
+        /data merge entity @s {Tags:["unset","40planet_gui_entity"],transformation:{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],scale:[7f,10f,1f],translation:[-.085f,1.5f,-.15f]}}
+        /tp @s ~ ~ ~ ~180 0
+    }
+    execute(summon minecraft:text_display){
+        /data merge entity @s {Tags:["unset","40planet_gui_entity"],transformation:{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],scale:[.1f,.1f,1f],translation:[0f,1.7f,-.15f]},text:'{"text":"[ 스텟 ]","bold":true}',background:0}
+        /tp @s ~ ~ ~ ~180 0
+    }
+    execute(summon minecraft:text_display){
+        /data merge entity @s {Tags:["unset","40planet_gui_entity"],transformation:{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],scale:[.1f,.1f,1f],translation:[0f,1.61f,-.15f]},text:'{"text":"[ 장비 ]","bold":true}',background:0}
+        /tp @s ~ ~ ~ ~180 0
+    }
+    execute(summon minecraft:text_display){
+        /data merge entity @s {Tags:["unset","40planet_gui_entity"],transformation:{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],scale:[.1f,.1f,1f],translation:[0f,1.52f,-.15f]},text:'{"text":"[ 스킬 ]","bold":true}',background:0}
+        /tp @s ~ ~ ~ ~180 0
+    }
+    /execute rotated ~180 0 run summon minecraft:interaction ^ ^1.70 ^-.15 {Tags:["unset","40planet_gui_entity"],height:.03f,width:.1f,response:1b}
+    /execute rotated ~180 0 run summon minecraft:interaction ^ ^1.61 ^-.15 {Tags:["unset","40planet_gui_entity"],height:.03f,width:.1f,response:1b}
+    /execute rotated ~180 0 run summon minecraft:interaction ^ ^1.52 ^-.15 {Tags:["unset","40planet_gui_entity"],height:.03f,width:.1f,response:1b}
+
+    /scoreboard players operation #temp 40planet_num = @s 40planet_id
+    execute(as @e[distance=..2,tag=unset]){
+        /scoreboard players operation @s 40planet_id = #temp 40planet_num
+        /tag @s remove unset
+    }
+}
+
 def first_load_player(){
     /scoreboard players set @s 40planet_inv_idx 0
     /scoreboard players set @s 40planet_rpg_first 0
@@ -25,17 +57,6 @@ def first_load_player(){
     /item replace entity @s container.17 with command_block[minecraft:custom_data={40planet_inv_btn:1b,40planet_ui:1b},minecraft:custom_name='{"text":"메뉴","italic":false}']
 }
 
-var blank_item = { # 빈칸
-    id:"minecraft:black_stained_glass_pane",
-    count:1,
-    components:{
-        "minecraft:hide_tooltip":{},
-        "minecraft:custom_model_data":1000,
-        "minecraft:custom_data":{
-            "40planet_ui":1b
-        }
-    }
-}
 var button_item = { # 메뉴 버튼
     id:"minecraft:command_block",
     count:1,
@@ -50,9 +71,6 @@ var button_item = { # 메뉴 버튼
 }
 
 var default_menu = []
-var i = 0;
-while(i < 27){ append(default_menu, blank_item); i = i + 1 }
-default_menu[8] = button_item
 
 var main_menu = default_menu
 main_menu[11] = { # 스텟
@@ -702,6 +720,12 @@ def tick(){
         }
         /execute unless items entity @s container.17 *[minecraft:custom_data~{40planet_ui:1b}] run function __namespace__:detect_inventory
 
+    }
+    
+    execute(as @e[tag=rpg_window_marker] at @s unless entity @a[distance=..0.0001]){
+        /scoreboard players operation #temp 40planet_num = @s 40planet_id
+        /execute as @e[tag=40planet_gui_entity,distance=..2] if score @s 40planet_id = #temp 40planet_num run kill @s
+        /kill @s
     }
 
     

@@ -971,7 +971,10 @@ class Interpreter:
             else:
                 self.write(f"data modify storage {STORAGE_NAME} {var.temp} set value {temp}\n")
 
-        file.write(f"function {self.namespace}:{self.get_folder_dir()}{fun.name}\n")
+        if self.is_module and "/" in fun.name:
+            file.write(f"function {self.namespace}:{fun.name}\n")
+        else:
+            file.write(f"function {self.namespace}:{self.get_folder_dir()}{fun.name}\n")
         file.close()
         return fun.temp, None
     def import_(self, node):
@@ -1060,6 +1063,7 @@ class Interpreter:
     def while_(self, node):
         dump_function, error = self.if_(node, "while")
         if error: return None, error
+        self.return_command_process(node)
         current_file = self.current_file
         self.current_file = dump_function
 
@@ -1267,20 +1271,29 @@ class Interpreter:
         return None, None
 
     def break_and_return(self, node):
-        for temp in self.used_return:
-            self.write(f"execute if score #{temp} {SCOREBOARD_NAME} matches 1 run return run data get storage {STORAGE_NAME} {self.used_return[temp]}\n")
-            self.write_first(f"scoreboard players set #{temp} {SCOREBOARD_NAME} 0\n")
+        self.break_command_process(node)
+        self.return_command_process(node)
+    def break_command_process(self, node):
         for temp in self.used_break:
             self.write(f"execute if score #{temp} {SCOREBOARD_NAME} matches 1 run return 0\n")
             self.write_first(f"scoreboard players set #{temp} {SCOREBOARD_NAME} 0\n")
-        
+
+        while node.name != "root":
+            node = node.parent
+            if node.name == "while":
+                self.used_break = []
+            elif node.name == "if" or node.name == "execute": return
+    def return_command_process(self, node):
+        for temp in self.used_return:
+            self.write(f"execute if score #{temp} {SCOREBOARD_NAME} matches 1 run return run data get storage {STORAGE_NAME} {self.used_return[temp]}\n")
+            self.write_first(f"scoreboard players set #{temp} {SCOREBOARD_NAME} 0\n")
         while node.name != "root":
             node = node.parent
             if node.name == "define_function":
                 self.used_return = {}
-            elif node.name == "while":
-                self.used_break = []
-            elif node.name == "if" or node.name == "execute": return
+            elif node.name == "if" or node.name == "execute" or node.name == "while": return
+
+
 
     def write_first(self, txt):
         file = open(self.current_dir + self.current_file, "r", encoding="utf-8")
@@ -2146,11 +2159,12 @@ class Execute:
 
     def entity(self, node) -> string:
         if node.name != "@":
-            return None, InvalidSyntaxError(
-                self.current_node.token,
-                self.interpreter.filename,
-                f'\"entity\" must be started with \"@\"'
-            )
+            return node.name, None
+            # return None, InvalidSyntaxError(
+            #     self.current_node.token,
+            #     self.interpreter.filename,
+            #     f'\"entity\" must be started with \"@\"'
+            # )
         result = ""
 
         if node in self.interpreter.variables:

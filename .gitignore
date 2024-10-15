@@ -16,5 +16,6 @@ compiler.spec
 /village-test
 /rpg_mob
 /rpg_mob_datapack
+/bdengine
 
 .venv

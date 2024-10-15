@@ -57,6 +57,11 @@ def tick(){
             /execute if score @s 40planet_num matches 10 run kill @s
         }
     }
+    execute(as @e[tag=,type=item]){
+        /tag @s add at_e
+        /data modify entity @s CustomName set from entity @s Item.components."minecraft:custom_name"
+        /data modify entity @s CustomNameVisible set value 1b
+    }
 }
 
 var target_attack

@@ -37,6 +37,6 @@ def test(){
         /data modify entity @s DeathLootTable set value ""
         /tag @s add 40planet_test
         # 체력 20으로 설정
-        /scoreboard players set @s 40planet_health 200
+        /scoreboard players set @s 40planet_rpg_health 200
     }
 }

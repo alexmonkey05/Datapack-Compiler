@@ -1,5 +1,21 @@
-def timer(var a) {
-    if(type(a) == "int") {
-        print("wa! it is int!")
+def tick(){
+    execute(if entity @e[tag=,type=snowball] as @e[tag=,type=snowball]){
+        /tag @s add snowball
+        /tag @s add unset
+        execute(at @s summon marker){
+            /ride @s mount @e[distance=..0.001,tag=unset,limit=1]
+            /tag @s add snowball_marker
+        }
+        /tag @s remove unset
+    }
+
+    execute(as @e[tag=snowball_marker] at @s){
+        /execute if predicate {"condition":"minecraft:entity_properties","entity":"this","predicate":{"vehicle":{}}} run return 0
+
+        /execute at @s run summon tnt
+        execute(if score "@s" "40planet_num"){
+                
+        }
+        /kill @s
     }
 }
