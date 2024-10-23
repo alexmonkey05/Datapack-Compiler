@@ -1,4 +1,10 @@
-execute(if predicate {"condition":"minecraft:entity_properties",
-"entity":"this","predicate":{"vehicle":{}}}){
+execute(if predicate {
+    "condition":"minecraft:entity_properties",
+    "entity":"this",
+    "predicate":{
+        "vehicle":{}
+        }
+    }
+){
 
 }

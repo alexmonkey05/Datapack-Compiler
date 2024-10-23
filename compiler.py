@@ -2375,7 +2375,6 @@ class Execute:
         elif node == "predicate":
             next_node = self.advance()
             if next_node.name == "{":
-                print_tree(next_node.parent)
                 paren_cnt = 1
                 result = "{"
                 while paren_cnt > 0:
