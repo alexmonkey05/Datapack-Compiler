@@ -812,7 +812,8 @@ def make_basic_files(version, file_dir, namespace = "pack"):
         "1.20.4": "26",
         "1.20.6": "41",
         "1.21": "48",
-        "1.21.1": "48"
+        "1.21.1": "48",
+        "1.21.2": "57"
     }
     file.write('{ "pack": {"pack_format": ' + datapack_versions[version] + ', "description": "by 40planet"} }')
     file.close()
@@ -2212,7 +2213,7 @@ class Execute:
         else:
             self.result += f"$({self.interpreter.variables[node.name][-1].temp[5:]}) "
             if self.result[0] != "$": self.result = "$" + self.result
-    def namespace(self) -> Node:
+    def namespace(self) -> string:
         namespace = self.advance().name
         if namespace == NAMESPACE: namespace = self.interpreter.namespace
         is_colon = self.advance().name == ":"
@@ -2369,8 +2370,24 @@ class Execute:
                     self.interpreter.filename,
                     f'\"<if|unless> score <target> <scoreboard>\" must be followed by one of ("<", "<=", "=", ">=", ">", "matches")'
                 )
-        elif node == "dimension" or node == "predicate":
+        elif node == "dimension":
             self.result += f"{self.namespace()} "
+        elif node == "predicate":
+            next_node = self.advance()
+            if next_node.name == "{":
+                print_tree(next_node.parent)
+                paren_cnt = 1
+                result = "{"
+                while paren_cnt > 0:
+                    current_string = self.advance().name
+                    if current_string == "{": paren_cnt += 1
+                    elif current_string == "}": paren_cnt -= 1
+                    
+                    if current_string != "\n": result += current_string
+                self.result += result + " "
+            else:
+                self.reverse()
+                self.result += f"{self.namespace()} "
         elif node == "function":
             if len(self.current_node.children) > 0:
                 interpreter = self.interpreter
@@ -2433,6 +2450,11 @@ class Execute:
                         f'\"*\" or number must come'
                     )
                     slot += ".*"
+            else:
+                next_node = self.advance()
+                if next_node.name == ".":
+                    slot += f".{self.advance().name}"
+                else: self.reverse()
             item = self.namespace()
             current_node = self.advance()
             if current_node.name == "[":
@@ -2601,7 +2623,7 @@ def reset_temp():
     used_temp = []
 
 import argparse
-values = ["1.20.4", "1.20.6", "1.21", "1.21.1"]
+values = ["1.20.4", "1.20.6", "1.21", "1.21.1", "1.21.2"]
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
                     prog='comet_compiler',
@@ -2711,6 +2733,6 @@ if __name__ == "__main__":
 
     combobox = ttk.Combobox(tk,values=values,state="readonly")
     combobox.grid(row=3,column=0)
-    combobox.set("1.21.1")
+    combobox.set("1.21.2")
 
     tk.mainloop()

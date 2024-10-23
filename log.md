@@ -250,9 +250,9 @@ execute(if function {
   - 정형화된 CLI 로그 추가
   - 에러 메시지, 실행 시 나오는 아이콘 등
   - 38번째 줄에 있는 `verboseLevel = LOGLEVEL["DEBUG"]`의 `"DEBUG"` 부분을 변경하여 로그에 표시될 내용을 변경할 수 있음
-# 아직 릴리즈 안 함 2.15.2
+# 2024/10/23 2.16
 - 모듈 내의 정의되지 않은 함수를 호출 할 때에 에러메시지가 안 뜨던 오류 수정
-- 아래와 같이 `if predicate`를 작성 시, 에러가 나는 현상 발견
+- 아래와 같이 `if predicate`를 작성 시, 에러가 나는 현상 수정
 ```
 if predicate {"condition":"minecraft:entity_properties","entity":"this","predicate":{"vehicle":{}}}
 ```
@@ -263,3 +263,5 @@ if predicate {"condition":"minecraft:entity_properties","entity":"this","predica
 ```
 if block "~ ~ ~" chest[facing=east]
 ```
+- `if items`에서 `weapon.offhand` 슬롯을 감지하려고 하면 에러가 나던 현상 수정
+- 선택 가능한 버전에 `1.21.2` 추가

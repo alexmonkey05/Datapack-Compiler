@@ -1,9 +1,8 @@
 import id
 import skill
 import stat
-import blocks
+# import blocks
 
-# camera.test()
 
 /scoreboard objectives add 40planet_inv_idx dummy
 /scoreboard objectives add 40planet_rpg_first dummy
@@ -17,37 +16,6 @@ var inv_ui;
 var player_id;
 var inv_ui_len;
 
-def summon_window(){
-    execute(summon minecraft:block_display){
-        /data merge entity @s {Tags:["rpg_window_marker","unset"]}
-        /tp @s ~ ~ ~ ~180 0
-    }
-    execute(summon minecraft:text_display){
-        /data merge entity @s {Tags:["unset","40planet_gui_entity"],transformation:{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],scale:[7f,10f,1f],translation:[-.085f,1.5f,-.15f]}}
-        /tp @s ~ ~ ~ ~180 0
-    }
-    execute(summon minecraft:text_display){
-        /data merge entity @s {Tags:["unset","40planet_gui_entity"],transformation:{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],scale:[.1f,.1f,1f],translation:[0f,1.7f,-.15f]},text:'{"text":"[ 스텟 ]","bold":true}',background:0}
-        /tp @s ~ ~ ~ ~180 0
-    }
-    execute(summon minecraft:text_display){
-        /data merge entity @s {Tags:["unset","40planet_gui_entity"],transformation:{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],scale:[.1f,.1f,1f],translation:[0f,1.61f,-.15f]},text:'{"text":"[ 장비 ]","bold":true}',background:0}
-        /tp @s ~ ~ ~ ~180 0
-    }
-    execute(summon minecraft:text_display){
-        /data merge entity @s {Tags:["unset","40planet_gui_entity"],transformation:{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],scale:[.1f,.1f,1f],translation:[0f,1.52f,-.15f]},text:'{"text":"[ 스킬 ]","bold":true}',background:0}
-        /tp @s ~ ~ ~ ~180 0
-    }
-    /execute rotated ~180 0 run summon minecraft:interaction ^ ^1.70 ^-.15 {Tags:["unset","40planet_gui_entity"],height:.03f,width:.1f,response:1b}
-    /execute rotated ~180 0 run summon minecraft:interaction ^ ^1.61 ^-.15 {Tags:["unset","40planet_gui_entity"],height:.03f,width:.1f,response:1b}
-    /execute rotated ~180 0 run summon minecraft:interaction ^ ^1.52 ^-.15 {Tags:["unset","40planet_gui_entity"],height:.03f,width:.1f,response:1b}
-
-    /scoreboard players operation #temp 40planet_num = @s 40planet_id
-    execute(as @e[distance=..2,tag=unset]){
-        /scoreboard players operation @s 40planet_id = #temp 40planet_num
-        /tag @s remove unset
-    }
-}
 
 def first_load_player(){
     /scoreboard players set @s 40planet_inv_idx 0
@@ -55,306 +23,6 @@ def first_load_player(){
     player_id = id.set_id()
     /data modify storage 40planet:rpg players.^player_id&.armor set value [{}, {}, {}, {}, {}, {}, {}]
     /item replace entity @s container.17 with command_block[minecraft:custom_data={40planet_inv_btn:1b,40planet_ui:1b},minecraft:custom_name='{"text":"메뉴","italic":false}']
-}
-
-var button_item = { # 메뉴 버튼
-    id:"minecraft:command_block",
-    count:1,
-    components:{
-        # "minecraft:custom_model_data":1000,
-        "minecraft:custom_data":{
-            "40planet_inv_btn":1b, # 인벤 바꾸는 버튼인지 확인
-            "40planet_ui":1b # 인벤 ui인지 확인
-        },
-        "minecraft:custom_name":'{"text":"메뉴","italic":false}'
-    }
-}
-
-var default_menu = []
-
-var main_menu = default_menu
-main_menu[11] = { # 스텟
-    id:"minecraft:netherite_upgrade_smithing_template",
-    count:1,
-    components:{
-        # "minecraft:custom_model_data":1000,
-        "minecraft:custom_data":{
-            "40planet_ui":1b
-        },
-        "minecraft:custom_name":'{"text":"스텟","italic":false}'
-    }
-}
-main_menu[13] = { # 장비
-    id:"minecraft:iron_chestplate",
-    count:1,
-    components:{
-        # "minecraft:custom_model_data":1000,
-        "minecraft:custom_data":{
-            "40planet_ui":1b
-        },
-        "minecraft:custom_name":'{"text":"장비","italic":false}'
-    }
-}
-main_menu[15] = { # 스킬
-    id:"minecraft:book",
-    count:1,
-    components:{
-        # "minecraft:custom_model_data":1000,
-        "minecraft:custom_data":{
-            "40planet_ui":1b
-        },
-        "minecraft:custom_name":'{"text":"스킬","italic":false}'
-    }
-}
-
-var stat_menu = default_menu
-stat_menu[10] = { # 체력
-    id:"minecraft:totem_of_undying",
-    count:1,
-    components:{
-        # "minecraft:custom_model_data":1000,
-        "minecraft:custom_data":{
-            "40planet_ui":1b
-        },
-        "minecraft:custom_name":'{"text":"체력","italic":false}'
-    }
-}
-stat_menu[12] = { # 근력
-    id:"minecraft:iron_sword",
-    count:1,
-    components:{
-        # "minecraft:custom_model_data":1000,
-        "minecraft:custom_data":{
-            "40planet_ui":1b
-        },
-        "minecraft:custom_name":'{"text":"근력","italic":false}'
-    }
-}
-stat_menu[14] = { # 민첩
-    id:"minecraft:wind_charge",
-    count:1,
-    components:{
-        # "minecraft:custom_model_data":1000,
-        "minecraft:custom_data":{
-            "40planet_ui":1b
-        },
-        "minecraft:custom_name":'{"text":"민첩","italic":false}'
-    }
-}
-stat_menu[16] = { # 마나
-    id:"minecraft:breeze_rod",
-    count:1,
-    components:{
-        # "minecraft:custom_model_data":1000,
-        "minecraft:custom_data":{
-            "40planet_ui":1b
-        },
-        "minecraft:custom_name":'{"text":"마나","italic":false}'
-    }
-}
-
-var armor_menu = default_menu
-armor_menu[2] = {
-    id:"minecraft:leather_helmet",
-    count:1,
-    components:{
-        # "minecraft:custom_model_data":1000,
-        "minecraft:custom_data":{
-            "40planet_ui":1b,
-            "40planet_ui_11":1b
-        },
-        "minecraft:custom_name":'{"text":"[ 투구 ]","italic":false}'
-    }
-}
-armor_menu[4] = {
-    id:"minecraft:leather_leggings",
-    count:1,
-    components:{
-        # "minecraft:custom_model_data":1000,
-        "minecraft:custom_data":{
-            "40planet_ui":1b,
-            "40planet_ui_13":1b
-        },
-        "minecraft:custom_name":'{"text":"[ 바지 ]","italic":false}'
-    }
-}
-armor_menu[6] = {
-    id:"minecraft:lead",
-    count:1,
-    components:{
-        # "minecraft:custom_model_data":1000,
-        "minecraft:custom_data":{
-            "40planet_ui":1b,
-            "40planet_ui_15":1b
-        },
-        "minecraft:custom_name":'{"text":"[ 목걸이 ]","italic":false}'
-    }
-}
-armor_menu[11] = {
-    id:"minecraft:leather_chestplate",
-    count:1,
-    components:{
-        # "minecraft:custom_model_data":1000,
-        "minecraft:custom_data":{
-            "40planet_ui":1b,
-            "40planet_ui_20":1b
-        },
-        "minecraft:custom_name":'{"text":"[ 갑옷 ]","italic":false}'
-    }
-}
-armor_menu[13] = {
-    id:"minecraft:leather_boots",
-    count:1,
-    components:{
-        # "minecraft:custom_model_data":1000,
-        "minecraft:custom_data":{
-            "40planet_ui":1b,
-            "40planet_ui_22":1b
-        },
-        "minecraft:custom_name":'{"text":"[ 신발 ]","italic":false}'
-    }
-}
-armor_menu[15] = {
-    id:"minecraft:ender_pearl",
-    count:1,
-    components:{
-        # "minecraft:custom_model_data":1000,
-        "minecraft:custom_data":{
-            "40planet_ui":1b,
-            "40planet_ui_24":1b
-        },
-        "minecraft:custom_name":'{"text":"[ 마법의 정수 ]","italic":false}'
-    }
-}
-armor_menu[24] = {
-    id:"minecraft:ender_pearl",
-    count:1,
-    components:{
-        # "minecraft:custom_model_data":1000,
-        "minecraft:custom_data":{
-            "40planet_ui":1b,
-            "40planet_ui_33":1b
-        },
-        "minecraft:custom_name":'{"text":"[ 마법의 정수 ]","italic":false}'
-    }
-}
-
-var skill_menu = default_menu
-skill_menu[4] = { # 장비 슬롯
-    id:"minecraft:command_block",
-    count:1,
-    components:{
-        # "minecraft:custom_model_data":1000,
-        "minecraft:custom_data":{
-            "40planet_ui":1b,
-            "40planet_ui_skill":1b
-        },
-        "minecraft:custom_name":'{"text":"장비를 올려놓으세요","italic":false}'
-    }
-}
-skill_menu[24] = {} # 스킬 슬롯
-skill_menu[22] = {} # 스킬 슬롯
-skill_menu[20] = {} # 스킬 슬롯
-
-inv_ui = [[], main_menu, stat_menu, armor_menu, skill_menu];
-inv_ui_len = len(inv_ui)
-# a3924728-f122-470f-977a-79ec38d81808
-# /summon minecraft:armor_stand 0 -60 0 {UUID:[I;-1550694616,-249411825,-1753581076,953686024],NoGravity:1b,Invisible:1b,Small:1b}
-# print(inv_ui)
-
-# ui아이템 지우기
-def clear_items(){
-    /clear @s *[minecraft:custom_data~{40planet_ui:1b}]
-    /execute anchored eyes positioned ^ ^ ^ run kill @e[distance=..5,tag=,type=item,nbt={Item:{components:{"minecraft:custom_data":{40planet_ui:1b}}}}]
-}
-
-def setting_inv_ui_2(){
-    var stat_point = get_score("@s", "40planet_stat_point")
-    /execute in minecraft:overworld run item replace block 15 -60 15 container.0 from entity @s container.19
-    /execute if score @s 40planet_stat_point matches 1.. in minecraft:overworld run data modify block 15 -60 15 Items[0].components."minecraft:custom_name" set value '[{"italic":false,"text":"체력"},{"text":" [↑] ^stat_point&","color":"yellow"}]'
-    var value = get_score("@s", "40planet_rpg_health")
-    var equip_value = get_score("@s", "40planet_rpg_equipment_health")
-    /execute in minecraft:overworld run data modify block 15 -60 15 Items[0].components."minecraft:lore" set value ['[{"text":"","color":"green","italic":false}, {"text":"^value&","color":"white"}, " +^equip_value&"]']
-    /execute in minecraft:overworld run item replace entity @s container.19 from block 15 -60 15 container.0
-    /execute in minecraft:overworld run item replace block 15 -60 15 container.0 from entity @s container.21
-    /execute if score @s 40planet_stat_point matches 1.. in minecraft:overworld run data modify block 15 -60 15 Items[0].components."minecraft:custom_name" set value '[{"italic":false,"text":"근력"},{"text":" [↑] ^stat_point&","color":"yellow"}]'
-    value = get_score("@s", "40planet_rpg_strength")
-    equip_value = get_score("@s", "40planet_rpg_equipment_strength")
-    /execute in minecraft:overworld run data modify block 15 -60 15 Items[0].components."minecraft:lore" set value ['[{"text":"","color":"green","italic":false}, {"text":"^value&","color":"white"}, " +^equip_value&"]']
-    /execute in minecraft:overworld run item replace entity @s container.21 from block 15 -60 15 container.0
-    /execute in minecraft:overworld run item replace block 15 -60 15 container.0 from entity @s container.23
-    /execute if score @s 40planet_stat_point matches 1.. in minecraft:overworld run data modify block 15 -60 15 Items[0].components."minecraft:custom_name" set value '[{"italic":false,"text":"민첩"},{"text":" [↑] ^stat_point&","color":"yellow"}]'
-    value = get_score("@s", "40planet_rpg_speed")
-    equip_value = get_score("@s", "40planet_rpg_equipment_speed")
-    /execute in minecraft:overworld run data modify block 15 -60 15 Items[0].components."minecraft:lore" set value ['[{"text":"","color":"green","italic":false}, {"text":"^value&","color":"white"}, " +^equip_value&"]']
-    /execute in minecraft:overworld run item replace entity @s container.23 from block 15 -60 15 container.0
-    /execute in minecraft:overworld run item replace block 15 -60 15 container.0 from entity @s container.25
-    /execute if score @s 40planet_stat_point matches 1.. in minecraft:overworld run data modify block 15 -60 15 Items[0].components."minecraft:custom_name" set value '[{"italic":false,"text":"마나"},{"text":" [↑] ^stat_point&","color":"yellow"}]'
-    value = get_score("@s", "40planet_rpg_mana")
-    equip_value = get_score("@s", "40planet_rpg_equipment_mana")
-    /execute in minecraft:overworld run data modify block 15 -60 15 Items[0].components."minecraft:lore" set value ['[{"text":"","color":"green","italic":false}, {"text":"^value&","color":"white"}, " +^equip_value&"]']
-    /execute in minecraft:overworld run item replace entity @s container.25 from block 15 -60 15 container.0
-}
-
-var armor_data
-var armor_types = ["helmet", "leggings", "neck", "chestplate", "boots", "ring", "ring"]
-def update_armor_slot(var slot, var idx, var update_armor_data){
-    if(update_armor_data){
-        /execute unless data storage 40planet:rpg players.^player_id&.armor run data modify storage 40planet:rpg players.^player_id&.armor set value [{}, {}, {}, {}, {}, {}, {}]
-        /data modify storage 40planet:rpg players.armor set from storage 40planet:rpg players.^player_id&.armor
-        armor_data = get_data("storage", "40planet:rpg", "players.armor")
-    }
-    var armor_type = armor_types[idx]
-    /execute in minecraft:overworld run item replace block 15 -60 15 container.0 with air
-    /execute in minecraft:overworld run item replace block 15 -60 15 container.1 with stone
-    armor_data[idx].Slot = 1b
-    execute(in minecraft:overworld){
-        set_data("block", "15 -60 15", "Items[0]", armor_data[idx])
-    }
-    /execute if items block 15 -60 15 container.1 *[minecraft:custom_data~{40planet_^armor_type&:1b}] in minecraft:overworld run item replace entity @s container.^slot& from block 15 -60 15 container.1
-}
-
-def setting_inv_ui_3(){
-    /execute unless data storage 40planet:rpg players.^player_id&.armor run data modify storage 40planet:rpg players.^player_id&.armor set value [{}, {}, {}, {}, {}, {}, {}]
-    /data modify storage 40planet:rpg players.armor set from storage 40planet:rpg players.^player_id&.armor
-    armor_data = get_data("storage", "40planet:rpg", "players.armor")
-    update_armor_slot(11, 0, false)
-    update_armor_slot(13, 1, false)
-    update_armor_slot(15, 2, false)
-    update_armor_slot(20, 3, false)
-    update_armor_slot(22, 4, false)
-    update_armor_slot(24, 5, false)
-    update_armor_slot(33, 6, false)
-
-}
-
-# change_inv로 바꾸기
-def change_inventory(var change_inv){
-    /execute at @s run playsound minecraft:entity.arrow.hit_player weather @s ~ ~ ~ .5 1
-    /scoreboard players set change_inv 40planet_num 1
-    clear_items()
-    var slot
-    var i = 9;
-    while(len(change_inv) > 0){
-        execute(if data change_inv[0].Slot) {slot = int(change_inv[0].Slot)}
-        execute(unless data change_inv[0].Slot) {slot = i}
-        if(slot > 8){
-            change_inv[0].Slot = 1b;
-            /execute in minecraft:overworld unless data block 15 -60 15 Items[0] run data modify block 15 -60 15 Items set value [{id:"stone",count:1b,Slot:1b}]
-            execute(in minecraft:overworld){set_data("block", "15 -60 15", "Items[0]", change_inv[0])}
-            i = i + 1;
-            set_score("temp", "40planet_num", slot)
-
-            /scoreboard players set rpg_slot_change 40planet_num 1
-            /execute if score @s 40planet_inv_idx matches 4 if score temp 40planet_num matches 13 if items entity @s container.13 * unless items entity @s container.13 *[minecraft:custom_data~{40planet_ui:1b}] run scoreboard players set rpg_slot_change 40planet_num 0
-
-            /execute if score rpg_slot_change 40planet_num matches 1 in minecraft:overworld run item replace entity @s container.^slot& from block 15 -60 15 container.1
-        }
-        del(change_inv[0])
-    }
-    /execute if score @s 40planet_inv_idx matches 4 run data modify storage 40planet:rpg players.^player_id&.skill_item set value {}
-    var ui_idx = get_score("@s", "40planet_inv_idx")
-    /function __namespace__:setting_inv_ui_^ui_idx&
 }
 
 # slot번째 슬롯의 아이템 돌려주고 지우기
@@ -367,119 +35,6 @@ def return_item(var slot){
         /execute in minecraft:overworld run item replace entity @s container.0 from block 15 -60 15 container.1
         /tag @s remove 40planet_rpg_item
     }
-}
-
-# 17번 슬롯 클릭
-def click_menu(){
-    clear_items()
-    execute(if score "@s" "40planet_inv_idx" matches 3 ){
-        /item replace entity @s container.11 with air
-        /item replace entity @s container.13 with air
-        /item replace entity @s container.15 with air
-        /item replace entity @s container.20 with air
-        /item replace entity @s container.22 with air
-        /item replace entity @s container.24 with air
-        /item replace entity @s container.33 with air
-    }
-    execute(if score "@s" "40planet_inv_idx" matches 4 ){
-        return_item(13)
-        /item replace entity @s container.29 with air
-        /item replace entity @s container.31 with air
-        /item replace entity @s container.33 with air
-    }
-    /scoreboard players add @s 40planet_inv_idx 1
-    var inv_idx = get_score("@s", "40planet_inv_idx");
-    /execute if score @s 40planet_inv_idx matches 1 run data modify storage 40planet:rpg players.^player_id&.inventory set from entity @s Inventory
-    if (inv_idx > 1) {
-        inv_idx = 0;
-        /scoreboard players set @s 40planet_inv_idx 0
-    }
-    if(inv_idx != 0) {change_inventory(inv_ui[inv_idx])}
-    else{
-        /data modify storage 40planet:rpg players.inventory set from storage 40planet:rpg players.^player_id&.inventory
-        change_inventory(get_data("storage", "40planet:rpg", "players.inventory"))
-        /clear @s *[minecraft:custom_data~{40planet_ui:1b}]
-        /item replace entity @s container.17 with command_block[minecraft:custom_data={40planet_inv_btn:1b,40planet_ui:1b},minecraft:custom_name='{"text":"메뉴","italic":false}']
-    }
-}
-
-# 인벤 변경이 감지될 때 실행되는 함수
-def detect_inventory(){
-    # /say detect_inventory
-    /execute at @s run kill @e[distance=..5,tag=,type=item,nbt={Item:{components:{"minecraft:custom_data":{40planet_ui:1b}}}}]
-    player_id = id.get_id()
-    execute (if score "@s" "40planet_inv_idx" matches 0){
-        execute (unless items entity @s container.17 *[minecraft:custom_data~{40planet_ui:1b}]){
-            return_item(17)
-            click_menu()
-        }
-        return 0
-    }
-
-    var inv_idx = get_score("@s", "40planet_inv_idx");
-
-    # 잘못 넣은 아이템 돌려주기
-    var slot = 9
-    while(slot <= 35){
-        /execute in minecraft:overworld run item replace block 15 -60 15 container.1 from entity @s container.^slot&
-        execute(in minecraft:overworld unless items block "15 -60 15" container.1 *[minecraft:custom_data~{40planet_ui:1b}]){
-            if(slot == 17){
-                return_item(17)
-                click_menu()
-                execute(if score "@s" "40planet_inv_idx" matches 0){ break }
-            }
-            else{
-                /scoreboard players set is_btn 40planet_num 0
-                /scoreboard players set change_inv 40planet_num 0
-                /scoreboard players set not_change_inv 40planet_num 0
-                /execute store success score is_btn 40planet_num run function __namespace__:click_^inv_idx&_^slot&
-
-                # 빈 칸인 경우에는 다시 아이템을 채워넣기 위해서 return_item, change_inventory을 실행
-                execute(if score "is_btn" "40planet_num" matches 0){
-                    return_item(slot)
-                    execute(if score "not_change_inv" "40planet_num" matches 0){
-                        change_inventory(inv_ui[get_score("@s", "40planet_inv_idx")])
-                        break
-                    }
-                }
-                # 인벤을 바꾸는 버튼인 경우, 저장된 아이템과 현재 인벤의 정보가 안 맞을 수 밖에 없으므로 break
-                execute(unless score "is_btn" "40planet_num" matches 0 if score "change_inv" "40planet_num" matches 1){
-                    # print("change inv")
-                    break
-                }
-                execute(unless score "is_btn" "40planet_num" matches 0 if score "change_inv" "40planet_num" matches 0){
-                    # print("not change inv")
-                    execute(if score "not_change_inv" "40planet_num" matches 0){
-                        change_inventory(inv_ui[get_score("@s", "40planet_inv_idx")])
-                        break
-                    }
-                }
-            }
-        }
-        slot = slot + 1;
-    }
-}
-
-def click_1_20(){ # 스텟
-    return_item(20)
-    # print("스텟")
-    /scoreboard players set @s 40planet_inv_idx 2
-    change_inventory(inv_ui[2])
-    /return 1
-}
-def click_1_22(){ # 장비
-    return_item(22)
-    # print("장비")
-    /scoreboard players set @s 40planet_inv_idx 3
-    change_inventory(inv_ui[3])
-    /return 1
-}
-def click_1_24(){ # 스킬
-    return_item(24)
-    # print("스킬")
-    /scoreboard players set @s 40planet_inv_idx 4
-    change_inventory(inv_ui[4])
-    /return 1
 }
 
 def update_stat(){ # 장비 스텟 + 기본 스텟 적용하기
@@ -537,6 +92,7 @@ def click_2_25(){ # 마나
     /return 1
 }
 
+# 장비의 업그레이드 스텟 추가해주는 함수
 def update_equipment_stat(){
     /scoreboard players set @s 40planet_rpg_equipment_health 0
     /scoreboard players set @s 40planet_rpg_equipment_strength 0
@@ -571,6 +127,7 @@ def update_equipment_stat(){
     update_stat()
 }
 
+# 갑옷 장착, 해제 함수
 def armor_slot(var slot, var idx){
     /execute in minecraft:overworld run item replace block 15 -60 15 container.0 from entity @s container.^slot&
     execute(if score "is_correct_slot" "40planet_num" matches 0){
@@ -582,7 +139,7 @@ def armor_slot(var slot, var idx){
     }
     /execute store success score temp 40planet_num in minecraft:overworld run data modify storage 40planet:rpg players.^player_id&.armor[^idx&] set from block 15 -60 15 Items[0]
     /execute if score temp 40planet_num matches 1 at @s run playsound minecraft:item.armor.equip_iron weather @s ~ ~ ~
-    update_armor_slot(slot, idx, true)
+    # update_armor_slot(slot, idx, true)
     update_equipment_stat()
     /scoreboard players set not_change_inv 40planet_num 1
     /clear @s *[minecraft:custom_data~{40planet_ui_^slot&:1b}]
@@ -592,36 +149,6 @@ def click_3_11(){ # 투구
     # print("투구")
     /execute store result score is_correct_slot 40planet_num if items entity @s container.11 *[minecraft:custom_data~{40planet_helmet:1b}]
     return armor_slot(11, 0)
-}
-def click_3_13(){ # 바지
-    # print("바지")
-    /execute store result score is_correct_slot 40planet_num if items entity @s container.13 *[minecraft:custom_data~{40planet_leggings:1b}]
-    return armor_slot(13, 1)
-}
-def click_3_15(){ # 목걸이
-    # print("목걸이")
-    /execute store result score is_correct_slot 40planet_num if items entity @s container.15 *[minecraft:custom_data~{40planet_neck:1b}]
-    return armor_slot(15, 2)
-}
-def click_3_20(){ # 갑옷
-    # print("갑옷")
-    /execute store result score is_correct_slot 40planet_num if items entity @s container.20 *[minecraft:custom_data~{40planet_chestplate:1b}]
-    return armor_slot(20, 3)
-}
-def click_3_22(){ # 신발
-    # print("신발")
-    /execute store result score is_correct_slot 40planet_num if items entity @s container.22 *[minecraft:custom_data~{40planet_boots:1b}]
-    return armor_slot(22, 4)
-}
-def click_3_24(){ # 반지
-    # print("반지")
-    /execute store result score is_correct_slot 40planet_num if items entity @s container.24 *[minecraft:custom_data~{40planet_ring:1b}]
-    return armor_slot(24, 5)
-}
-def click_3_33(){ # 반지
-    # print("반지")
-    /execute store result score is_correct_slot 40planet_num if items entity @s container.33 *[minecraft:custom_data~{40planet_ring:1b}]
-    return armor_slot(33, 6)
 }
 
 def click_4_13(){ # 무기 슬롯
@@ -700,32 +227,81 @@ def click_4_33(){ # Shift + 우클릭
 }
 
 
-def tick(){
-    # /execute unless entity a3924728-f122-470f-977a-79ec38d81808 run summon armor_stand 0 -60 0 {UUID:[I;-1550694616,-249411825,-1753581076,953686024],NoGravity:1b,Invisible:1b,Small:1b}
-    /execute in minecraft:overworld unless block 15 -60 15 barrel run setblock 15 -60 15 barrel
-    # 배럴의 1번칸은 공기, 2번칸은 무언가 들어있도록 유지
-    /execute in minecraft:overworld if items block 15 -60 15 container.0 * run item replace block 15 -60 15 container.0 with air
-    /execute in minecraft:overworld unless items block 15 -60 15 container.1 * run item replace block 15 -60 15 container.1 with stone
+def summon_window(){
+    execute(summon minecraft:block_display){
+        /data merge entity @s {Tags:["rpg_window_marker","unset","40planet_gui_entity"]}
+        /tp @s ~ ~ ~ ~180 0
+    }
+    execute(summon minecraft:text_display){
+        /data merge entity @s {Tags:["unset","40planet_gui_entity"],transformation:{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],scale:[7f,10f,1f],translation:[-.085f,1.5f,-.15f]}}
+        /tp @s ~ ~ ~ ~180 0
+    }
+    execute(summon minecraft:text_display){
+        /data merge entity @s {Tags:["unset","40planet_gui_entity"],transformation:{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],scale:[.1f,.1f,1f],translation:[0f,1.7f,-.15f]},text:'{"text":"[ 스텟 ]","bold":true}',background:0}
+        /tp @s ~ ~ ~ ~180 0
+    }
+    execute(summon minecraft:text_display){
+        /data merge entity @s {Tags:["unset","40planet_gui_entity"],transformation:{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],scale:[.1f,.1f,1f],translation:[0f,1.61f,-.15f]},text:'{"text":"[ 장비 ]","bold":true}',background:0}
+        /tp @s ~ ~ ~ ~180 0
+    }
+    execute(summon minecraft:text_display){
+        /data merge entity @s {Tags:["unset","40planet_gui_entity"],transformation:{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],scale:[.1f,.1f,1f],translation:[0f,1.52f,-.15f]},text:'{"text":"[ 스킬 ]","bold":true}',background:0}
+        /tp @s ~ ~ ~ ~180 0
+        /data modify storage 40planet:rpg window.rotation set from entity @s Rotation
+    }
+    /execute rotated ~180 0 run summon minecraft:interaction ^ ^1.70 ^-.15 {Tags:["unset","40planet_gui_entity","stat"],height:.03f,width:.1f,response:1b}
+    /execute rotated ~180 0 run summon minecraft:interaction ^ ^1.61 ^-.15 {Tags:["unset","40planet_gui_entity","equip"],height:.03f,width:.1f,response:1b}
+    /execute rotated ~180 0 run summon minecraft:interaction ^ ^1.52 ^-.15 {Tags:["unset","40planet_gui_entity","skill"],height:.03f,width:.1f,response:1b}
 
-    /execute as @a unless score @s 40planet_rpg_first = @s 40planet_rpg_first run function __namespace__:first_load_player
-    execute(as @a[gamemode=!creative,gamemode=!spectator]){
-        /execute if score @s 40planet_rpg_leave matches 1.. run function __namespace__:update_stat
-        player_id = id.get_id()
-        execute(if function {
-            /execute store success score is_inv_changed 40planet_num run data modify storage 40planet:rpg pre_inventory.^player_id& set from entity @s Inventory
-            return get_score("is_inv_changed", "40planet_num")
-        })
-        {
-            detect_inventory()
+    /scoreboard players operation #temp 40planet_num = @s 40planet_id
+    execute(as @e[distance=..2,tag=unset]){
+        /scoreboard players operation @s 40planet_id = #temp 40planet_num
+        /tag @s remove unset
+        /data modify entity @s Rotation set from storage 40planet:rpg window.rotation
+    }
+}
+
+def summon_stat_window(){
+    /scoreboard players operation #temp 40planet_num = @s 40planet_id
+    execute(summon minecraft:text_display){
+        /data merge entity @s {Tags:["40planet_gui_entity","stat_window"],transformation:{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],scale:[7f,10f,1f],translation:[-.085f,1.5f,-.15f]}}
+        /tp @s ~ ~ ~ ~ 0
+        /scoreboard players operation @s 40planet_id = #temp 40planet_num
+    }
+}
+
+def tick(){
+    /execute unless entity a3924728-f122-470f-977a-79ec38d81808 run summon item_display 0 -60 0 {UUID:[I;-1550694616,-249411825,-1753581076,953686024]}
+    
+    execute(as @a unless items entity @s container.17 *[minecraft:custom_data~{40planet_inv_btn:1b}] at @s){
+        summon_window()
+
+        /clear @s command_block[minecraft:custom_data~{40planet_inv_btn:1b}]
+        /execute in minecraft:overworld run item replace entity a3924728-f122-470f-977a-79ec38d81808 container.0 from entity @s container.17
+        /item replace entity @s container.17 with command_block[minecraft:custom_data={40planet_inv_btn:1b}]
+        /execute in minecraft:overworld unless items entity a3924728-f122-470f-977a-79ec38d81808 container.0 * run return 0
+        /execute at @s anchored eyes positioned ^ ^ ^ run summon item ~ ~ ~ {PickupDelay:0s,Item:{id:"stone",count:1b},Tags:["40planet_rpg_item"]}
+        execute(as @e[tag=40planet_rpg_item,limit=1]){
+            /execute in minecraft:overworld run item replace entity @s container.0 from entity a3924728-f122-470f-977a-79ec38d81808 container.0
+            /tag @s remove 40planet_rpg_item
         }
-        /execute unless items entity @s container.17 *[minecraft:custom_data~{40planet_ui:1b}] run function __namespace__:detect_inventory
 
     }
-    
-    execute(as @e[tag=rpg_window_marker] at @s unless entity @a[distance=..0.0001]){
-        /scoreboard players operation #temp 40planet_num = @s 40planet_id
-        /execute as @e[tag=40planet_gui_entity,distance=..2] if score @s 40planet_id = #temp 40planet_num run kill @s
-        /kill @s
+
+    execute(as @e[tag=40planet_gui_entity]){
+        execute(if entity @s[tag=rpg_window_marker] at @s unless entity @a[distance=..0.0001]){
+            /scoreboard players operation #temp 40planet_num = @s 40planet_id
+            /execute as @e[tag=40planet_gui_entity,distance=..2] if score @s 40planet_id = #temp 40planet_num run kill @s
+            /kill @s
+        }
+
+        execute(if entity @s[type=interaction] if data entity "@s" "interaction" at @s){
+            /scoreboard players operation #temp 40planet_num = @s 40planet_id
+            /execute as @a if score @s 40planet_id = #temp 40planet_num run tag @s add 40planet_rpg_window_owner
+            /execute if entity @s[tag=stat] rotated ~75 ~ positioned as @p[tag=40planet_rpg_window_owner] run function __namespace__:summon_stat_window
+            /tag @a remove 40planet_rpg_window_owner
+            /data remove entity @s interaction
+        }
     }
 
     
