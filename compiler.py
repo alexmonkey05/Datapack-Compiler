@@ -286,8 +286,8 @@ class Parser:
             error = None
             if self.current_tok.string == "var":
                 return self.define_var()
-            elif self.current_tok.string == "const":
-                return self.define_const()
+            # elif self.current_tok.string == "const":
+            #     return self.define_const()
             else:
                 method_name = f'make_tree_of_{self.current_tok.string}'
                 method = getattr(self, method_name)
@@ -720,26 +720,26 @@ class Parser:
 
 
         return node, None
-    def define_const(self):
-        type_ = self.current_tok.string
-        self.advance()
-        if self.current_tok.type != 1:
-            return None, InvalidSyntaxError(
-                self.current_tok,
-                self.filename,
-                "Variable's name was expected, but it's not"
-            )
+    # def define_const(self):
+    #     type_ = self.current_tok.string
+    #     self.advance()
+    #     if self.current_tok.type != 1:
+    #         return None, InvalidSyntaxError(
+    #             self.current_tok,
+    #             self.filename,
+    #             "Variable's name was expected, but it's not"
+    #         )
 
-        var = Variable(self.current_tok.string, type_, False)
-        self.variables[var.name] = var
-
-
-        node = Node("define_const", token = None)
-
-        Node(var.name, parent=node, token = self.current_tok)
+    #     var = Variable(self.current_tok.string, type_, False)
+    #     self.variables[var.name] = var
 
 
-        return node, None
+    #     node = Node("define_const", token = None)
+
+    #     Node(var.name, parent=node, token = self.current_tok)
+
+
+    #     return node, None
 
     def is_next_match(self, target):
         tok = self.advance()
@@ -885,21 +885,21 @@ class Interpreter:
         self.using_variables[-1][var.name] = var
         if self.is_parameter: return var, None
         return var, None
-    def define_const_(self, node):
-        var_name = node.children[0].name
-        var = Variable(var_name, "type_", True, get_var_temp())
-        self.const.append(var)
-        if var.name in self.using_variables[-1]:
-            return None, InvalidSyntaxError(
-                node.children[0].token,
-                self.filename,
-                f"\"{var.name}\" already defined"
-            )
-        if var.name not in self.variables: self.variables[var.name] = []
-        self.variables[var.name].append(var)
-        self.using_variables[-1][var.name] = var
-        if self.is_parameter: return var, None
-        return var, None
+    # def define_const_(self, node):
+    #     var_name = node.children[0].name
+    #     var = Variable(var_name, "type_", True, get_var_temp())
+    #     self.const.append(var)
+    #     if var.name in self.using_variables[-1]:
+    #         return None, InvalidSyntaxError(
+    #             node.children[0].token,
+    #             self.filename,
+    #             f"\"{var.name}\" already defined"
+    #         )
+    #     if var.name not in self.variables: self.variables[var.name] = []
+    #     self.variables[var.name].append(var)
+    #     self.using_variables[-1][var.name] = var
+    #     if self.is_parameter: return var, None
+    #     return var, None
     def define_function_(self, node):
         fun = Function(node.children[1].name, node.children[0].name, [], get_fun_temp())
         self.functions[fun.name] = fun
@@ -1176,7 +1176,7 @@ class Interpreter:
         # if len(elements) > 1: elements = elements[:-1] 
         # elements += "}"
 
-        self.add_var(temp, "nbt", False, temp, keys)
+        self.add_var(temp, "nbt", False, temp)
         return temp, None
     def make_selector_(self, node):
         temp = get_temp()
@@ -2107,7 +2107,7 @@ data modify storage {STORAGE_NAME} {temp} set from entity 0-0-0-0-a transformati
 
     def add_var(self, name, type, is_const, temp, details = None):
         if name not in self.variables: self.variables[name] = []
-        self.variables[name].append(Variable(name, type, is_const, temp, details))
+        self.variables[name].append(Variable(name, type, is_const, temp))
 
 class Execute:
     def __init__(self, condition, interpreter, token) -> None:
