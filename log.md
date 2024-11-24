@@ -265,3 +265,6 @@ if block "~ ~ ~" chest[facing=east]
 ```
 - `if items`에서 `weapon.offhand` 슬롯을 감지하려고 하면 에러가 나던 현상 수정
 - 선택 가능한 버전에 `1.21.2` 추가
+# 2024/11/24 2.16.1
+- tkinter 모듈의 `Variable`과 혜성의 `Variable`이 충돌하여 에러가 나던 현상 해결
+  - `Variable` $\to$ `VariableComet`으로 클래스 명을 바꿔 해결

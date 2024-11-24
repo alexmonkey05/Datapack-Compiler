@@ -226,9 +226,10 @@ class Parser:
         self.filename = filename
         self.tok_idx = -1
         self.advance()
+
         self.variables = {
-            "false":[Variable("false","bool",True,"false")],
-            "true":[Variable("true","bool",True,"true")]
+            "false":[VariableComet("false","bool",True,"false")],
+            "true":[VariableComet("true","bool",True,"true")]
         }
         self.functions = {}
 
@@ -413,7 +414,7 @@ class Parser:
         node = Node("import", token = self.current_tok)
         tok = self.advance()
         Node(tok.string, parent=node, token = self.current_tok)
-        self.variables[tok.string] = Variable(tok.string, "module", False)
+        self.variables[tok.string] = VariableComet(tok.string, "module", False)
         return node, None
     def make_tree_of_def(self, parent):
         node = Node("define_function", token = self.current_tok)
@@ -707,10 +708,10 @@ class Parser:
             return None, InvalidSyntaxError(
                 self.current_tok,
                 self.filename,
-                "Variable's name was expected, but it's not"
+                "VariableComet's name was expected, but it's not"
             )
 
-        var = Variable(self.current_tok.string, type_, False)
+        var = VariableComet(self.current_tok.string, type_, False)
         self.variables[var.name] = var
 
 
@@ -727,10 +728,10 @@ class Parser:
     #         return None, InvalidSyntaxError(
     #             self.current_tok,
     #             self.filename,
-    #             "Variable's name was expected, but it's not"
+    #             "VariableComet's name was expected, but it's not"
     #         )
 
-    #     var = Variable(self.current_tok.string, type_, False)
+    #     var = VariableComet(self.current_tok.string, type_, False)
     #     self.variables[var.name] = var
 
 
@@ -755,12 +756,12 @@ class Parser:
 # VARIABLE
 #######################################
 
-class Variable:
-    def __init__(self, name, type_, is_const, temp = "", details = None) -> None:
+class VariableComet:
+    def __init__(self, name, type_, is_const, asdf = "", details = None) -> None:
         self.name = name
         self.type = type_
         self.is_const = is_const
-        self.temp = temp
+        self.temp = asdf
         self.details = details
         self.value = False
 
@@ -833,9 +834,9 @@ class Interpreter:
         self.current_dir = result_dir + f"{self.namespace}/data/{self.namespace}/{self.function_folder}/" + current_dir
         self.current_file = "load.mcfunction"
         self.variables = {
-            "false":[Variable("false","bool",True,"false")],
-            "true":[Variable("true","bool",True,"true")],
-            "var_temp":[Variable("var_temp","bool",True,"var_temp")]
+            "false":[VariableComet("false","bool",True,"false")],
+            "true":[VariableComet("true","bool",True,"true")],
+            "var_temp":[VariableComet("var_temp","bool",True,"var_temp")]
         }
         self.functions = {}
         self.modules = {}
@@ -872,7 +873,7 @@ class Interpreter:
         return var_name, None
     def define_var_(self, node):
         var_name = node.children[0].name
-        var = Variable(var_name, "type_", False, get_var_temp())
+        var = VariableComet(var_name, "type_", False, get_var_temp())
         self.const.append(var)
         if var.name in self.using_variables[-1]:
             return None, InvalidSyntaxError(
@@ -887,7 +888,7 @@ class Interpreter:
         return var, None
     # def define_const_(self, node):
     #     var_name = node.children[0].name
-    #     var = Variable(var_name, "type_", True, get_var_temp())
+    #     var = VariableComet(var_name, "type_", True, get_var_temp())
     #     self.const.append(var)
     #     if var.name in self.using_variables[-1]:
     #         return None, InvalidSyntaxError(
@@ -927,7 +928,7 @@ class Interpreter:
             if len(self.variables[var]) == 0:
                 del(self.variables[var])
         self.using_variables.pop(-1)
-        self.variables[fun.temp] = [Variable(fun.name, fun.type, False, fun.temp)]
+        self.variables[fun.temp] = [VariableComet(fun.name, fun.type, False, fun.temp)]
         reset_return_score = ""
         for temp in self.used_return:
             reset_return_score += f"scoreboard players set #{temp} {SCOREBOARD_NAME} 0\n"
@@ -1000,11 +1001,11 @@ class Interpreter:
             file.close()
         details, error = interprete("/".join(self.filename.split("/")[:-1]) + "/" + name, self.version, self.result_dir, self.namespace, True, node.children[0].token)
         if error: return None, error
-        self.variables[name] = [Variable(name, "module", False)]
+        self.variables[name] = [VariableComet(name, "module", False)]
         self.modules[name] = details
         for fun_name in details["functions"]:
             fun = details["functions"][fun_name]
-            self.variables[fun.temp] = [Variable(fun.name, fun.type, False, fun.temp)]
+            self.variables[fun.temp] = [VariableComet(fun.name, fun.type, False, fun.temp)]
             self.functions[f"{name}.{fun.name}"] = Function(f"{name}/{fun.name}", fun.type, fun.inputs, fun.temp)
         for var_name in details["variables"]:
             var = details["variables"][var_name][0]
@@ -1148,7 +1149,7 @@ class Interpreter:
         if is_first: self.write(f"data modify storage {STORAGE_NAME} {temp} set value [{elements[2:]}]\n")
 
         if temp not in self.variables: self.variables[temp] = []
-        self.variables[temp].append(Variable(temp, "arr", True, temp))
+        self.variables[temp].append(VariableComet(temp, "arr", True, temp))
         return temp, None
     def make_nbt_(self, node):
         temp = get_temp()
@@ -1314,7 +1315,7 @@ class Interpreter:
         if var1 in INTERPRETE_THESE:
             var1, error = self.interprete(node.children[1])
             if error: return None, error
-        if var1.__class__ == Variable:
+        if var1.__class__ == VariableComet:
             var1 = var1.name
 
 
@@ -1455,7 +1456,7 @@ execute store result storage {STORAGE_NAME} {temp} byte 1 run scoreboard players
         elif var1 in self.variables: # 인스턴스
             result = f"{self.variables[var1][-1].temp}.{var2}"
             if result not in self.variables:
-                self.variables[result] = [Variable(result, "asdf", False, result)]
+                self.variables[result] = [VariableComet(result, "asdf", False, result)]
             return result, None
         else: # 모듈 또는 클래스
 
@@ -2107,7 +2108,7 @@ data modify storage {STORAGE_NAME} {temp} set from entity 0-0-0-0-a transformati
 
     def add_var(self, name, type, is_const, temp, details = None):
         if name not in self.variables: self.variables[name] = []
-        self.variables[name].append(Variable(name, type, is_const, temp))
+        self.variables[name].append(VariableComet(name, type, is_const, temp))
 
 class Execute:
     def __init__(self, condition, interpreter, token) -> None:
@@ -2688,18 +2689,18 @@ if __name__ == "__main__":
         version = combobox.get()
         namespace = entry1.get().strip()
         if namespace == "": namespace = "pack"
-        try:
-            name = tk.file.name
-            dir = tk.dir
-            temp, error = generate_datapack(name, version, dir, namespace)
-            if error:
-                print(error.as_string())
-                messagebox.showinfo("name", error.as_string())
-            else:
-                messagebox.showinfo("name", "done!")
-        except Exception as err:
-            print(f"Unexpected {err=}, {type(err)=}")
-            messagebox.showinfo("name", f"Unexpected {err=}, {type(err)=}")
+        # try:
+        name = tk.file.name
+        dir = tk.dir
+        temp, error = generate_datapack(name, version, dir, namespace)
+        if error:
+            print(error.as_string())
+            messagebox.showinfo("name", error.as_string())
+        else:
+            messagebox.showinfo("name", "done!")
+        # except Exception as err:
+        #     print(f"Unexpected {err=}, {type(err)=}")
+        #     messagebox.showinfo("name", f"Unexpected {err=}, {type(err)=}")
         reset_temp()
 
     def select_planet_file():
