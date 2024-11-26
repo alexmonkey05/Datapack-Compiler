@@ -787,11 +787,12 @@ def make_basic_files(version, file_dir, namespace = "pack"):
     function_folder = "function"
     if version[:4] == "1.20": function_folder = "functions"
 
-    # if os.path.exists(file_dir + f"{namespace}/data/{namespace}/{function_folder}"): shutil.rmtree(file_dir + f"{namespace}/data/{namespace}/{function_folder}")
-    if os.path.exists(file_dir + f"{namespace}"): shutil.rmtree(file_dir + f"{namespace}")
-
-    tag_folder_dir = file_dir + f"{namespace}/data/minecraft/tags/{function_folder}"
     function_folder_dir = file_dir + f"{namespace}/data/{namespace}/{function_folder}"
+    tag_folder_dir = file_dir + f"{namespace}/data/minecraft/tags/{function_folder}"
+
+    # if os.path.exists(file_dir + f"{namespace}/data/{namespace}/{function_folder}"): shutil.rmtree(file_dir + f"{namespace}/data/{namespace}/{function_folder}")
+    if os.path.exists(function_folder_dir): shutil.rmtree(function_folder_dir)
+
     if not os.path.exists(tag_folder_dir): os.makedirs(tag_folder_dir)
     if not os.path.exists(function_folder_dir): os.makedirs(function_folder_dir)
 
@@ -1897,7 +1898,7 @@ execute unless score #type {SCOREBOARD_NAME} matches 4 run ")
 
         temp = get_temp()
         self.write(f"data modify storage {STORAGE_NAME} {temp} set from storage {STORAGE_NAME} {var}\n")
-        self.write(f"data remove storage {STORAGE_NAME} {var}\n")
+        self.write(f"data remove storage {STORAGE_NAME} {self.variables[var][-1].temp}\n")
         self.add_var(temp, "del_return", False, temp)
         return temp, None
     def fun_append(self, node, input_nodes):
