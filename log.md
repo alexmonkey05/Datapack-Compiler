@@ -270,5 +270,5 @@ if block "~ ~ ~" chest[facing=east]
   - `Variable` $\to$ `VariableComet`으로 클래스 명을 바꿔 해결
 # 2024/11/26 2.17
 - `del(a)`와 같이 del 함수에 변수를 넘겨줬을 경우 data remove 명령어가 제대로 작성되지 않던 오류 해결
-- 컴파일 할 때 데이터팩 전체를 지우고 새로 생성하는 것이 아닌, functions 폴더만 지우고 새로 생성하는 것으로 바뀜
+- 컴파일 할 때 데이터팩 전체를 지우고 새로 생성하는 것이 아닌, function 폴더만 지우고 새로 생성하는 것으로 바뀜
   - 입력한 네임스페이스 아래의 loot_table, recipe 등을 건드리지 않음
