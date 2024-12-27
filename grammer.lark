@@ -54,6 +54,7 @@ import_statement: "import" CNAME
 //--------------------------------------------------------------
 function_def: "def" CNAME "(" [parameter_list] ")" block
 function_call: CNAME "(" [arguments] ")"
+    | CNAME "." CNAME "(" [arguments] ")" -> method
 
 
 
@@ -169,7 +170,7 @@ MINECRAFT_NAME: /[a-zA-Z0-9_]+/
     | "{" _seperated{json_pair, ","} "}" -> json_
 
 ?selector: /@[parsen]/ ("[" _seperated{selector_parameter, ","} "]")?
-    | /\d+-\d+-\d+-\d+-\d/
+    | /"?[a-z\d]+-[a-z\d]+-[a-z\d]+-[a-z\d]+-[a-z\d]+"?/
 selector_parameter: /tag=/ (/!/? MINECRAFT_NAME)?
     | /advancements=/ minecraft_id_tag
     | /distance=/ minecraft_range

@@ -1,10 +1,5 @@
+def asdf(){}
 
-/$fasd
-
-print("asdf")
-
-[
-    1,
-    2,
-    3
-]
+import test2
+var a
+a = test2.test()

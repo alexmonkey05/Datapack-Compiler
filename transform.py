@@ -869,7 +869,6 @@ data modify storage {STORAGE_NAME} {temp} set from entity 0-0-0-0-a transformati
         with open(filename, "r", encoding="utf-8") as file:
             file_data = modify_file_data(file.read())
         parser_tree = planet_parser.parse(file_data + "\n")
-        # print(parser_tree.pretty())
 
         datapack_generator = DatapackGenerater(self.version, self.result_dir, self.namespace, filename, True, name)
         datapack_generator.transform(parser_tree)
@@ -927,7 +926,7 @@ data modify storage {STORAGE_NAME} {temp} set from entity 0-0-0-0-a transformati
         self.current_file = current_file
 
         for break_temp in self.used_break:
-            command += f"execute if score #{break_temp} {SCOREBOARD_NAME} matches 1 run return run data get storage {STORAGE_NAME} {break_temp}\n"
+            command += f"execute if score #{break_temp} {SCOREBOARD_NAME} matches 1 run return 0\n"
         for return_temp in self.used_return:
             value = self.used_return[return_temp]
             command += f"execute if score #{return_temp} {SCOREBOARD_NAME} matches 1 run return run data get storage {STORAGE_NAME} {value}\n"
@@ -936,11 +935,17 @@ data modify storage {STORAGE_NAME} {temp} set from entity 0-0-0-0-a transformati
         return CometToken("operation", "set_variable", items[0].start_pos, end_pos=items[0].end_pos, column=items[0].column, command=command, line=items[0].line)
 
     def while_statement(self, items):
+        result = self.if_statement(items, True)
         # break에 쓰인 temp 메모리 풀어주기
         for break_temp in self.used_break:
             self.add_used_temp(break_temp)
         self.used_break = []
-        return self.if_statement(items, True)
+        
+        for temp in self.used_return:
+            value = self.used_return[temp]
+            result.command += f"execute if score #{temp} {SCOREBOARD_NAME} matches 1 run return run data get storage {STORAGE_NAME} {value}\n"
+        
+        return result
     
     def break_(self, items):
         temp = self.get_temp()
@@ -971,6 +976,12 @@ data modify storage {STORAGE_NAME} {temp} set from entity 0-0-0-0-a transformati
         self.current_file = current_file
         if self.is_module: command = f"{command}run function {self.namespace}:{self.module_name}/{execute_filename[:-11]}\n"
         else: command = f"{command}run function {self.namespace}:{execute_filename[:-11]}\n"
+
+        for temp in self.used_return:
+            value = self.used_return[temp]
+            command += f"execute if score #{temp} {SCOREBOARD_NAME} matches 1 run return run data get storage {STORAGE_NAME} {value}\n"
+        for temp in self.used_break:
+            command += f"execute if score #{temp} {SCOREBOARD_NAME} matches 1 run return 0\n"
 
         return CometToken("execute", command, items[0].start_pos, end_pos=items[0].end_pos, column=items[0].column, command=command, line=items[0].line)
 
@@ -1018,7 +1029,7 @@ data modify storage {STORAGE_NAME} {temp} set from entity 0-0-0-0-a transformati
         if self.is_module: command = f"{self.namespace}:{self.module_name}/{execute_filename[:-11]}"
         else: command = f"{self.namespace}:{execute_filename[:-11]}"
 
-        self.used_return = []
+        self.used_return = {}
 
         return CometToken("execute_if", command, command=command)
 
@@ -1083,3 +1094,47 @@ data modify storage {STORAGE_NAME} {temp} set from entity 0-0-0-0-a transformati
 
         for item in items[1:]:
             print(item, type(item), item.type)
+    
+    def method(self, items):
+        variable = items[0]
+
+        if variable.type == CNAME:
+            if variable.value not in self.variables: raise ValueError(error_as_txt(
+                variable,
+                "InvalidSyntaxError",
+                self.filename,
+                f"\"{variable.value}\" is not definded",
+            ))
+
+            # 변수.함수()
+            if variable.value not in self.modules: raise ValueError(error_as_txt(
+                variable,
+                "InvalidSyntaxError",
+                self.filename,
+                f"call method of \"{variable.value}\" is not implemented",
+            ))
+
+            # 파일명.함수()
+            command = ""
+            arguments = items[2].children
+            name = items[1].value
+            functions = self.modules[variable.value]["functions"]
+            if name not in functions: raise ValueError(error_as_txt(
+                items[1],
+                "InvalidSyntaxError",
+                self.filename,
+                f"\"{name}\" is not defined",
+            ))
+            function_ = functions[name]
+            # 인자 넘겨주는 부분
+            for i in range(len(arguments)):
+                argument = arguments[i].children[0]
+                argument_value = argument.value
+                if argument_value in self.variables:
+                    if type(argument) == CometToken: command += argument.command
+                    command += f"data modify storage {STORAGE_NAME} {function_.inputs[i].temp} set from storage {STORAGE_NAME} {self.variables[argument_value][-1].temp}\n"
+                else:
+                    command += f"data modify storage {STORAGE_NAME} {function_.inputs[i].temp} set value {argument_value}\n"
+            
+            command += f"function {self.namespace}:{variable.value}/{name}\n"
+            return CometToken("minecraft", function_.temp, items[0].start_pos, end_pos=items[1].end_pos, column=items[0].column, command=command, line=items[0].line)

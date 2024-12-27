@@ -1,5 +1,7 @@
 
 def test(){
     print("test")
+    execute(as @p){
+        return 0;}
 }
 /function __namespace__:test
