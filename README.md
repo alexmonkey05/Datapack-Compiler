@@ -1,3 +1,5 @@
+## [한국어 README.md](https://github.com/alexmonkey05/Datapack-Compiler/blob/main/README_kr.md)
+
 # Datapack-Compiler
 ## Project Description
 This project is about creating a Minecraft compiler.   
