@@ -291,6 +291,7 @@ print(@p)
 - 매크로 문법이 변경됨
   - `/say ^variable&` $\to$ `/$say $(variable)`
   - 본래의 마크의 매크로 문법을 살림
+- 0b, 1b 등 마크 자료형 문제 해결
 ### 아직 정식으로 3.0을 릴리즈 한건 아님!
 # 2024/12/27
 - 늘 그렇듯 if, execute, while에서의 return, break 에러 수정
