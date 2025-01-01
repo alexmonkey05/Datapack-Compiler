@@ -700,7 +700,7 @@ data modify storage {STORAGE_NAME} {temp} set from entity 0-0-0-0-a transformati
         if var2 in self.variables:
             if type(items[1]) == CometToken: result += items[1].command
             temp = self.get_temp()
-            result += f"data modify storage {STORAGE_NAME} {temp} set from storage {STORAGE_NAME} {var1}[$({var2[5:]})]\n"
+            result += f"data modify storage {STORAGE_NAME} {temp} set from storage {STORAGE_NAME} {var1}[$({self.variables[var2][-1].temp[5:]})]\n"
             self.add_var(temp, temp)
             return CometToken("operation", temp, items[0].start_pos, end_pos=items[1].end_pos, column=items[0].column, command=result, line=items[0].line)
         if items[1].type == CNAME: self.is_defined(items[1])
@@ -1054,7 +1054,8 @@ data modify storage {STORAGE_NAME} {temp} set from entity 0-0-0-0-a transformati
             command += f"{items[i].value}={items[i+1].value},"
         command = command[:-1] + "}"
         return CometToken("minecraft", "scores_selector", items[0].start_pos, end_pos=items[-1].end_pos, column=items[0].column, command=command, line=items[0].line)
-    
+    def selelctor_nbt(self, items):
+        pass
 
     def json_pair(self, items):
         command = f"{items[0].value}:{items[1].value}"

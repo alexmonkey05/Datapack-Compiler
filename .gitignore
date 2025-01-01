@@ -1,4 +1,5 @@
 compiler.spec
+new_compiler.spec
 /build
 /dist
 /etc
