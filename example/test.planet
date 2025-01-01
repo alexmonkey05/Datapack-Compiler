@@ -1,3 +1,1 @@
-var scores
-var score_name = scores[get_score("idx", "num")]
-print(score_name)
+/say a

@@ -168,15 +168,8 @@ if __name__ == "__main__":
         # try:
         name = tk.file.name
         dir = tk.dir
-        temp, error = generate_datapack(name, version, dir, namespace)
-        if error:
-            print(error.as_string())
-            messagebox.showinfo("name", error.as_string())
-        else:
-            messagebox.showinfo("name", "done!")
-        # except Exception as err:
-        #     print(f"Unexpected {err=}, {type(err)=}")
-        #     messagebox.showinfo("name", f"Unexpected {err=}, {type(err)=}")
+        generate_datapack(name, version, dir, namespace)
+        messagebox.showinfo("name", "done!")
 
     def select_planet_file():
         tk.file = filedialog.askopenfile(
