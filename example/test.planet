@@ -1,1 +1,1 @@
-/say a
+set_data("entity", "@s", "interaction", {})

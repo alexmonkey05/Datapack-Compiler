@@ -355,6 +355,8 @@ execute if score #{temp} {SCOREBOARD_NAME} matches 5 run data modify storage {ST
 "
         self.add_var(temp, temp)
         self.add_used_temp(var_name)
+        for input_node in input_nodes:
+            if type(input_node.children[0]) == CometToken: result = input_node.children[0].command + result
         return CometToken("type", temp, items[0].start_pos, end_pos=items[0].end_pos, column=items[0].column, command=result, line=items[0].line)
     def fun_round(self, items):
         input_nodes = items[1].children
@@ -375,6 +377,8 @@ execute if score #{temp} {SCOREBOARD_NAME} matches 5 run data modify storage {ST
             ))
         self.add_var(temp, temp)
         self.add_used_temp(var_name)
+        for input_node in input_nodes:
+            if type(input_node.children[0]) == CometToken: result = input_node.children[0].command + result
         return CometToken("round", temp, items[0].start_pos, end_pos=items[0].end_pos, column=items[0].column, command=result, line=items[0].line)
     def fun_get_score(self, items):
         input_nodes = items[1].children
@@ -395,6 +399,8 @@ execute if score #{temp} {SCOREBOARD_NAME} matches 5 run data modify storage {ST
         self.add_used_temp(input_nodes[0].children[0].value)
         self.add_used_temp(input_nodes[1].children[0].value)
         self.add_var(temp, temp)
+        for input_node in input_nodes:
+            if type(input_node.children[0]) == CometToken: result = input_node.children[0].command + result
         return CometToken("get_score", temp, items[0].start_pos, end_pos=items[0].end_pos, column=items[0].column, command=result, line=items[0].line)
     def fun_set_score(self, items):
         input_nodes = items[1].children
@@ -410,6 +416,8 @@ execute if score #{temp} {SCOREBOARD_NAME} matches 5 run data modify storage {ST
         self.add_used_temp(input_nodes[1].children[0].value)
         self.add_used_temp(value)
         self.add_var(temp, temp)
+        for input_node in input_nodes:
+            if type(input_node.children[0]) == CometToken: result = input_node.children[0].command + result
         return CometToken("get_score", temp, items[0].start_pos, end_pos=items[0].end_pos, column=items[0].column, command=result, line=items[0].line)
     def fun_get_data(self, items):
         input_nodes = items[1].children
@@ -424,6 +432,8 @@ execute if score #{temp} {SCOREBOARD_NAME} matches 5 run data modify storage {ST
         self.add_used_temp(input_nodes[1].children[0].value)
         self.add_used_temp(input_nodes[2].children[0].value)
         self.add_var(temp, temp)
+        for input_node in input_nodes:
+            if type(input_node.children[0]) == CometToken: result = input_node.children[0].command + result
         return CometToken("get_score", temp, items[0].start_pos, end_pos=items[0].end_pos, column=items[0].column, command=result, line=items[0].line)
     def fun_set_data(self, items):
         input_nodes = items[1].children
@@ -442,6 +452,10 @@ execute if score #{temp} {SCOREBOARD_NAME} matches 5 run data modify storage {ST
         self.add_used_temp(input_nodes[3].children[0].value)
         self.add_used_temp(value)
         self.add_var(temp, temp)
+
+        for input_node in input_nodes:
+            if type(input_node.children[0]) == CometToken: result = input_node.children[0].command + result
+
         return CometToken("get_score", temp, items[0].start_pos, end_pos=items[0].end_pos, column=items[0].column, command=result, line=items[0].line)
     def fun_int(self, items): return self.fun_round(items)
 #     def fun_bool(self, items):
@@ -549,6 +563,8 @@ data modify storage {STORAGE_NAME} {temp} set from storage {STORAGE_NAME} var1\n
         temp = self.get_temp()
         command = f"execute store result storage {STORAGE_NAME} {temp} int 1 run data get storage {STORAGE_NAME} {self.variables[var][-1].temp}\n"
         self.add_var(temp, temp)
+        for input_node in input_nodes:
+            if type(input_node.children[0]) == CometToken: command = input_node.children[0].command + command
         return CometToken("len", temp, items[0].start_pos, end_pos=items[0].end_pos, column=items[0].column, command=command, line=items[0].line)
     def fun_divide(self, items):
         input_nodes = items[1].children
@@ -765,9 +781,12 @@ data modify storage {STORAGE_NAME} {temp} set from entity 0-0-0-0-a transformati
         return CometToken("operation", "set_variable", items[0].start_pos, end_pos=items[0].end_pos, column=items[0].column, command=result, line=items[0].line)
     
     def nbt(self, items):
+        temp = self.get_temp()
+        item_cnt = len(items)
+        if item_cnt == 0:
+            return CometToken("nbt", temp, command=f"data remove storage {STORAGE_NAME} {temp}\ndata modify storage {STORAGE_NAME} {temp} set value {{}}\n")
         not_include_var = "{"
         is_first = True
-        temp = self.get_temp()
         result = f"data remove storage {STORAGE_NAME} {temp}\n"
         for pair in items:
             key = pair.children[0].value
