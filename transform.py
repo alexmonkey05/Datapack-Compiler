@@ -211,7 +211,7 @@ class DatapackGenerater(Transformer):
     def command_macro(self, items):
         result = ""
         with open(self.filename, "r", encoding="utf-8") as file:
-            result = file.read().split("\n")[items[0].children[0].line - 1][2:]
+            result = file.read().split("\n")[items[0].children[0].line - 1].strip()[2:]
         for item in items:
             name = item.data
             if name == "word": pass #result += item.children[0]
