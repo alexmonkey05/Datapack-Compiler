@@ -210,11 +210,14 @@ class DatapackGenerater(Transformer):
     # /$로 시작하는 커맨드
     def command_macro(self, items):
         result = ""
+        with open(self.filename, "r", encoding="utf-8") as file:
+            result = file.read().split("\n")[items[0].children[0].line - 1][2:]
         for item in items:
             name = item.data
-            if name == "word": result += item.children[0]
+            if name == "word": pass #result += item.children[0]
             else:
-                result += f"$({self.variables[item.children[0].value][-1].temp[5:]})"
+                macro_var = f"$({self.variables[item.children[0].value][-1].temp[5:]})"
+                result.replace(f"$({item.children[0]})", macro_var)
                 if type(item.children[0]) == CometToken: result = item.children[0].command + result
         # __namespace__ 바꾸기
         if NAMESPACE in result:
@@ -583,13 +586,13 @@ data modify storage {STORAGE_NAME} {temp} set from storage {STORAGE_NAME} var1\n
         if var in self.variables:
             var = self.variables[var][-1].temp
         else:
-            var, to_storage_command = self.to_storage(var)
+            var, to_storage_command = self.to_storage(input_nodes[0].children[0])
             command += to_storage_command
 
         if var2 in self.variables:
             var2 = self.variables[var2][-1].temp
         else:
-            var2, to_storage_command = self.to_storage(var2)
+            var2, to_storage_command = self.to_storage(input_nodes[1].children[0])
             command += to_storage_command
 
         temp = self.get_temp()
@@ -617,17 +620,17 @@ data modify storage {STORAGE_NAME} {temp} set from entity 0-0-0-0-a transformati
         if var in self.variables:
             var = self.variables[var][-1].temp
         else:
-            var, to_storage_command = self.to_storage(var)
+            var, to_storage_command = self.to_storage(input_nodes[0].children[0])
             command += to_storage_command
 
         if var2 in self.variables:
             var2 = self.variables[var2][-1].temp
         else:
-            var2, to_storage_command = self.to_storage(var2)
+            var2, to_storage_command = self.to_storage(input_nodes[1].children[0])
             command += to_storage_command
 
         temp = self.get_temp()
-        self.write(f"data modify storage 40planet:calc list set value [0f,0f,0f,0f, 0f,0f,0f,0f, 0f,0f,0f,0f, 0f,0f,0f,0f]\n\
+        command += f"data modify storage 40planet:calc list set value [0f,0f,0f,0f, 0f,0f,0f,0f, 0f,0f,0f,0f, 0f,0f,0f,0f]\n\
 data modify storage 40planet:calc list[0] set value 1f\n\
 execute store result storage 40planet:calc list[-1] float 0.00001 run data get storage {STORAGE_NAME} {var} 100000\n\
 data modify entity 0-0-0-0-a transformation set from storage 40planet:calc list\n\
@@ -636,7 +639,7 @@ data modify storage 40planet:calc list set value [0f,0f,0f,0f, 0f,0f,0f,0f, 0f,0
 execute store result storage 40planet:calc list[0] float 0.00001 run data get storage {STORAGE_NAME} {var2} 100000\n\
 data modify storage 40planet:calc list[-1] set from entity 0-0-0-0-a transformation.scale[0]\n\
 data modify entity 0-0-0-0-a transformation set from storage 40planet:calc list\n\
-data modify storage {STORAGE_NAME} {temp} set from entity 0-0-0-0-a transformation.scale[0]\n")
+data modify storage {STORAGE_NAME} {temp} set from entity 0-0-0-0-a transformation.scale[0]\n"
         self.add_var(temp, temp)
         return CometToken("multiply", temp, items[0].start_pos, end_pos=items[0].end_pos, column=items[0].column, command=command, line=items[0].line)
 
@@ -1097,6 +1100,7 @@ data modify storage {STORAGE_NAME} {temp} set from entity 0-0-0-0-a transformati
 
         if player.type == ESCAPED_STRING: result += player[1:-1]
         elif player.value in self.variables: result += f"$({self.variables[player.value][-1].temp[5:]})"
+        elif type(player) == CometToken: result += player.command
         else: result += player
         result += " "
         if scoreboard.type == ESCAPED_STRING: result += scoreboard[1:-1]

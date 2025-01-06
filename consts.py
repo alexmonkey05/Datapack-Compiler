@@ -1,3 +1,4 @@
+import os
 from lark import Token, Lark
 
 SCORE_TYPES = ("int", "float", "double", "bool")
@@ -36,10 +37,11 @@ OPERATION = "operation"
 
 NEW_LINE = "䗻"
 
-# 이스케이프 문자 처리하기(정규식에 쓰인 \d를 인식 못하는 듯)
-# planet_parser = Lark.open("C:/Users/alexm/AppData/Roaming/PrismLauncher/instances/1.21/minecraft/saves/데이터팩 컴파일러/datapacks/grammer.lark")
-planet_parser = Lark.open("./grammer.lark")
+python_file_path = os.path.abspath(__file__)
+lark_directory = os.path.dirname(python_file_path) + "/grammer.lark"
+planet_parser = Lark.open(lark_directory)
 
+# 이스케이프 문자 처리하기(정규식에 쓰인 \d를 인식 못하는 듯)
 # planet_parser = """%import common.CNAME
 # //%import common.FLOAT
 # FLOAT: /\d+\.\d+/
