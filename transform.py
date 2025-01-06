@@ -1,6 +1,7 @@
 from lark import Transformer, Token, Lark, Tree
 import os
 import json
+import re
 
 from consts import NEW_LINE, SCORE_TYPES, MINECRAFT_TYPES, TYPES, SCOREBOARD_NAME, STORAGE_NAME, NAMESPACE, BUILT_IN_FUNCTION, OPERATION, OPERATOR_ID, CNAME, INT, ESCAPED_STRING, VariableComet, error_as_txt, Function, CometToken, planet_parser, CometClass
 
@@ -217,7 +218,13 @@ class DatapackGenerater(Transformer):
             if name == "word": pass #result += item.children[0]
             else:
                 macro_var = f"$({self.variables[item.children[0].value][-1].temp[5:]})"
-                result.replace(f"$({item.children[0]})", macro_var)
+                if f"$({item.children[0].value})" not in result: raise ValueError(error_as_txt(
+                    item.children[0],
+                    "InvalidSyntaxError",
+                    self.filename,
+                    f"macro syntax is incorrect",
+                ))
+                result = result.replace(f"$({item.children[0].value})", macro_var, 1)
                 if type(item.children[0]) == CometToken: result = item.children[0].command + result
         # __namespace__ 바꾸기
         if NAMESPACE in result:
