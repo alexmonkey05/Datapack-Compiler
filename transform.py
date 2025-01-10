@@ -701,6 +701,44 @@ data modify storage {STORAGE_NAME} {temp} set from entity 0-0-0-0-a transformati
             return self.operator_basic([Token("INT", "0", items[0].start_pos, end_pos=items[0].end_pos, column=items[0].column, line=items[0].line), items[0]], "-")
         return Token("INT", f"-{variable.value}", items[0].start_pos, end_pos=items[0].end_pos, column=items[0].column, line=items[0].line)
 
+    def and_operation(self, items):
+        result = ""
+        storage_value1, to_storage_command1 = self.to_storage(items[0])
+        storage_value2, to_storage_command2 = self.to_storage(items[1])
+        result += to_storage_command1 + to_storage_command2
+
+        temp = self.get_temp()
+        result += f"execute store result score #{temp} {SCOREBOARD_NAME} run data get storage {STORAGE_NAME} {storage_value1}\n\
+execute if score #{temp} {SCOREBOARD_NAME} matches 1.. store result score #{temp} {SCOREBOARD_NAME} run data get storage {STORAGE_NAME} {storage_value2}\n\
+execute if score #{temp} {SCOREBOARD_NAME} matches 1.. run data modify storage {STORAGE_NAME} {temp} set value 1b\n\
+execute if score #{temp} {SCOREBOARD_NAME} matches ..0 run data modify storage {STORAGE_NAME} {temp} set value 0b\n"
+
+        self.add_used_temp(storage_value1)
+        self.add_used_temp(storage_value2)
+
+        self.add_var(temp, temp)
+
+        return CometToken("operator", temp, items[0].start_pos, end_pos=items[1].end_pos, column=items[0].column, command=result, line=items[0].line)
+    def or_operation(self, items):
+        result = ""
+        storage_value1, to_storage_command1 = self.to_storage(items[0])
+        storage_value2, to_storage_command2 = self.to_storage(items[1])
+        result += to_storage_command1 + to_storage_command2
+
+        temp = self.get_temp()
+        result += f"execute store result score #{temp} {SCOREBOARD_NAME} run data get storage {STORAGE_NAME} {storage_value1}\n\
+execute if score #{temp} {SCOREBOARD_NAME} matches ..0 store result score #{temp} {SCOREBOARD_NAME} run data get storage {STORAGE_NAME} {storage_value2}\n\
+execute if score #{temp} {SCOREBOARD_NAME} matches 1.. run data modify storage {STORAGE_NAME} {temp} set value 1b\n\
+execute if score #{temp} {SCOREBOARD_NAME} matches ..0 run data modify storage {STORAGE_NAME} {temp} set value 0b\n"
+
+        self.add_used_temp(storage_value1)
+        self.add_used_temp(storage_value2)
+
+        self.add_var(temp, temp)
+
+        return CometToken("operator", temp, items[0].start_pos, end_pos=items[1].end_pos, column=items[0].column, command=result, line=items[0].line)
+
+
     def dot_operation(self, items):
         var1 = items[0].value
         var2 = items[1].value
@@ -793,6 +831,7 @@ data modify storage {STORAGE_NAME} {temp} set from entity 0-0-0-0-a transformati
         temp = self.get_temp()
         item_cnt = len(items)
         if item_cnt == 0:
+            self.add_var(temp, temp)
             return CometToken("nbt", temp, command=f"data remove storage {STORAGE_NAME} {temp}\ndata modify storage {STORAGE_NAME} {temp} set value {{}}\n")
         not_include_var = "{"
         is_first = True
@@ -829,6 +868,11 @@ data modify storage {STORAGE_NAME} {temp} set from entity 0-0-0-0-a transformati
         not_include_var = "["
         is_first = True
         temp = self.get_temp()
+        item_cnt = len(items)
+        if item_cnt == 0:
+            self.add_var(temp, temp)
+            return CometToken("nbt", temp, command=f"data modify storage {STORAGE_NAME} {temp} set value []\n")
+        
         result = ""
         for i in range(len(items)):
             item = items[i]

@@ -146,8 +146,8 @@ while_statement: "while" "(" condition ")" block
     | expression "!=" expression    -> not_equal
     | "!" "(" logic_operation ")"   -> not
 ?condition: logic_operation
-    | condition "and" condition -> and
-    | condition "or" condition  -> or
+    | condition "and" condition -> and_operation
+    | condition "or" condition  -> or_operation
 
 
 // execute 설정

@@ -1,5 +1,3 @@
-
-var x = get_data("storage", "40planet:save", "data.player[0].pos[0]") 
-var y = get_data("storage", "40planet:save", "data.player[0].pos[1]") 
-var z = get_data("storage", "40planet:save", "data.player[0].pos[2]")
-/$tp @s $(x) $(y) $(z)
+var bugers =[
+    [], [], [], [], []
+]

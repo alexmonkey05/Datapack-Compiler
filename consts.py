@@ -39,21 +39,16 @@ OPERATION = "operation"
 NEW_LINE = "䗻"
 
 def get_executable_path():
+    dir_ = __file__.split("\\")
     if getattr(sys, 'frozen', False):  # PyInstaller로 패키징된 경우
         # 실행 파일의 경로를 반환
         dir_ = sys.executable.split("\\")
-        del dir_[-1]
-        dir_ = "\\".join(dir_)
-        print(dir_)
-        return dir_
-    else:
-        # 스크립트 실행 중인 경우
-        print(__file__)
-        return os.path.abspath(__file__)
+    del dir_[-1]
+    dir_ = "\\".join(dir_)
+    return dir_
 
 python_file_path = get_executable_path()
 lark_directory = python_file_path + "/grammer.lark"
-print(lark_directory)
 planet_parser = Lark.open(lark_directory)
 
 # 이스케이프 문자 처리하기(정규식에 쓰인 \d를 인식 못하는 듯)
