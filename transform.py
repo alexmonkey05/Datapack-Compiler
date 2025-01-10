@@ -1,7 +1,6 @@
 from lark import Transformer, Token, Lark, Tree
 import os
 import json
-import re
 
 from consts import NEW_LINE, SCORE_TYPES, MINECRAFT_TYPES, TYPES, SCOREBOARD_NAME, STORAGE_NAME, NAMESPACE, BUILT_IN_FUNCTION, OPERATION, OPERATOR_ID, CNAME, INT, ESCAPED_STRING, VariableComet, error_as_txt, Function, CometToken, planet_parser, CometClass
 

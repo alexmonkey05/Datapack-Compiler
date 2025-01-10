@@ -1,5 +1,6 @@
 import os
 from lark import Token, Lark
+import sys
 
 SCORE_TYPES = ("int", "float", "double", "bool")
 MINECRAFT_TYPES = ("bool", "short", "int", "float", "double", "long")
@@ -37,8 +38,22 @@ OPERATION = "operation"
 
 NEW_LINE = "䗻"
 
-python_file_path = os.path.abspath(__file__)
-lark_directory = os.path.dirname(python_file_path) + "/grammer.lark"
+def get_executable_path():
+    if getattr(sys, 'frozen', False):  # PyInstaller로 패키징된 경우
+        # 실행 파일의 경로를 반환
+        dir_ = sys.executable.split("\\")
+        del dir_[-1]
+        dir_ = "\\".join(dir_)
+        print(dir_)
+        return dir_
+    else:
+        # 스크립트 실행 중인 경우
+        print(__file__)
+        return os.path.abspath(__file__)
+
+python_file_path = get_executable_path()
+lark_directory = python_file_path + "/grammer.lark"
+print(lark_directory)
 planet_parser = Lark.open(lark_directory)
 
 # 이스케이프 문자 처리하기(정규식에 쓰인 \d를 인식 못하는 듯)
