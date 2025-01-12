@@ -19,11 +19,11 @@ execute store result score #var2_type 40planet_num run function basic:get_type_s
 execute if score #var2_type 40planet_num matches 0 run tellraw @a {"text": "Runtime Error : nbt type can not be operated","color": "red"}
 execute if score #var2_type 40planet_num matches 0 run return fail
 
-execute if score #var2_type 40planet_num matches 1 store result storage 40planet:value var1 int 1 run function basic:int/execute
-execute if score #var2_type 40planet_num matches 2 store result storage 40planet:value var1 float 0.01 run function basic:float/execute
-execute if score #var2_type 40planet_num matches 3 store result storage 40planet:value var1 double 0.01 run function basic:double/execute
-execute if score #var2_type 40planet_num matches 4 run function basic:string/execute
-execute if score #var2_type 40planet_num matches 5 store result storage 40planet:value var1 byte 1 run function basic:byte/execute
+execute if score #var2_type 40planet_num matches 1 store result storage 40planet:value var1 int 1 run return run function basic:int/execute
+execute if score #var2_type 40planet_num matches 2 store result storage 40planet:value var1 float 0.01 run return run function basic:float/execute
+execute if score #var2_type 40planet_num matches 3 store result storage 40planet:value var1 double 0.01 run return run function basic:double/execute
+execute if score #var2_type 40planet_num matches 4 run return run function basic:string/execute
+execute if score #var2_type 40planet_num matches 5 store result storage 40planet:value var1 byte 1 run return run function basic:byte/execute
 
 # execute if score #var1_type 40planet_num matches 2..3 run return run data get storage 40planet:value var1 100
 # return run data get storage 40planet:value var1

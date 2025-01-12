@@ -103,17 +103,17 @@ class DatapackGenerater(Transformer):
     # var 스토리지에 저장 후 경로 리턴
     def to_storage(self, tok):
         var = tok.value
-        result = ""
+        temp = self.get_temp()
+        self.add_var(temp, temp)
+        result = f"data remove storage {STORAGE_NAME} {temp}\n"
         if var in self.variables:
             if type(tok) == CometToken: result += tok.command
 
             if "." not in var[5:] and "[" not in var:
+                self.add_used_temp(temp)
                 return self.variables[var][-1].temp, result
-            temp = self.get_temp()
             return temp, result + f"data modify storage {STORAGE_NAME} {temp} set from storage {STORAGE_NAME} {var}\n"
         
-        temp = self.get_temp()
-        self.add_var(temp, temp)
         if var[0] == "@":
             var = var.replace('"', '\\"')
             return temp, f"data modify storage {STORAGE_NAME} {temp} set value \"{var}\"\n"
@@ -675,7 +675,10 @@ data modify storage {STORAGE_NAME} {temp} set from entity 0-0-0-0-a transformati
             result += f"data modify storage {STORAGE_NAME} var2 set from storage {STORAGE_NAME} {self.variables[var2][-1].temp}\n"
         elif items[1].type == CNAME: self.is_defined(items[1])
         else: result += f"data modify storage {STORAGE_NAME} var2 set value {var2}\n"
-        result += f"scoreboard players set #operator_type {SCOREBOARD_NAME} {OPERATOR_ID[operator]}\nfunction basic:operation\ndata modify storage {STORAGE_NAME} {temp} set from storage {STORAGE_NAME} var1\n"
+        operator_id = OPERATOR_ID[operator]
+        result += f"scoreboard players set #operator_type {SCOREBOARD_NAME} {operator_id}\n"
+        if OPERATOR_ID["=="] <= operator_id and operator_id <= OPERATOR_ID["<"]: result += f"execute store result storage {STORAGE_NAME} var1 int 1 run "
+        result += f"function basic:operation\ndata modify storage {STORAGE_NAME} {temp} set from storage {STORAGE_NAME} var1\n"
         self.add_var(temp, temp)
         self.add_used_temp(var1)
         self.add_used_temp(var2)
@@ -1013,8 +1016,8 @@ execute if score #{temp} {SCOREBOARD_NAME} matches ..0 run data modify storage {
         self.start(items[1].children)
         self.current_file = current_file
 
-        for break_temp in self.used_break:
-            command += f"execute if score #{break_temp} {SCOREBOARD_NAME} matches 1 run return 0\n"
+        if not is_while:
+            for break_temp in self.used_break: command += f"execute if score #{break_temp} {SCOREBOARD_NAME} matches 1 run return 0\n"
         for return_temp in self.used_return:
             value = self.used_return[return_temp]
             command += f"execute if score #{return_temp} {SCOREBOARD_NAME} matches 1 run return run data get storage {STORAGE_NAME} {value}\n"
@@ -1023,7 +1026,11 @@ execute if score #{temp} {SCOREBOARD_NAME} matches ..0 run data modify storage {
         return CometToken("operation", "set_variable", items[0].start_pos, end_pos=items[0].end_pos, column=items[0].column, command=command, line=items[0].line)
 
     def while_statement(self, items):
+        command = ""
+        for break_temp in self.used_break:
+            command += f"scoreboard players reset #{break_temp} {SCOREBOARD_NAME}\n"
         result = self.if_statement(items, True)
+        result.command = command + result.command
         # break에 쓰인 temp 메모리 풀어주기
         for break_temp in self.used_break:
             self.add_used_temp(break_temp)

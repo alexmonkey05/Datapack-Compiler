@@ -1,3 +1,19 @@
-if(!(false)){
-    
+var in_test = false
+var temp_text = ""
+var result_test = ""
+
+var is_tutorial
+var in_text
+def tick_tutorial(){}
+def tick(){
+    if(is_tutorial) tick_tutorial()
+
+    if(in_text){
+        if(result_test != temp_text){
+            /$data modify storage $(temp_text)
+        } else {
+            in_text = false
+            temp_text = ""
+        }
+    }
 }
