@@ -15,7 +15,7 @@ def modify_file_data(file_data):
     file_lines = file_data.split("\n")
     for i in range(len(file_lines)):
         line = file_lines[i].strip()
-        if line[0:2] == "/$":
+        if "/$" in line:
             file_lines[i] += NEW_LINE
     return "\n".join(file_lines)
 
@@ -221,7 +221,7 @@ class DatapackGenerater(Transformer):
                     item.children[0],
                     "InvalidSyntaxError",
                     self.filename,
-                    f"macro syntax is incorrect",
+                    f"macro syntax is incorrect. It can only use variables",
                 ))
                 result = result.replace(f"$({item.children[0].value})", macro_var, 1)
                 if type(item.children[0]) == CometToken: result = item.children[0].command + result

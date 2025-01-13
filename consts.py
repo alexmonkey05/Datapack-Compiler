@@ -355,7 +355,7 @@ class VariableComet:
         self.temp = temp
         self.details = details
 
-    def __str__(self):
+    def __repr__(self):
         return f"({self.name}, {self.temp})"
 
 class Function:
@@ -380,7 +380,7 @@ class CometToken:
         self.end_column = end_column
         self.end_pos = end_pos
 
-    def __str__(self):
+    def __repr__(self):
         return f"CometToken(type:{self.type}, value:{self.value})"
 
 class CometClass:
