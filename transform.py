@@ -211,7 +211,7 @@ class DatapackGenerater(Transformer):
     def command_macro(self, items):
         result = ""
         with open(self.filename, "r", encoding="utf-8") as file:
-            result = file.read().split("\n")[items[0].children[0].line - 1].strip()[2:]
+            result = file.read().split("\n")[items[0].children[0].line - 1].strip()
         result = result[result.index("/$") + 1:]
         for item in items:
             name = item.data
@@ -230,6 +230,8 @@ class DatapackGenerater(Transformer):
         if NAMESPACE in result:
             if self.is_module: result = result.replace(NAMESPACE + ":", f"{self.namespace}:{self.module_name}/")
             result = result.replace(NAMESPACE, f"{self.namespace}")
+        if "\\$" in result: result = result.replace("\\$", "$")
+        result = result[1:]
         return CometToken("command", result, items[0].children[0].start_pos, end_pos=items[-1].children[0].end_pos, column=items[0].children[0].column, command=result, line=items[0].children[0].line)
 
     ##############
