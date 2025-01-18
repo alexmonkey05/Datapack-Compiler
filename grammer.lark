@@ -4,11 +4,12 @@ FLOAT: /\d+\.\d+/
 //%import common.INT
 INT: /\d+/
 // %import common.ESCAPED_STRING
-ESCAPED_STRING: /"([^"\\]|\\.)*"/
-    | /'([^'\\]|\\.)*'/
+ESCAPED_STRING: /"([^"\\\n]|\\.)*"/
+    | /'([^'\\\n]|\\.)*'/
     // | /[a-zA-z]+/
 %import common.WS_INLINE
 %import common.WS
+%import common.NEWLINE
 
 
 start: (statement eol*)* statement?
@@ -89,8 +90,8 @@ variable_set: CNAME set_value
 member_operation: variable "[" expression "]"
     | array "[" INT "]"
     | array "[" /[+-]\d+/ "]"
-dot_operation: variable "." CNAME
-    | nbt "." CNAME
+dot_operation: variable "." (CNAME | ESCAPED_STRING)
+    | nbt "." (CNAME | ESCAPED_STRING)
 
 //값 토큰 설정
 //--------------------------------------------------------------
@@ -222,7 +223,7 @@ execute_parameter: /as/ selector
 
 ?nbt_dir: MINECRAFT_NAME
     | ESCAPED_STRING
-    | nbt_dir /\[\d+\]/
+    | nbt_dir /\[[+-]?\d+\]/
     | nbt_dir /\./ (MINECRAFT_NAME | ESCAPED_STRING)
 ?execute_store: execute_store_list nbt_dir /(byte|double|float|int|long|short)/ minecraft_number
     | /score/ (selector|MINECRAFT_NAME) MINECRAFT_NAME
