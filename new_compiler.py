@@ -157,10 +157,7 @@ if __name__ == "__main__":
     from tkinter import filedialog
     from eel import chrome, edge
 
-    if getattr(sys, 'frozen', False):
-        parentDir = os.path.dirname(sys.executable)
-    else:
-        parentDir = os.path.dirname(__file__)
+    parentDir = os.path.dirname(__file__)
 
     eel.init(os.path.join(parentDir, "web"));
 
