@@ -284,41 +284,17 @@ test
 ```
 
 ## execute
-1. Except for `if score`, you can almost always use the mark syntax as is.
-2. You can put an entity type variable in place of the selection argument, such as `@a[tag=player]`.
-```
-var player = @a[tag=player]
-execute ( as player at @s ){...}
-```
-### if score
-You can use like `execute( if score <string name> <string objective> ... )`
-### if data
-- You can use like `if data <변수>`
-```
-execute(unless data camera_paths[0][1]){
-    /scoreboard players set @s 40planet_camera_is_playing 0
-}
-```
-- You can use like `if data <storage|entity|block> <string path>`
-```
-var id = get_data("entity", "@s", "UUID")
-execute(if data storage "temp:test" "id"){
-    # code for adding id
-}
-```
+- Except for `if function`, you can almost always use the mark syntax as is.
 ### if function
 - If you have defined a function, it can be used in the form of `execute(if function __namespace__:test)`
 - It can also be used in the form below without defining a function
 ```
 execute(if function {
     return 1
-} positioned "0 0 0"){
+} positioned 0 0 0){
     print("success!")
 }
 ```
-
-### Things to note
-Since the string is entered almost as is, if there is a bug in execute, it will be very difficult to find.
    
 
 ## Built-in function

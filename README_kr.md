@@ -281,42 +281,17 @@ test
 ```
 
 ## execute
-1. `if score`를 제외하고는 거의 대부분 마크 문법 그대로 사용해도 된다.
-2. `@a[tag=player]`와 같이 선택인자가 들어가는 자리에는 entity 타입의 변수를 넣어도 된다
-3. 좌표를 입력하기 위해서는 `0 0 0`이 아닌 `"0 0 0"`과 같이 문자열로 입력해야 한다. (시야각도 마찬가지이다)
-```
-var player = @a[tag=player]
-execute ( as player at @s ){...}
-```
-### if score
-`execute( if score <string name> <string objective> ... )`의 형태로 사용 가능하다
-### if data
-- `if data <변수>`의 형태로 사용 가능하다
-```
-execute(unless data camera_paths[0][1]){
-    /scoreboard players set @s 40planet_camera_is_playing 0
-}
-```
-- `if data <storage|entity|block> <string path>`의 형태로 사용 가능하다
-```
-var id = get_data("entity", "@s", "UUID")
-execute(if data storage "temp:test" "id"){
-    # 아이디 추가하는 구문
-}
-```
+1. `if function`을 제외하고는 거의 대부분 마크 문법 그대로 사용해도 된다.
 ### if function
 - 함수를 정의했다면 `execute(if function __namespace__:test)`의 형태로 사용 가능하다
 - 함수를 정의하지 않고 아래와 같은 형태로도 사용 가능하다
 ```
 execute(if function {
     return 1
-} positioned "0 0 0"){
+} positioned 0 0 0){
     print("성공!")
 }
 ```
-
-### 주의할 점
-문자열을 거의 그대로 넣는 방식이므로 execute에서 버그가 나면 찾기 굉장히 힘들겁니다
    
 
 ## 내장함수
