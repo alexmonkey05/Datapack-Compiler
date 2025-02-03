@@ -195,4 +195,5 @@ if __name__ == "__main__":
     def open_folder(path):
         webbrowser.open(f"file:///{path}")
 
-    eel.start('index.html', size=(600, 800))  # Start
+    print("The compiler is hosted on http://localhost:8000!")
+    eel.start('index.html', size=(600, 800), mode="default")  # Start
