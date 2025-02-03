@@ -152,55 +152,104 @@ if __name__ == "__main__":
 
         sys.exit(0)
 
-
-    from tkinter import *
+    import eel
+    import tkinter
     from tkinter import filedialog
-    from tkinter import messagebox
-    import tkinter.ttk as ttk
+    from eel import chrome, edge
 
+    parentDir = os.path.dirname(__file__)
 
-    tk = Tk()
-    filename = None
-    def event():
-        version = combobox.get()
-        namespace = entry1.get().strip()
-        if namespace == "": namespace = "pack"
-        # try:
-        name = tk.file.name
-        dir = tk.dir
-        generate_datapack(name, version, dir, namespace)
-        messagebox.showinfo("name", "done!")
+    eel.init(os.path.join(parentDir, "web"));
 
+    @eel.expose
+    def event(name, dir, version, namespace):
+        try:
+            generate_datapack(name, version, dir, namespace)
+            return "success"
+        except BaseException as error:
+            return str(error)
+        
+
+    @eel.expose
     def select_planet_file():
-        tk.file = filedialog.askopenfile(
+        root = tkinter.Tk()
+        root.attributes("-topmost", True)
+        root.withdraw()
+        result = filedialog.askopenfile(
             title="파일 선택창",
             filetypes=(('planet files', '*.planet'), ('all files', '*.*'))
         )
-        label1.configure(text="File: " + tk.file.name)
+        if result:
+            return result.name
+        else:
+            return ""
 
+    @eel.expose
     def select_folder():
-        tk.dir = filedialog.askdirectory()
-        label2.configure(text="Folder: " + tk.dir)
-
-    tk.title('.planet -> datapack Compiler')
-
-    label1 = Label(tk,text='File')
-    label1.grid(row=0, column=0)
-    label2 = Label(tk,text='Folder')
-    label2.grid(row=1, column=0)
-    label3 = Label(tk,text='Datapack Name')
-    label3.grid(row=2, column=0)
+        root = tkinter.Tk()
+        root.attributes("-topmost", True)
+        root.withdraw()
+        directory_path = filedialog.askdirectory()
+        return directory_path
 
 
-    entry1 = Entry(tk)
-    entry1.grid(row=2,column=1)
+    import webbrowser
+    @eel.expose
+    def open_folder(path):
+        webbrowser.open(f"file:///{path}")
 
-    btn1 = Button(tk,text='Select',command=select_planet_file).grid(row=0,column=1)
-    btn2 = Button(tk,text='Select',command=select_folder).grid(row=1,column=1)
-    btn3 = Button(tk,text='Compile',command=event).grid(row=3,column=1)
+    def __can_use_chrome():
+        """Identify if Chrome is available for Eel to use"""
+        chrome_instance_path = chrome.find_path()
+        return chrome_instance_path is not None and os.path.exists(chrome_instance_path)
 
-    combobox = ttk.Combobox(tk,values=values,state="readonly")
-    combobox.grid(row=3,column=0)
-    combobox.set("1.21.2")
 
-    tk.mainloop()
+    def __can_use_edge():
+        """Identify if Edge is available for Eel to use"""
+        return edge.find_path()
+    
+    import socket 
+
+    def get_port():
+        """Get an available port by starting a new server, stopping and and returning the port"""
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.bind(("localhost", 0))
+        port = sock.getsockname()[1]
+        sock.close()
+        return port
+    
+    class UIOpenMode:
+        NONE = 0
+        CHROME_OR_EDGE = 1
+        DEFAULT_BROWSER = 2
+
+    # try:
+    chrome_available = __can_use_chrome()
+    edge_available = __can_use_edge()
+    open_mode = UIOpenMode.CHROME_OR_EDGE
+
+    if open_mode == UIOpenMode.CHROME_OR_EDGE and chrome_available:
+        logger.info("The interface is being opened in a new Chrome window")
+        logger.info(
+            "Please do not close this terminal while using this compiler - the process will end when the window is closed"
+        )
+        eel.start("index.html", size=(600, 800), port=0, mode="chrome")
+    elif open_mode == UIOpenMode.CHROME_OR_EDGE and edge_available:
+        logger.info("The interface is being opened in a new Edge window")
+        logger.info(
+            "Please do not close this terminal while using this compiler - the process will end when the window is closed"
+        )
+        eel.start("index.html", size=(600, 800), port=0, mode="edge")
+    elif open_mode == UIOpenMode.DEFAULT_BROWSER or (
+        open_mode == UIOpenMode.CHROME_OR_EDGE and not chrome_available and not edge_available
+    ):
+        logger.info("The interface is being opened in your default browser")
+        logger.info(
+            "Please do not close this terminal while using this compiler - the process will end when the window is closed"
+        )
+        eel.start("index.html", size=(600, 800), port=0, mode="user default")
+    else:
+        port = get_port()
+        logger.info(f"Server starting at http://localhost:{port}/index.html")
+        logger.info("You may end this process using Ctrl+C when finished using auto-py-to-exe")
+        eel.start("index.html", host="localhost", port=port, mode=None, close_callback=lambda x, y: None)

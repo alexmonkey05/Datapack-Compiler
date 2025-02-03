@@ -40,9 +40,6 @@ NEW_LINE = "䗻"
 
 def get_executable_path():
     dir_ = __file__.split("\\")
-    if getattr(sys, 'frozen', False):  # PyInstaller로 패키징된 경우
-        # 실행 파일의 경로를 반환
-        dir_ = sys.executable.split("\\")
     del dir_[-1]
     dir_ = "\\".join(dir_)
     return dir_
