@@ -1,2 +1,7 @@
-var a = "b"
-execute(as @a at @s) /$execute$(a)
+def test(){
+    execute(if entity @s){
+        return 0
+    }
+    execute(if entity @s){}
+    execute(if entity @s){}
+}

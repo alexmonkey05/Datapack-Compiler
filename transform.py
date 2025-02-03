@@ -536,7 +536,7 @@ data modify storage {STORAGE_NAME} {temp} set from storage {STORAGE_NAME} var1\n
         if type(input_nodes[0].children[0]) == CometToken: command += input_nodes[0].children[0].command
 
         temp = self.get_temp()
-        command += f"data modify storage {STORAGE_NAME} {temp} set from storage {STORAGE_NAME} {var}\n"
+        command += f"data modify storage {STORAGE_NAME} {temp} set from storage {STORAGE_NAME} {self.variables[var][-1].temp}\n"
         command += f"data remove storage {STORAGE_NAME} {self.variables[var][-1].temp}\n"
         self.add_var(temp, temp)
         return CometToken("del", temp, items[0].start_pos, end_pos=items[0].end_pos, column=items[0].column, command=command, line=items[0].line)
@@ -554,7 +554,9 @@ data modify storage {STORAGE_NAME} {temp} set from storage {STORAGE_NAME} var1\n
         if type(arr_node) == CometToken: command += arr_node.command
 
         element = input_nodes[1].children[0]
-        if type(element) == CometToken: command += element.command
+        if type(element) == CometToken:
+            command += element.command
+            element = element.value
         
 
         if element in self.variables:
@@ -920,7 +922,6 @@ execute if score #{temp} {SCOREBOARD_NAME} matches ..0 run data modify storage {
                     result = f"data modify storage {STORAGE_NAME} {temp} set value {not_include_var[:-1]}]\n" + result
                     is_first = False
                 item_temp = self.variables[item.value][-1].temp
-                if type(item) == CometToken: result += item.command
                 result += f"data modify storage {STORAGE_NAME} {temp} append from storage {STORAGE_NAME} {item_temp}\n"
                 # self.add_used_temp(item_temp)
             elif is_first:
@@ -1026,10 +1027,10 @@ execute if score #{temp} {SCOREBOARD_NAME} matches ..0 run data modify storage {
         self.current_file = current_file
 
         if not is_while:
-            for break_temp in self.used_break: command += f"execute if score #{break_temp} {SCOREBOARD_NAME} matches 1 run return 0\n"
+            for break_temp in self.used_break: command = f"scoreboard players reset #{break_temp} {SCOREBOARD_NAME}\n" + command + f"execute if score #{break_temp} {SCOREBOARD_NAME} matches 1 run return 0\n"
         for return_temp in self.used_return:
             value = self.used_return[return_temp]
-            command += f"execute if score #{return_temp} {SCOREBOARD_NAME} matches 1 run return run data get storage {STORAGE_NAME} {value}\n"
+            command = f"scoreboard players reset #{return_temp} {SCOREBOARD_NAME}\n" + command + f"execute if score #{return_temp} {SCOREBOARD_NAME} matches 1 run return run data get storage {STORAGE_NAME} {value}\n"
 
         self.add_used_temp(if_temp)
         return CometToken("operation", "set_variable", items[0].start_pos, end_pos=items[0].end_pos, column=items[0].column, command=command, line=items[0].line)
@@ -1047,7 +1048,7 @@ execute if score #{temp} {SCOREBOARD_NAME} matches ..0 run data modify storage {
         
         for temp in self.used_return:
             value = self.used_return[temp]
-            result.command += f"execute if score #{temp} {SCOREBOARD_NAME} matches 1 run return run data get storage {STORAGE_NAME} {value}\n"
+            result.command = f"scoreboard players reset #{temp} {SCOREBOARD_NAME}\n" + result.command + f"execute if score #{temp} {SCOREBOARD_NAME} matches 1 run return run data get storage {STORAGE_NAME} {value}\n"
         
         return result
     
@@ -1083,9 +1084,9 @@ execute if score #{temp} {SCOREBOARD_NAME} matches ..0 run data modify storage {
 
         for temp in self.used_return:
             value = self.used_return[temp]
-            command += f"execute if score #{temp} {SCOREBOARD_NAME} matches 1 run return run data get storage {STORAGE_NAME} {value}\n"
+            command = f"scoreboard players reset #{temp} {SCOREBOARD_NAME}\n" + command + f"execute if score #{temp} {SCOREBOARD_NAME} matches 1 run return run data get storage {STORAGE_NAME} {value}\n"
         for temp in self.used_break:
-            command += f"execute if score #{temp} {SCOREBOARD_NAME} matches 1 run return 0\n"
+            command = f"scoreboard players reset #{temp} {SCOREBOARD_NAME}\n" + command + f"execute if score #{temp} {SCOREBOARD_NAME} matches 1 run return 0\n"
 
         return CometToken("execute", command, items[0].start_pos, end_pos=items[0].end_pos, column=items[0].column, command=command, line=items[0].line)
 
