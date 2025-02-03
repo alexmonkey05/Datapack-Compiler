@@ -152,48 +152,55 @@ if __name__ == "__main__":
 
         sys.exit(0)
 
-    import eel
-    import tkinter
+
+    from tkinter import *
     from tkinter import filedialog
+    from tkinter import messagebox
+    import tkinter.ttk as ttk
 
-    eel.init("web");
 
-    @eel.expose
-    def event(name, dir, version, namespace):
-        try:
-            generate_datapack(name, version, dir, namespace)
-            return "success"
-        except BaseException as error:
-            return str(error)
-        
+    tk = Tk()
+    filename = None
+    def event():
+        version = combobox.get()
+        namespace = entry1.get().strip()
+        if namespace == "": namespace = "pack"
+        # try:
+        name = tk.file.name
+        dir = tk.dir
+        generate_datapack(name, version, dir, namespace)
+        messagebox.showinfo("name", "done!")
 
-    @eel.expose
     def select_planet_file():
-        root = tkinter.Tk()
-        root.attributes("-topmost", True)
-        root.withdraw()
-        result = filedialog.askopenfile(
+        tk.file = filedialog.askopenfile(
             title="파일 선택창",
             filetypes=(('planet files', '*.planet'), ('all files', '*.*'))
         )
-        if result:
-            return result.name
-        else:
-            return ""
+        label1.configure(text="File: " + tk.file.name)
 
-    @eel.expose
     def select_folder():
-        root = tkinter.Tk()
-        root.attributes("-topmost", True)
-        root.withdraw()
-        directory_path = filedialog.askdirectory()
-        return directory_path
+        tk.dir = filedialog.askdirectory()
+        label2.configure(text="Folder: " + tk.dir)
+
+    tk.title('.planet -> datapack Compiler')
+
+    label1 = Label(tk,text='File')
+    label1.grid(row=0, column=0)
+    label2 = Label(tk,text='Folder')
+    label2.grid(row=1, column=0)
+    label3 = Label(tk,text='Datapack Name')
+    label3.grid(row=2, column=0)
 
 
-    import webbrowser
-    @eel.expose
-    def open_folder(path):
-        webbrowser.open(f"file:///{path}")
+    entry1 = Entry(tk)
+    entry1.grid(row=2,column=1)
 
-    print("The compiler is hosted on http://localhost:8000!")
-    eel.start('index.html', size=(600, 800), mode="default")  # Start
+    btn1 = Button(tk,text='Select',command=select_planet_file).grid(row=0,column=1)
+    btn2 = Button(tk,text='Select',command=select_folder).grid(row=1,column=1)
+    btn3 = Button(tk,text='Compile',command=event).grid(row=3,column=1)
+
+    combobox = ttk.Combobox(tk,values=values,state="readonly")
+    combobox.grid(row=3,column=0)
+    combobox.set("1.21.2")
+
+    tk.mainloop()
