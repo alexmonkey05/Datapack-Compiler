@@ -155,8 +155,14 @@ if __name__ == "__main__":
     import eel
     import tkinter
     from tkinter import filedialog
+    from eel import chrome, edge
 
-    eel.init("web");
+    if getattr(sys, 'frozen', False):
+        parentDir = os.path.dirname(sys.executable)
+    else:
+        parentDir = os.path.dirname(__file__)
+
+    eel.init(os.path.join(parentDir, "web"));
 
     @eel.expose
     def event(name, dir, version, namespace):
@@ -195,5 +201,58 @@ if __name__ == "__main__":
     def open_folder(path):
         webbrowser.open(f"file:///{path}")
 
-    print("The compiler is hosted on http://localhost:8000!")
-    eel.start('index.html', size=(600, 800), mode="default")  # Start
+    def __can_use_chrome():
+        """Identify if Chrome is available for Eel to use"""
+        chrome_instance_path = chrome.find_path()
+        return chrome_instance_path is not None and os.path.exists(chrome_instance_path)
+
+
+    def __can_use_edge():
+        """Identify if Edge is available for Eel to use"""
+        return edge.find_path()
+    
+    import socket 
+
+    def get_port():
+        """Get an available port by starting a new server, stopping and and returning the port"""
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.bind(("localhost", 0))
+        port = sock.getsockname()[1]
+        sock.close()
+        return port
+    
+    class UIOpenMode:
+        NONE = 0
+        CHROME_OR_EDGE = 1
+        DEFAULT_BROWSER = 2
+
+    # try:
+    chrome_available = __can_use_chrome()
+    edge_available = __can_use_edge()
+    open_mode = UIOpenMode.CHROME_OR_EDGE
+
+    if open_mode == UIOpenMode.CHROME_OR_EDGE and chrome_available:
+        logger.info("The interface is being opened in a new Chrome window")
+        logger.info(
+            "Please do not close this terminal while using this compiler - the process will end when the window is closed"
+        )
+        eel.start("index.html", size=(600, 800), port=0, mode="chrome")
+    elif open_mode == UIOpenMode.CHROME_OR_EDGE and edge_available:
+        logger.info("The interface is being opened in a new Edge window")
+        logger.info(
+            "Please do not close this terminal while using this compiler - the process will end when the window is closed"
+        )
+        eel.start("index.html", size=(600, 800), port=0, mode="edge")
+    elif open_mode == UIOpenMode.DEFAULT_BROWSER or (
+        open_mode == UIOpenMode.CHROME_OR_EDGE and not chrome_available and not edge_available
+    ):
+        logger.info("The interface is being opened in your default browser")
+        logger.info(
+            "Please do not close this terminal while using this compiler - the process will end when the window is closed"
+        )
+        eel.start("index.html", size=(600, 800), port=0, mode="user default")
+    else:
+        port = get_port()
+        logger.info(f"Server starting at http://localhost:{port}/index.html")
+        logger.info("You may end this process using Ctrl+C when finished using auto-py-to-exe")
+        eel.start("index.html", host="localhost", port=port, mode=None, close_callback=lambda x, y: None)
