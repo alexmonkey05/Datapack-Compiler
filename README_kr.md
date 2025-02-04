@@ -4,6 +4,7 @@
 
  - [사용법](#사용법)
  - [Vscode 문법 강조 확장](#vscode-문법-강조-확장)
+ - [기여](#기여)
  - [문법](#문법)
   - [일반](#일반)
 	- [execute](#execute)
@@ -48,7 +49,6 @@ compiler.exe --cli -p ./a.planet -v 1.21 -d ./world/datapacks -n packpack
 :----: | :----:
  컴파일 성공 시 | 컴파일 실패 시
 
-### 유의사항
  - 네임스페이스는 소문자만 입력받습니다. 기본값은 `pack`입니다.
  - `컴파일` 버튼을 눌러 코드를 컴파일합니다.
  - 마인크래프트 세이브파일의 `datapacks` 폴더에 생성된 데이터팩과 `basic_1.20.zip` 또는 `basic_1.21.zip`을 넣어줍니다.
@@ -58,6 +58,12 @@ compiler.exe --cli -p ./a.planet -v 1.21 -d ./world/datapacks -n packpack
 [Comet Highlighter(VSC Marketplace Link)](https://marketplace.visualstudio.com/items?itemName=alexmonkey05.comet-highlighter)   
 위의 링크로 들어가거나 VSCode를 실행 후 extensions에서 Comet Highlighter를 검색해 다운로드 하여 사용할 수 있습니다   
 해당 익스텐션은 색만 표시해줄 뿐, 자동완성 기능은 없습니다
+
+# 기여
+ - exe 파일을 이 명령어를 통해 생성할 수 있습니다.
+```
+pyinstaller --noconfirm --onefile --console --add-data "<location>\grammer.lark;." --add-data "<location>\web;web/" "<location>\new_compiler.py"
+```
 
 # 문법
 ## 일반

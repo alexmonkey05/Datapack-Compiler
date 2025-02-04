@@ -6,6 +6,7 @@ It was created by 40planet, and free use is permitted as long as the link is ind
 
  - [How to Use](#how-to-use)
  - [Vscode Highlighter Extension](#vscode-highlighter-extension)
+ - [Contribute](#contribute)
  - [Syntax](#syntax)
 	- [General](#general)
 	- [execute](#execute)
