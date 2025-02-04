@@ -52,8 +52,8 @@
         </div>
         <div id="namespace-controller">
           <label for="namespace"><img src=image/namespace.svg /><span>Namespace</span></label>
-          <span class="description">Input namespace</span>
-          <input required type="text" id="namespace" name="namespace" />
+          <span class="description">Input namespace. Capitalized character will be force-lowercased.</span>
+          <input type="text" id="namespace" name="namespace" />
         </div>
       </div>
       <button id="compile-btn" type="submit">Compile</button>
@@ -94,6 +94,10 @@
         folderWarning.innerText = translation.warning
         return
       };
+      if (namespace === "") {
+        namespace = "pack"
+      }
+      namespace = namespace.toLowerCase();
 
       const result = await eel.event(file, folder, version, namespace)()
       document.querySelector("#output").style.display = "flex";
@@ -126,7 +130,7 @@
       document.querySelector("#version-controller .description").innerText = isEnglish ? "Select minecraft version" : "마인크래프트 버전을 선택하세요"
 
       document.querySelector("#namespace-controller label > span").innerText = isEnglish ? "Namespace" : "네임스페이스"
-      document.querySelector("#namespace-controller .description").innerText = isEnglish ? "Input namespace" : "네임스페이스를 입력하세요"
+      document.querySelector("#namespace-controller .description").innerText = isEnglish ? "Input namespace. Capitalized character will be force-lowercased." : "네임스페이스를 입력하세요. 대문자 문자는 소문자로 강제 변경됩니다."
 
       const compileBtn = document.querySelector("#compile-btn")
       compileBtn.innerText = isEnglish ? "Compile" : "컴파일";

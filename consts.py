@@ -38,14 +38,7 @@ OPERATION = "operation"
 
 NEW_LINE = "䗻"
 
-def get_executable_path():
-    dir_ = __file__.split("\\")
-    del dir_[-1]
-    dir_ = "\\".join(dir_)
-    return dir_
-
-python_file_path = get_executable_path()
-lark_directory = python_file_path + "/grammer.lark"
+lark_directory = os.path.join(os.path.dirname(__file__), "grammer.lark")
 planet_parser = Lark.open(lark_directory)
 
 # 이스케이프 문자 처리하기(정규식에 쓰인 \d를 인식 못하는 듯)
