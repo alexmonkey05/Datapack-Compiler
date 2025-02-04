@@ -1,6 +1,7 @@
 # Datapack-Compiler
 이 프로젝트는 마인크래프트 컴파일러를 만드는 프로젝트입니다.   
-40행성(40planet)에 의해 제작되었으며, 출처만 표기한다면 자유로운 사용을 허가합니다.
+40행성(40planet)에 의해 제작되었으며, 출처만 표기한다면 자유로운 사용을 허가합니다.   
+   
 Check english README.md in [here](https://github.com/alexmonkey05/Datapack-Compiler/blob/main/README_kr.md)!
 
  - [사용법](#사용법)
