@@ -1,38 +1,73 @@
-## [한국어 README.md](https://github.com/alexmonkey05/Datapack-Compiler/blob/main/README_kr.md)
-
 # Datapack-Compiler
-## Project Description
-This project is about creating a Minecraft compiler.   
+The aim of this project is to create Minecraft Datapack compiler.\
 It was created by 40planet, and free use is permitted as long as the link is indicated.
 
-## Highlighter Extension
-[Comet Highlighter(VSC Marketplace Link)](https://marketplace.visualstudio.com/items?itemName=alexmonkey05.comet-highlighter)   
-You can use the link above or run VSCode and search for Comet Highlighter in extensions to download and use it.   
-This extension only displays colors and does not have an auto-completion feature.
-## How to use
-### Setting1
-1. Download `compiler.exe` and execute.
-2. Select `.planet` file and directory where the data pack will be created
-3. Enter the name of the data pack.
-	1. If it's blank, it's same as `pack`.
-	2. Datapack does not work correctly when entering uppercase letters
-4. Press "convert"
-5. Put generated datapack ans `basic_1.21.zip` or `basic_1.20` in the `datapacks` folder in saves
-6. Refresh the data pack by executing `/reload` in the mark.
-7. If you reload your datapack again, go to no.4   
-[Comet Tutorial(Youtube Link)](https://youtu.be/vzlmWR5MqCY)  
-### Setting2 (CLI 사용 / cmd에서 사용) 
-1. Download `compiler.exe`.
-2. Place `compiler.exe` in a place where it can be run.
-3. Enter and use as follows:
+한국어 번역본은 [여기서 확인](https://github.com/alexmonkey05/Datapack-Compiler/blob/main/README_kr.md)하세요!
+
+ - [How to Use](#how-to-use)
+ - [Vscode Highlighter Extension](#vscode-highlighter-extension)
+ - [Syntax](#syntax)
+	- [General](#general)
+	- [execute](#execute)
+	- [import](#import)
+	- [Built-In Function](#built-in-function)
+
+# How to Use
+There is a video tutorial! Check out [Comet Tutorial](https://youtu.be/vzlmWR5MqCY).
+
+## Install and Run
+### Use Compiled Version (Windows Only)
+1. Download `compiler.exe` on the [release tab](https://github.com/alexmonkey05/Datapack-Compiler/releases)
+1. There are two ways to run. Running `compiler.exe` is entering into GUI mode, and running `compiler.exe --cli <argument>` is entering into CLI mode.
+
+#### Arguments (CLI mode)
+| Argument | Description |
+| ---- | ---- |
+| `--cli` | Use cli instead of gui |
+| `-p <planet file>` or `--planet` | Select file to compile |
+| `-v <version>` or `--version` | Select minecraft version |
+| `-d <location>` or `--dist` | Select folder to locate output |
+| `-n <namespace>` or `--name` | Input namespace (default=`pack`) |
+| `-h` or `--help` | Show help page |
+
+#### Demo (CLI mode)
 ```
 compiler.exe --cli --planet ./a.planet --version 1.21 --dist ./world/datapacks --name packpack
 ```
 ```
 compiler.exe --cli -p ./a.planet -v 1.21 -d ./world/datapacks -n packpack
 ```
-- Similarly, if `--name` is not entered, the namespace becomes `pack`.
-## Syntax
+
+### Use Project Code (Windows, macOS, Linux)
+1. Download project codes on the [release tab](https://github.com/alexmonkey05/Datapack-Compiler/releases)
+1. Run `cd /path/to/project`
+1. Run `pip install -r requirements.txt`. It will install the required package automatically.\
+**[Warning]** If you are not Windows user, you may need to install `sudo apt-get install python3-tk`
+1. Run `python new_compiler.py`(Windows) or `python3 new_compiler.py`(Universal). It will enter into GUI mode.
+
+## GUI mode
+<img src="https://github.com/user-attachments/assets/d4a9549b-1b9f-432b-b3c2-65ea39003410" width=700 /> |  <img src="https://github.com/user-attachments/assets/7207a09f-7ee2-43a6-b353-849a94048805" width=700 />
+:----: | :----:
+ When success | When failed
+
+ - The field of namespace is lowercase-only. The default value is `pack`
+ - You can compile your code using `compile` button
+ - Put generated datapack and `basic_1.20.zip` or `basic_1.21.zip` in the minecraft save's `datapacks` folder.
+ - Now refresh the datapack by executing `/reload` in the minecraft session.
+
+# Vscode Highlighter Extension
+[Comet Highlighter(VSC Marketplace Link)](https://marketplace.visualstudio.com/items?itemName=alexmonkey05.comet-highlighter)   
+You can use the link above or run VSCode and search for Comet Highlighter in extensions to download and use it.   
+This extension only displays colors and does not have an auto-completion feature.
+
+# Contribute
+ - You can generate executable by entering this command.
+```
+pyinstaller --noconfirm --onefile --console --add-data "<location>\grammer.lark;." --add-data "<location>\web;web/" "<location>\new_compiler.py"
+```
+
+# Syntax
+## General
 ### Data types
 - int
 	- intager like `1`, `-2`, `100`

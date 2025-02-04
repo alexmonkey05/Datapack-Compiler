@@ -1,35 +1,66 @@
 # Datapack-Compiler
-## 프로젝트 설명
 이 프로젝트는 마인크래프트 컴파일러를 만드는 프로젝트입니다.   
 40행성(40planet)에 의해 제작되었으며, 출처만 표기한다면 자유로운 사용을 허가합니다.
 
-## 하이라이터
-[Comet Highlighter(VSC Marketplace Link)](https://marketplace.visualstudio.com/items?itemName=alexmonkey05.comet-highlighter)   
-위의 링크로 들어가거나 VSCode를 실행 후 extensions에서 Comet Highlighter를 검색해 다운로드 하여 사용할 수 있습니다   
-해당 익스텐션은 색만 표시해줄 뿐, 자동완성 기능은 없습니다
-## 사용법
-### 세팅1 (CLI/cmd가 익숙치 않은 경우)
-1. `compiler.exe`를 받아 실행한다
-2. `.planet`파일과 데이터팩이 생성될 폴더를 선택한다
-3. 데이터팩의 이름을 입력한다. 
-	1. 입력하지 않는다면 `pack`으로 간주한다.
-	2. 대문자를 입력하면 데이터팩이 올바르게 작동하지 않는다
-4. "변환하기" 버튼을 누른다
-5. `datapacks` 폴더 안에 생성된 데이터팩과 `basic.zip`을 넣어준다
-6. 마크 안에서 `/reload`를 실행하여 데이터팩을 새로고침해준다   
-[혜성 튜토리얼(Youtube Link)](https://youtu.be/vzlmWR5MqCY)  
-### 세팅2 (CLI 사용 / cmd에서 사용) 
-1. `compiler.exe`를 다운로드 받는다
-2. `compiler.exe`를 실행시킬 수 있는 곳에 놓는다
-3. 아래와 같이 입력하여 사용한다
+ - [사용법](#사용법)
+ - [Vscode 문법 강조 확장](#vscode-문법-강조-확장)
+ - [문법](#문법)
+  - [일반](#일반)
+	- [execute](#execute)
+	- [import](#import)
+	- [내장 함수](#내장-함수)
+
+# 사용법
+영상 튜토리얼이 있습니다! [Comet Tutorial](https://youtu.be/vzlmWR5MqCY)을 참고하세요.
+
+## 설치 및 실행
+### 컴파일 버전 사용 (Windows 한정)
+1. [Release 탭](https://github.com/alexmonkey05/Datapack-Compiler/releases)에서 `compiler.exe`를 다운로드합니다.
+1. 실행에는 두 가지 방법이 있습니다. `compiler.exe`를 실행할 경우, GUI 모드로 진입하며, `compiler.exe --cli <argument>`를 입력해 실행할 경우, CLI 모드로 진입합니다.
+
+#### 인자 (CLI 모드)
+| 인자 | 설명 |
+| ---- | ---- |
+| `--cli` | GUI 모드 대신 CLI 모드를 사용합니다. |
+| `-p <planet file>` or `--planet` | 컴파일 할 파일을 지정합니다. |
+| `-v <version>` or `--version` | 컴파일에 사용할 마인크래프트 버전을 지정합니다. |
+| `-d <location>` or `--dist` | 결과물이 위치할 폴더를 지정합니다. |
+| `-n <namespace>` or `--name` | 네임스페이스를 입력합니다. (기본값=`pack`) |
+| `-h` or `--help` | 도움말 페이지를 표시합니다. |
+
+#### 예제 (CLI 모드)
 ```
 compiler.exe --cli --planet ./a.planet --version 1.21 --dist ./world/datapacks --name packpack
 ```
 ```
 compiler.exe --cli -p ./a.planet -v 1.21 -d ./world/datapacks -n packpack
 ```
-- 마찬가지로 만약 `--name`이 입력되지 않았다면 네임스페이스는 `pack`이 된다
-## 문법
+
+### 프로젝트 코드 사용 (Windows, macOS, Linux)
+1. [Release 탭](https://github.com/alexmonkey05/Datapack-Compiler/releases)에서 프로젝트 코드를 다운로드합니다.
+1. `cd <프로젝트 경로>`를 실행합니다.
+1. `pip install -r requirements.txt`를 실행합니다. 이 작업은 필요한 패키지를 자동으로 설치합니다.\
+**[Warning]** 만약, Windows 유저가 아닐경우, `sudo apt-get install python3-tk` 명령어를 입력해야 할 수도 있습니다.
+1. `python new_compiler.py`(Windows) 또는 `python3 new_compiler.py`(유니버설)를 실행합니다. 실행 시 GUI 모드로 진입합니다.
+
+## GUI 모드
+<img src="https://github.com/user-attachments/assets/d4a9549b-1b9f-432b-b3c2-65ea39003410" width=700 /> |  <img src="https://github.com/user-attachments/assets/7207a09f-7ee2-43a6-b353-849a94048805" width=700 />
+:----: | :----:
+ 컴파일 성공 시 | 컴파일 실패 시
+
+### 유의사항
+ - 네임스페이스는 소문자만 입력받습니다. 기본값은 `pack`입니다.
+ - `컴파일` 버튼을 눌러 코드를 컴파일합니다.
+ - 마인크래프트 세이브파일의 `datapacks` 폴더에 생성된 데이터팩과 `basic_1.20.zip` 또는 `basic_1.21.zip`을 넣어줍니다.
+ - 이제 마인크래프트에 접속해 `/reload`를 실행해 데이터팩을 새로고침하면 실행됩니다.
+
+# Vscode 문법 강조 확장
+[Comet Highlighter(VSC Marketplace Link)](https://marketplace.visualstudio.com/items?itemName=alexmonkey05.comet-highlighter)   
+위의 링크로 들어가거나 VSCode를 실행 후 extensions에서 Comet Highlighter를 검색해 다운로드 하여 사용할 수 있습니다   
+해당 익스텐션은 색만 표시해줄 뿐, 자동완성 기능은 없습니다
+
+# 문법
+## 일반
 ### 자료형 목록
 - int
 	- `1`, `-2`, `100`과 같은 정수 자료형
@@ -294,7 +325,7 @@ execute(if function {
 ```
    
 
-## 내장함수
+## 내장 함수
 ### 함수명(자료형 인자, ...)
 `함수명`에 관한 설명   
 `자료형`이 `any`로 적혀있는 경우, 어떤 자료형이든 상관 없다는 얘기이다.   
