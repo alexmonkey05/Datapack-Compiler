@@ -3,9 +3,11 @@ import os
 import json
 
 from consts import NEW_LINE, SCORE_TYPES, MINECRAFT_TYPES, TYPES, SCOREBOARD_NAME, STORAGE_NAME, NAMESPACE, BUILT_IN_FUNCTION, OPERATION, OPERATOR_ID, CNAME, INT, ESCAPED_STRING, VariableComet, error_as_txt, Function, CometToken, planet_parser, CometClass
+from logger import L
+import datetime
 
+logger = L()
 
-# TODO : 남은거 execute, 내장함수들
 
 #######################################
 # DatapackGenerater
@@ -967,12 +969,15 @@ execute if score #{temp} {SCOREBOARD_NAME} matches ..0 run data modify storage {
         
         filename = "/".join(self.filename.replace("\\", "/").split("/")[:-1])
         filename += "/" + name + ".planet"
+        now = datetime.datetime.now()
         with open(filename, "r", encoding="utf-8") as file:
             file_data = modify_file_data(file.read())
         parser_tree = planet_parser.parse(file_data + "\n")
 
         datapack_generator = DatapackGenerater(self.version, self.result_dir, self.namespace, filename, True, name)
         datapack_generator.transform(parser_tree)
+
+        logger.debug("interprete_file",f"{logger.fit(filename, 20)} took {logger.prYello(int((datetime.datetime.now() - now).total_seconds() * 1000) / 1000)}s")
 
         self.variables[name] = [VariableComet(name, "module", False)]
         self.modules[name] = {
