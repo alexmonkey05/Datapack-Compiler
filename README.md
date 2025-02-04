@@ -83,8 +83,7 @@ pyinstaller --noconfirm --onefile --console --add-data "<location>\grammer.lark;
 ```
 var a
 var b = 2.0
-var c = @p[tag=player]
-var d = @p[tag=^b&] # ^b&는 후술할 매크로 기능이다
+var c = "asdf"
 ```
 
 배열 선언은 다른 변수와 똑같이 선언한다
@@ -278,14 +277,17 @@ def dumb_function(var a){
 /gamemode creative @a
 ```
    
-`^변수명&`처럼 적으면 매크로처럼 사용 가능하다
+커맨드의 시작에 `$`를 적고, `$(변수명)`처럼 적으면 매크로처럼 사용 가능하다
 ```
 var a = 123
-/say ^a&
+/$say $(a)
+var command = "say a"
+/$$(command)
 ```
 
 ```
 [@] 123
+[@] a
 ```
 
 ### 주석
