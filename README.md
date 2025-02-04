@@ -75,8 +75,6 @@ pyinstaller --noconfirm --onefile --console --add-data "<location>\grammer.lark;
 	- `1.0`, `3.14`와 같은 소수 자료형
 - string
 	- `"This is string"`과 같은 문자열 자료형
-- entity
-	- `@a[tag=player]`와 같은 선택인자 자료형
 - nbt
 	- `{id:"minecraft:block_display",Tags:["temp"]}`와 같은 json 자료형
 ### 변수 선언
@@ -84,8 +82,7 @@ pyinstaller --noconfirm --onefile --console --add-data "<location>\grammer.lark;
 ```
 var a
 var b = 2.0
-var c = @p[tag=player]
-var d = @p[tag=^b&] # ^b&는 후술할 매크로 기능이다
+var c = "asdf"
 ```
 
 배열 선언은 다른 변수와 똑같이 선언한다
@@ -279,14 +276,17 @@ def dumb_function(var a){
 /gamemode creative @a
 ```
    
-`^변수명&`처럼 적으면 매크로처럼 사용 가능하다
+커맨드의 시작에 `$`를 적고, `$(변수명)`처럼 적으면 매크로처럼 사용 가능하다
 ```
 var a = 123
-/say ^a&
+/$say $(a)
+var command = "say a"
+/$$(command)
 ```
 
 ```
 [@] 123
+[@] a
 ```
 
 ### 주석
@@ -504,18 +504,4 @@ print(string(1 + 1))
 
 ```
 2
-```
-### entity(string a)
-`a`를 `entity`로 변환해준다   
-**아직 불완전하므로 `"@a"`와 같은 변수만 하는 것을 추천합니다**
-```
-var test = "@s"
-var self = entity(test)
-def print_self(){
-    print(self)
-}
-```
-
-```
-<실행한 사람의 닉네임>
 ```
