@@ -23,5 +23,5 @@ new_compiler.spec
 /maz
 40planet_ani.zip
 new_compiler.exe
-
+__pycache__/
 .venv

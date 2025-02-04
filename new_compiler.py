@@ -105,11 +105,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
                     prog='comet_compiler',
                     description='Compile .planet files')
-    parser.add_argument('--cli', action='store_true')      # option that takes a value
-    parser.add_argument('-p', '--planet')
-    parser.add_argument('-v', '--version')
-    parser.add_argument('-d', '--dist')
-    parser.add_argument('-n', '--name')
+    parser.add_argument('--cli', action='store_true', help="Use cli instead of gui")      # option that takes a value
+    parser.add_argument('-p', '--planet', help="Select file to compile")
+    parser.add_argument('-v', '--version', help="Select minecraft version")
+    parser.add_argument('-d', '--dist', help="Select folder to locate output")
+    parser.add_argument('-n', '--name', help="Input namespace. Default value is \"pack\".")
     args = parser.parse_args()
     if args.cli:
         logger.log("===============================================")
@@ -167,6 +167,7 @@ if __name__ == "__main__":
             generate_datapack(name, version, dir, namespace)
             return "success"
         except BaseException as error:
+            logger.critical(str(error));
             return str(error)
         
 
