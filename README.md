@@ -76,8 +76,6 @@ pyinstaller --noconfirm --onefile --console --add-data "<location>\grammer.lark;
 	- `1.0`, `3.14`와 같은 소수 자료형
 - string
 	- `"This is string"`과 같은 문자열 자료형
-- entity
-	- `@a[tag=player]`와 같은 선택인자 자료형
 - nbt
 	- `{id:"minecraft:block_display",Tags:["temp"]}`와 같은 json 자료형
 ### 변수 선언
@@ -505,18 +503,4 @@ print(string(1 + 1))
 
 ```
 2
-```
-### entity(string a)
-`a`를 `entity`로 변환해준다   
-**아직 불완전하므로 `"@a"`와 같은 변수만 하는 것을 추천합니다**
-```
-var test = "@s"
-var self = entity(test)
-def print_self(){
-    print(self)
-}
-```
-
-```
-<실행한 사람의 닉네임>
 ```
