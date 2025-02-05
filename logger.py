@@ -19,8 +19,7 @@ LOGLEVEL = {
 # verboseLevel = LOGLEVEL["DEBUG"]
 
 class L:
-    def __init__(self):
-        self.verboseLevel = LOGLEVEL["INFO"]
+    def __init__(self): self.verboseLevel = LOGLEVEL["INFO"]
     def prCyan(self, skk): return "\033[96m{}\033[00m".format(skk)
     def prYello(self, skk): return "\033[93m{}\033[00m".format(skk)
     def prRed(self, skk): return "\033[91m{}\033[00m".format(skk)

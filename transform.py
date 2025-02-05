@@ -3,10 +3,10 @@ import os
 import json
 
 from consts import NEW_LINE, SCORE_TYPES, MINECRAFT_TYPES, TYPES, SCOREBOARD_NAME, STORAGE_NAME, NAMESPACE, BUILT_IN_FUNCTION, OPERATION, OPERATOR_ID, CNAME, INT, ESCAPED_STRING, VariableComet, error_as_txt, Function, CometToken, planet_parser, CometClass
-from logger import L
+from logger import L, LOGLEVEL
 import datetime
 
-logger = L()
+logger = None
 
 
 #######################################
@@ -23,8 +23,12 @@ def modify_file_data(file_data):
 
 imported_files = []
 class DatapackGenerater(Transformer):
-    def __init__(self, version, result_dir = "./", namespace = "pack", filename = "", is_module = False, module_name = "", visit_tokens = True) -> None:
+    def __init__(self, version, result_dir = "./", namespace = "pack", filename = "", is_module = False, module_name = "", visit_tokens = True, logger_level = None) -> None:
+        global logger
         super().__init__(visit_tokens)
+        # self.logger_level = logger_level
+        # logger.verboseLevel = LOGLEVEL[logger_level]
+        logger = logger_level
         # 파라미터 가공
         if type(version) == str: version = float(version[2:])
         self.version = version
@@ -974,7 +978,7 @@ execute if score #{temp} {SCOREBOARD_NAME} matches ..0 run data modify storage {
             file_data = modify_file_data(file.read())
         parser_tree = planet_parser.parse(file_data + "\n")
 
-        datapack_generator = DatapackGenerater(self.version, self.result_dir, self.namespace, filename, True, name)
+        datapack_generator = DatapackGenerater(self.version, self.result_dir, self.namespace, filename, True, name, logger_level=logger)
         datapack_generator.transform(parser_tree)
 
         logger.debug("interprete_file",f"{logger.fit(filename, 20)} took {logger.prYello(int((datetime.datetime.now() - now).total_seconds() * 1000) / 1000)}s")

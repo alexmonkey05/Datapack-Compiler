@@ -93,7 +93,7 @@ def generate_datapack(filename, version, result_dir = "./", namespace = "pack"):
     # 트랜스폼
     now = datetime.datetime.now()
     # print(parser_tree.pretty())
-    datapack_generator = DatapackGenerater(version, result_dir, namespace, filename)
+    datapack_generator = DatapackGenerater(version, result_dir, namespace, filename, logger_level=logger)
     datapack_generator.transform(parser_tree)
     logger.debug("interprete_file", f"{logger.fit(filename, 20)} took {logger.prYello(int((datetime.datetime.now() - now).total_seconds() * 1000) / 1000)}s")
     return parser_tree
@@ -110,7 +110,7 @@ if __name__ == "__main__":
     parser.add_argument('-v', '--version', help="Select minecraft version")
     parser.add_argument('-d', '--dist', help="Select folder to locate output")
     parser.add_argument('-n', '--name', help="Input namespace. Default value is \"pack\".")
-    parser.add_argument('-l', '--logger')
+    parser.add_argument('-l', '--logger', help="Input logger level. Default value is \"INFO\".")
     args = parser.parse_args()
     if args.cli:
         logger.log("===============================================")
@@ -141,8 +141,7 @@ if __name__ == "__main__":
             n = "pack"
             logger.info("namespace", f"namespace is not defined, using default namespace: {logger.prGreen(n)}")
         l = args.logger
-        if l == None: 
-            l = "INFO"
+        if l == None: l = "INFO"
         logger.verboseLevel = LOGLEVEL[l]
             
         
