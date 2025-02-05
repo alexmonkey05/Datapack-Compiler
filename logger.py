@@ -16,7 +16,7 @@ LOGLEVEL = {
     "LOG": 4,
 }
 
-verboseLevel = LOGLEVEL["INFO"]
+verboseLevel = LOGLEVEL["DEBUG"]
 
 class L:
     def prCyan(self, skk): return "\033[96m{}\033[00m".format(skk)
