@@ -1,5 +1,5 @@
 from lark import Lark, Token
-from logger import L
+from logger import L, LOGLEVEL
 import os
 import shutil
 from transform import DatapackGenerater, error_as_txt, modify_file_data
@@ -110,6 +110,7 @@ if __name__ == "__main__":
     parser.add_argument('-v', '--version')
     parser.add_argument('-d', '--dist')
     parser.add_argument('-n', '--name')
+    parser.add_argument('-l', '--logger')
     args = parser.parse_args()
     if args.cli:
         logger.log("===============================================")
@@ -139,6 +140,11 @@ if __name__ == "__main__":
         if n == None: 
             n = "pack"
             logger.info("namespace", f"namespace is not defined, using default namespace: {logger.prGreen(n)}")
+        l = args.logger
+        if l == None: 
+            l = "INFO"
+        logger.verboseLevel = LOGLEVEL[l]
+            
         
         try:
             interprete_result = generate_datapack(p, v, d, n)

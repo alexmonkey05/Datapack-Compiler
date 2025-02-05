@@ -339,3 +339,12 @@ df"
 - Linux 환경에서 `\`로 인한 경로 에러가 나던 것 수정
 - `README.md`에서 입문자가 읽기 더 편하게 바뀜
 - `README.md`, `README_kr.md` $\to$ `README_en.md`, `README.md`로 바뀜
+# 아직 릴리즈 안 함 3.0.2
+- -l 옵션으로 로그 레벨 조정 가능
+  - DEBUG
+  - INFO
+  - WARNING
+  - ERROR
+  - CRITICAL
+  - FATAL
+  - LOG

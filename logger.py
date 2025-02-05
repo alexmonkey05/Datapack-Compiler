@@ -16,9 +16,11 @@ LOGLEVEL = {
     "LOG": 4,
 }
 
-verboseLevel = LOGLEVEL["DEBUG"]
+# verboseLevel = LOGLEVEL["DEBUG"]
 
 class L:
+    def __init__(self):
+        self.verboseLevel = LOGLEVEL["INFO"]
     def prCyan(self, skk): return "\033[96m{}\033[00m".format(skk)
     def prYello(self, skk): return "\033[93m{}\033[00m".format(skk)
     def prRed(self, skk): return "\033[91m{}\033[00m".format(skk)
@@ -30,7 +32,7 @@ class L:
         return time.strftime("%H:%M:%S", time.localtime())
 
     def print(self, scope: str, message, level: int = LOGLEVEL["DEBUG"]):
-        if level > verboseLevel:
+        if level > self.verboseLevel:
             return
         inf = self.prCyan("[INFO    ]")
         if level == LOGLEVEL["ERROR"]:
