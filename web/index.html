@@ -79,7 +79,7 @@
       const file = event.target[0].parentElement.parentElement.querySelector(".result").innerText
       const folder = event.target[1].parentElement.parentElement.querySelector(".result").innerText
       const version = event.target[2].value
-      const namespace = event.target[3].value
+      let namespace = event.target[3].value
 
       const fileWarning = event.target[0].parentElement.parentElement.querySelector(".warning")
       const folderWarning = event.target[1].parentElement.parentElement.querySelector(".warning")
