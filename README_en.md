@@ -348,7 +348,7 @@ print(a)
 123
 ```
 ### random()
-Returns a random integer between 0 and 1.
+Returns a random double between 0 and 1.
 ```
 random()
 ```

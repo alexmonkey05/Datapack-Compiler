@@ -162,7 +162,7 @@ while_statement: "while" "(" condition ")" block
     | MINECRAFT_NAME
 ?minecraft_id_tag: "#" minecraft_id
     | minecraft_id
-MINECRAFT_NAME: /[a-zA-Z0-9_]+/
+MINECRAFT_NAME: /[a-zA-Z0-9_.]+/
 ?json_pair: /"([^"\\]|\\.)*"/ ":" json_value
 ?json_value: /"([^"\\]|\\.)*"/ 
     | number
@@ -180,7 +180,7 @@ selector_parameter: /tag=/ (/!/? MINECRAFT_NAME)?
     | /level=/ minecraft_range
     | /limit=/ INT
     | /name=/ /!/? MINECRAFT_NAME
-    | "nbt=" /!/? nbt                                                -> selector_nbt
+    // | "nbt=" /!/? nbt                                                -> selector_nbt
     | /predicate=/ minecraft_id
     | "scores=" "{" (MINECRAFT_NAME "=" minecraft_range)? ("," MINECRAFT_NAME "=" minecraft_range)* "}" -> scores
     | /sort=/ /(arbitrary|furthest|nearest|random)/

@@ -95,7 +95,7 @@ class CometToken:
         self.end_pos = end_pos
 
     def __repr__(self):
-        return f"CometToken(type:{self.type}, value:{self.value})"
+        return f"CometToken(type:{self.type}, value:{self.value}, command:{self.command})"
 
 class CometClass:
     def __init__(self):

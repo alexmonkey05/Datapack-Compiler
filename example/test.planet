@@ -1,7 +1,4 @@
-def test(){
-    execute(if entity @s){
-        return 0
-    }
-    execute(if entity @s){}
-    execute(if entity @s){}
+var a = 123
+execute(as @p if data storage 40planet:value {test:1b,asdf:[a, "fdsa", a]}){
+
 }
