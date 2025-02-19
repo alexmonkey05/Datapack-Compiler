@@ -2,13 +2,16 @@ from lark import Lark, Token
 from logger import L, LOGLEVEL
 import os
 import shutil
-from transform import DatapackGenerater, error_as_txt, modify_file_data
+from transform import DatapackGenerater, error_as_txt, modify_file_data, filedata
 from consts import planet_parser, NEW_LINE
 import datetime
 import sys
+import json
 
   
 logger = L()
+COMET_CACHE_FILE = "./comet_cache.txt"
+existing_functions = {}
 
 
 datapack_versions = {
@@ -21,6 +24,14 @@ datapack_versions = {
     "1.21.4": "61"
 }
 
+def search_functions(function_folder_dir):
+    filenames = os.listdir(function_folder_dir)
+    for filename in filenames:
+        if filename == "tick.mcfunction" or filename == "load.mcfunction": continue
+        full_filename = os.path.join(function_folder_dir, filename)
+        full_filename = full_filename.replace("\\", "/")
+        if filename.split(".")[-1] != "mcfunction": search_functions(full_filename)
+        else: existing_functions[full_filename] = True
 # 네임스페이스/functions, tick.json, load.json 삭제 후 재생성
 def make_basic_files(version, file_dir, namespace = "pack"):
     logger.debug("make_basic_files", f"version: {version}, file_dir: {file_dir}, namespace: {namespace}")
@@ -28,11 +39,14 @@ def make_basic_files(version, file_dir, namespace = "pack"):
     function_folder = "function"
     if version[:4] == "1.20": function_folder = "functions"
 
-    function_folder_dir = file_dir + f"{namespace}/data/{namespace}/{function_folder}"
-    tag_folder_dir = file_dir + f"{namespace}/data/minecraft/tags/{function_folder}"
+    function_folder_dir = os.path.join(file_dir, namespace, "data", namespace, function_folder)
+    tag_folder_dir = os.path.join(file_dir, namespace, "data", "minecraft", "tags", function_folder)
+    
 
     # if os.path.exists(file_dir + f"{namespace}/data/{namespace}/{function_folder}"): shutil.rmtree(file_dir + f"{namespace}/data/{namespace}/{function_folder}")
+    search_functions(function_folder_dir)
     if os.path.exists(function_folder_dir): shutil.rmtree(function_folder_dir)
+    
 
     if not os.path.exists(tag_folder_dir): os.makedirs(tag_folder_dir)
     if not os.path.exists(function_folder_dir): os.makedirs(function_folder_dir)
@@ -96,11 +110,33 @@ def generate_datapack(filename, version, result_dir = "./", namespace = "pack"):
     datapack_generator = DatapackGenerater(version, result_dir, namespace, filename, logger_level=logger)
     datapack_generator.transform(parser_tree)
     logger.debug("interprete_file", f"{logger.fit(filename, 20)} took {logger.prYello(int((datetime.datetime.now() - now).total_seconds() * 1000) / 1000)}s")
+    write_all_files()
     return parser_tree
+
+def write_all_files():
+    now = datetime.datetime.now()
+    for filename in filedata:
+        # print(filename)
+        if filename in existing_functions: del existing_functions[filename]
+        # if filename in comet_cache and filedata[filename] == comet_cache[filename]: continue
+        with open(filename, "w+", encoding="utf-8") as file:
+            file.write(filedata[filename])
+    # with open(COMET_CACHE_FILE, "w+", encoding="utf-8") as file:
+    #     file.write(str(filedata))
+    # print(existing_functions)
+    # for filename in existing_functions:
+    #     os.remove(filename)
+    logger.debug("write_datapack", f"Took {logger.prYello(int((datetime.datetime.now() - now).total_seconds() * 1000) / 1000)}s")
 
 import argparse
 values = ["1.20.4", "1.20.6", "1.21", "1.21.1", "1.21.2", "1.21.3", "1.21.4"]
 if __name__ == "__main__":
+    
+    # if os.path.isfile(COMET_CACHE_FILE):
+    #     with open(COMET_CACHE_FILE, "r+", encoding="utf-8") as file:
+    #         comet_cache = eval(file.read())
+    # else:
+    #     comet_cache = {}
 
     parser = argparse.ArgumentParser(
                     prog='comet_compiler',

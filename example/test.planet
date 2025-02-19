@@ -1,4 +1,4 @@
-var a = 123
-execute(as @p if data storage 40planet:value {test:1b,asdf:[a, "fdsa", a]}){
-
-}
+import test2
+var num
+/$say data modify storage 40planet:temp tellraw.save$(num) set value '[{"text":"\\n\\n","color":"gray","bold":true},{"text":"세이브 $(num) - ","color":"gold","cvgjhdutttyjtyghrfghrtkyhjrgethfykrftjghrtuyryufgkyjgfhkjfghythftyhgkfghfghfghfjhgfghjfghjfghjfghfghfghfghfghffghfghfgjghfdbold":true},{"nbt":"saves[$(num)].year","storage":"40planet:save"},{"nbt":"saves[$(num)].hour","storage":"40planet:save"}]'
+/$data modify storage 40planet:temp tellraw.save$(num) set value '[{"text":"\\n\\n","color":"gray","bold":true},{"text":"세이브 $(num) - ","color":"gold","bold":true},{"nbt":"saves[$(num)].year","storage":"40planet:save"},"-",{"nbt":"saves[$(num)].month","storage":"40planet:save"},"-",{"nbt":"saves[$(num)].day","storage":"40planet:save"}," ",{"nbt":"saves[$(num)].hour","storage":"40planet:save"},":"]

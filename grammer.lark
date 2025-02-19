@@ -31,10 +31,10 @@ start: (statement eol*)* statement?
 minecraft_command: /\/[^\$][^\n]*/
 command_macro: "/$" ( macro_ | word )+
 // minecraft_command.10: "/" (macro | word)+ eol
-macro_: "$(" condition ")"
-word.-999: /(\\\$|[^\n\$^䗻])+/
+macro_: "$(" CNAME ")"
+word.1: /(\\\$|[^\n\$^䗻])+/
 
-new_line.-900: /\n/
+new_line.2: /\n/
 ?eol: new_line | ";" | "䗻"
 
 // 중괄호 블럭
@@ -163,6 +163,7 @@ while_statement: "while" "(" condition ")" block
 ?minecraft_id_tag: "#" minecraft_id
     | minecraft_id
 MINECRAFT_NAME: /[a-zA-Z0-9_.]+/
+MINECRAFT_NAME_NOT_DOT: /[a-zA-Z0-9_]+/
 ?json_pair: /"([^"\\]|\\.)*"/ ":" json_value
 ?json_value: /"([^"\\]|\\.)*"/ 
     | number
@@ -221,10 +222,10 @@ execute_parameter: /as/ selector
 ?execute_facing: coordinate_set
     | /entity/ selector
 
-?nbt_dir: MINECRAFT_NAME
+?nbt_dir: MINECRAFT_NAME_NOT_DOT
     | ESCAPED_STRING
     | nbt_dir /\[[+-]?\d+\]/
-    | nbt_dir /\./ (MINECRAFT_NAME | ESCAPED_STRING)
+    | nbt_dir /\./ (MINECRAFT_NAME_NOT_DOT | ESCAPED_STRING)
 ?execute_store: execute_store_list nbt_dir /(byte|double|float|int|long|short)/ minecraft_number
     | /score/ (selector|MINECRAFT_NAME) MINECRAFT_NAME
 ?execute_store_list: block_entity

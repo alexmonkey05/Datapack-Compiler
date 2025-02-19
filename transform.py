@@ -7,7 +7,7 @@ from logger import L, LOGLEVEL
 import datetime
 
 logger = None
-
+filedata = {}
 
 #######################################
 # DatapackGenerater
@@ -153,9 +153,9 @@ class DatapackGenerater(Transformer):
             if (txt[0] != "$" and "$(" in txt) or (txt[0:2] == "$("):
                 self.macro(txt)
             else:
-                file = open(self.current_dir + self.current_file, "a+", encoding="utf-8")
-                file.write(txt)
-                file.close()
+                filename = self.current_dir + self.current_file
+                if filename in filedata:filedata[filename] += txt
+                else: filedata[filename] = txt
 
     def macro(self, txt):
         if txt[0] != "$" or txt[0:2] == "$(": txt = "$" + txt
@@ -952,7 +952,8 @@ execute if score #{temp} {SCOREBOARD_NAME} matches ..0 run data modify storage {
         imported_files.append(name)
 
         # 모듈 폴더 생성
-        os.makedirs(self.result_dir +f"{self.namespace}/data/{self.namespace}/{self.function_folder}/{name}/")
+        folder_dir = self.result_dir +f"{self.namespace}/data/{self.namespace}/{self.function_folder}/{name}/"
+        if not os.path.exists(folder_dir): os.makedirs(folder_dir)
         
         # tick. load 함수 생성
         open(self.result_dir +f"{self.namespace}/data/{self.namespace}/{self.function_folder}/{name}/load.mcfunction", "w+").close()
