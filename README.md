@@ -29,14 +29,15 @@ If you are english speaker, check out [README_en.md](https://github.com/alexmonk
 | `-v <version>` or `--version` | 컴파일에 사용할 마인크래프트 버전을 지정합니다. |
 | `-d <location>` or `--dist` | 결과물이 위치할 폴더를 지정합니다. |
 | `-n <namespace>` or `--name` | 네임스페이스를 입력합니다. (기본값=`pack`) |
+| `-l` or `--logger` | 출력될 로그의 레벨을 정합니다. (기본값=`INFO`) (`DEBUG` > `INFO` > `WARNING` > `ERROR` > `CRITICAL` > `FATAL` > `LOG` 순으로 레벨이 높습니다.) |
 | `-h` or `--help` | 도움말 페이지를 표시합니다. |
 
 #### 예제 (CLI 모드)
 ```
-compiler.exe --cli --planet ./a.planet --version 1.21 --dist ./world/datapacks --name packpack
+compiler.exe --cli --planet ./a.planet --version 1.21 --dist ./world/datapacks --name packpack --logger DEBUG
 ```
 ```
-compiler.exe --cli -p ./a.planet -v 1.21 -d ./world/datapacks -n packpack
+compiler.exe --cli -p ./a.planet -v 1.21 -d ./world/datapacks -n packpack -l DEBUG
 ```
 
 ### 프로젝트 코드 사용 (Windows, macOS, Linux)
