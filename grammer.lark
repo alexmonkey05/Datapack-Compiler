@@ -92,6 +92,8 @@ member_operation: variable "[" expression "]"
     | array "[" /[+-]\d+/ "]"
 dot_operation: variable "." (CNAME | ESCAPED_STRING)
     | nbt "." (CNAME | ESCAPED_STRING)
+    | dot_operation "." no_dot_minecraft_id
+no_dot_minecraft_id : CNAME ":" CNAME
 
 //값 토큰 설정
 //--------------------------------------------------------------
@@ -220,7 +222,7 @@ execute_parameter: /as/ selector
     | /as/ selector
 
 ?execute_facing: coordinate_set
-    | /entity/ selector
+    | /entity/ selector /(eyes|feet)/
 
 ?nbt_dir: MINECRAFT_NAME_NOT_DOT
     | ESCAPED_STRING
@@ -255,6 +257,7 @@ if_function_block: "{" statement* "}"
     | /entity/ selector
 ?item_slot: /(container|enderchest|horse|hotbar|inventory|player\.crafting|villager)\.(\d+|\*)/
     | /contents/
+    | /weapon/
     | /weapon\.(?:\*|mainhand|offhand)/
     | /horse\.(?:chest|saddle)/
     | /armor\.(?:\*|body|chest|feet|head|legs)/

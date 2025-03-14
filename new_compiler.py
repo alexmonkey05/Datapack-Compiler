@@ -25,6 +25,10 @@ datapack_versions = {
 }
 
 def search_functions(function_folder_dir):
+    global existing_functions
+    if not os.path.exists(function_folder_dir):
+        existing_functions = {}
+        return
     filenames = os.listdir(function_folder_dir)
     for filename in filenames:
         if filename == "tick.mcfunction" or filename == "load.mcfunction": continue
@@ -51,22 +55,30 @@ def make_basic_files(version, file_dir, namespace = "pack"):
     if not os.path.exists(tag_folder_dir): os.makedirs(tag_folder_dir)
     if not os.path.exists(function_folder_dir): os.makedirs(function_folder_dir)
 
-    file = open(file_dir + f"{namespace}/data/minecraft/tags/{function_folder}/load.json", "w+")
+    load_json = file_dir + f"{namespace}/data/minecraft/tags/{function_folder}/load.json"
+    tick_json = file_dir + f"{namespace}/data/minecraft/tags/{function_folder}/tick.json"
+    load_mcfunction = file_dir + f"{namespace}/data/{namespace}/{function_folder}/load.mcfunction"
+    tick_mcfunction = file_dir + f"{namespace}/data/{namespace}/{function_folder}/tick.mcfunction"
+    pack_mcmeta = file_dir + f"{namespace}/pack.mcmeta"
+    file = open(load_json, "w+")
     file.write(f"{{\"values\": [\"{namespace}:load\"]}}")
     file.close()
-    file = open(file_dir + f"{namespace}/data/minecraft/tags/{function_folder}/tick.json", "w+")
+    file = open(tick_json, "w+")
     file.write(f"{{\"values\": [\"{namespace}:tick\"]}}")
     file.close()
-    file = open(file_dir + f"{namespace}/data/{namespace}/{function_folder}/load.mcfunction", "w+")
-    file.write(f"\
-# This data pack was compiled with the 40planet's compiler.\n\
-# https://github.com/alexmonkey05/Datapack-Compiler\n\n")
-    file.close()
-    file = open(file_dir + f"{namespace}/data/{namespace}/{function_folder}/tick.mcfunction", "w+")
-    file.close()
-    file = open(file_dir + f"{namespace}/pack.mcmeta", "w+")
-    file.write('{ "pack": {"pack_format": ' + datapack_versions[version] + ', "description": "by 40planet"} }')
-    file.close()
+    if not os.path.isfile(load_mcfunction):
+        file = open(load_mcfunction, "w+")
+        file.write(f"\
+    # This data pack was compiled with the 40planet's compiler.\n\
+    # https://github.com/alexmonkey05/Datapack-Compiler\n\n")
+        file.close()
+    if not os.path.isfile(tick_mcfunction):
+        file = open(tick_mcfunction, "w+")
+        file.close()
+    if not os.path.isfile(pack_mcmeta):
+        file = open(pack_mcmeta, "w+")
+        file.write('{ "pack": {"pack_format": ' + datapack_versions[version] + ', "description": "by 40planet"} }')
+        file.close()
 
 
 def generate_datapack(filename, version, result_dir = "./", namespace = "pack"):
@@ -116,14 +128,12 @@ def generate_datapack(filename, version, result_dir = "./", namespace = "pack"):
 def write_all_files():
     now = datetime.datetime.now()
     for filename in filedata:
-        # print(filename)
         if filename in existing_functions: del existing_functions[filename]
         # if filename in comet_cache and filedata[filename] == comet_cache[filename]: continue
         with open(filename, "w+", encoding="utf-8") as file:
             file.write(filedata[filename])
     # with open(COMET_CACHE_FILE, "w+", encoding="utf-8") as file:
     #     file.write(str(filedata))
-    # print(existing_functions)
     # for filename in existing_functions:
     #     os.remove(filename)
     logger.debug("write_datapack", f"Took {logger.prYello(int((datetime.datetime.now() - now).total_seconds() * 1000) / 1000)}s")

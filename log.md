@@ -351,3 +351,15 @@ df"
 - 태그나 스코어보드 이름에 `.`이 들어가도 에러가 나지 않음
 - 명령어가 너무 길어지고 같은 변수를 반복해서 매크로로 사용할 경우 매크로가 정상작동하지 않는 오류 해결
 - 최적화를 진행, 내 노트북에선 약 3배 가량 빨라짐
+# 2025/03/14 3.1.1
+- 일부 마크 문법이 혜성에서 에러를 내던 오류 해결
+  - `SelectedItem.components.minecraft:custom_data`
+- 아래와 같이 작성되면 nbt 데이터가 제대로 생성되지 않던 오류 해결
+```
+{
+    function: info.function,
+    owner_id: get_score("@s", "40planet_id"),
+    enabled: 1b
+}
+```
+- 같은 .planet 파일을 서로 다른 파일에서 import 했을 때 에러가 나던 오류 해결

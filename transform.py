@@ -21,7 +21,7 @@ def modify_file_data(file_data):
             file_lines[i] += NEW_LINE
     return "\n".join(file_lines)
 
-imported_files = []
+imported_files = {}
 class DatapackGenerater(Transformer):
     def __init__(self, version, result_dir = "./", namespace = "pack", filename = "", is_module = False, module_name = "", visit_tokens = True, logger_level = None) -> None:
         global logger
@@ -140,8 +140,8 @@ class DatapackGenerater(Transformer):
     def make_dump_function(self):
         filename = str(self.dump_function_cnt) + ".mcfunction"
         self.dump_function_cnt += 1
-        file = open(self.current_dir + filename, "w+")
-        file.close()
+        # file = open(self.current_dir + filename, "w+")
+        # file.close()
         return filename
 
     def write(self, full_txt):
@@ -216,6 +216,7 @@ class DatapackGenerater(Transformer):
         if NAMESPACE in command:
             if self.is_module: command = command.replace(NAMESPACE + ":", f"{self.namespace}:{self.module_name}/")
             command = command.replace(NAMESPACE, f"{self.namespace}")
+        if "\\$" in command: command = command.replace("\\$", "$")
         return CometToken("command", items[0][1:], items[0].start_pos, end_pos=items[0].end_pos, column=items[0].column, command=command, line=items[0].line)
     # /$로 시작하는 커맨드
     def command_macro(self, items):
@@ -775,6 +776,8 @@ execute if score #{temp} {SCOREBOARD_NAME} matches ..0 run data modify storage {
         return CometToken("operator", temp, items[0].start_pos, end_pos=items[0].end_pos, column=items[0].column, command=result, line=items[0].line)
 
 
+    def no_dot_minecraft_id(self, items):
+        return Token("minecraft_id", f"{items[0]}:{items[1]}", items[0].start_pos, end_pos=items[0].end_pos, column=items[0].column, line=items[0].line)
     def dot_operation(self, items):
         var1 = items[0].value
         var2 = items[1].value
@@ -871,7 +874,7 @@ execute if score #{temp} {SCOREBOARD_NAME} matches ..0 run data modify storage {
             return CometToken("nbt", temp, command=f"data remove storage {STORAGE_NAME} {temp}\ndata modify storage {STORAGE_NAME} {temp} set value {{}}\n")
         not_include_var = "{"
         is_first = True
-        result = f"data remove storage {STORAGE_NAME} {temp}\n"
+        result = ""
         for pair in items:
             key = pair.children[0].value
             value = pair.children[1]
@@ -884,7 +887,7 @@ execute if score #{temp} {SCOREBOARD_NAME} matches ..0 run data modify storage {
                 ))
             if value.value in self.variables:
                 if is_first and len(not_include_var) > 2:
-                    result += f"data modify storage {STORAGE_NAME} {temp} set value {not_include_var[:-1]}" + "}\n"
+                    result = f"data modify storage {STORAGE_NAME} {temp} set value {not_include_var[:-1]}" + "}\n" + result
                     is_first = False
                 value_temp = self.variables[value.value][-1].temp
                 if type(value) == CometToken: result += value.command
@@ -894,9 +897,10 @@ execute if score #{temp} {SCOREBOARD_NAME} matches ..0 run data modify storage {
                 not_include_var += f"{key}:{value.value},"
             else:
                 result += f"data modify storage {STORAGE_NAME} {temp}.{key} set value {value.value}\n"
-            
+
         if is_first and len(not_include_var) > 2:
-            result += f"data modify storage {STORAGE_NAME} {temp} set value {not_include_var[:-1]}" + "}\n"
+            result = f"data modify storage {STORAGE_NAME} {temp} set value {not_include_var[:-1]}" + "}\n" + result
+        result = f"data remove storage {STORAGE_NAME} {temp}\n" + result
         self.add_var(temp, temp)
         return CometToken("nbt", temp, items[0].children[0].start_pos, end_pos=items[0].children[0].end_pos, column=items[0].children[0].column, command=result, line=items[0].children[0].line)
 
@@ -948,16 +952,21 @@ execute if score #{temp} {SCOREBOARD_NAME} matches ..0 run data modify storage {
 
     def import_statement(self, items):
         name = items[0].value
-        if name in imported_files: return None
-        imported_files.append(name)
+        if name in imported_files:
+            self.modules[name] = {
+                "variables": imported_files[name]["variables"],
+                "functions": imported_files[name]["functions"]
+            }
+            self.variables[name] = [VariableComet(name, "module", False)]
+            return None
 
         # 모듈 폴더 생성
         folder_dir = self.result_dir +f"{self.namespace}/data/{self.namespace}/{self.function_folder}/{name}/"
         if not os.path.exists(folder_dir): os.makedirs(folder_dir)
         
         # tick. load 함수 생성
-        open(self.result_dir +f"{self.namespace}/data/{self.namespace}/{self.function_folder}/{name}/load.mcfunction", "w+").close()
-        open(self.result_dir +f"{self.namespace}/data/{self.namespace}/{self.function_folder}/{name}/tick.mcfunction", "w+").close()
+        open(self.result_dir +f"{self.namespace}/data/{self.namespace}/{self.function_folder}/{name}/load.mcfunction", "a+").close()
+        open(self.result_dir +f"{self.namespace}/data/{self.namespace}/{self.function_folder}/{name}/tick.mcfunction", "a+").close()
         # #tick, #load에 함수 추가
         with open(self.result_dir + f"{self.namespace}/data/minecraft/tags/{self.function_folder}/load.json") as f:
             data = json.load(f)
@@ -986,6 +995,10 @@ execute if score #{temp} {SCOREBOARD_NAME} matches ..0 run data modify storage {
 
         self.variables[name] = [VariableComet(name, "module", False)]
         self.modules[name] = {
+            "variables": datapack_generator.variables,
+            "functions": datapack_generator.functions
+        }
+        imported_files[name] = {
             "variables": datapack_generator.variables,
             "functions": datapack_generator.functions
         }
