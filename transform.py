@@ -303,8 +303,8 @@ class DatapackGenerater(Transformer):
         self.add_var(function_.temp, function_.temp)
 
         # return 쓰인 temp 메모리 풀어주기
-        for return_temp in self.used_return:
-            self.add_used_temp(return_temp)
+        # for return_temp in self.used_return:
+        #     self.add_used_temp(return_temp)
         self.used_return = {}
         return Token("function_def", name, items[0].start_pos, items[0].line, items[0].column, items[0].end_line, items[0].end_column, items[0].end_pos)
     # function_def에서 파라미터를 지역변수 리스트(self.variables)에 추가
@@ -464,6 +464,7 @@ execute if score #{temp} {SCOREBOARD_NAME} matches 5 run data modify storage {ST
         value, result = self.to_storage(input_nodes[2].children[0])
         temp = self.get_temp()
         result += f"execute store result score "
+        print(result)
         result = self.merge_string(result, input_nodes[0].children[0])
         result = self.merge_string(result, input_nodes[1].children[0], end=f" run data get storage {STORAGE_NAME} {value}\n")
 
@@ -471,7 +472,7 @@ execute if score #{temp} {SCOREBOARD_NAME} matches 5 run data modify storage {ST
         self.add_used_temp(input_nodes[1].children[0].value)
         self.add_used_temp(value)
         self.add_var(temp, temp)
-        for input_node in input_nodes:
+        for input_node in input_nodes[:2]:
             if type(input_node.children[0]) == CometToken: result = input_node.children[0].command + result
         return CometToken("get_score", temp, items[0].start_pos, end_pos=items[0].end_pos, column=items[0].column, command=result, line=items[0].line)
     def fun_get_data(self, items):
@@ -508,7 +509,7 @@ execute if score #{temp} {SCOREBOARD_NAME} matches 5 run data modify storage {ST
         self.add_used_temp(value)
         self.add_var(temp, temp)
 
-        for input_node in input_nodes:
+        for input_node in input_nodes[:3]:
             if type(input_node.children[0]) == CometToken: result = input_node.children[0].command + result
 
         return CometToken("get_score", temp, items[0].start_pos, end_pos=items[0].end_pos, column=items[0].column, command=result, line=items[0].line)
