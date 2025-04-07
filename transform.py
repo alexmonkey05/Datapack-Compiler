@@ -1,3 +1,6 @@
+# TODO : 1.21.5보다 낮은 버전에선 SNBT 문법 못 쓰게 하기
+
+
 from lark import Transformer, Token, Lark, Tree
 import os
 import json
@@ -64,6 +67,7 @@ class DatapackGenerater(Transformer):
         self.const = []
         self.used_return = {}
         self.used_break = []
+        self.return_filenames = []
 
         # temp 설정
         self.reset_temp()
@@ -154,7 +158,10 @@ class DatapackGenerater(Transformer):
                 self.macro(txt)
             else:
                 filename = self.current_dir + self.current_file
-                if filename in filedata:filedata[filename] += txt
+                return_index = txt.find(NEW_LINE)
+                if return_index != -1:
+                    self.return_filenames.append(self.current_file)
+                if filename in filedata: filedata[filename] += txt
                 else: filedata[filename] = txt
 
     def macro(self, txt):
@@ -251,6 +258,16 @@ class DatapackGenerater(Transformer):
     ## function ##
     ##############
 
+    def parse_return(self, command, function_temp):
+        return_index = command.find(NEW_LINE)
+        front_command = command[:return_index]
+        back_command = command[return_index + 1:]
+        second_return_index = back_command.find(NEW_LINE)
+        return_value = back_command[:second_return_index]
+        back_command = back_command[second_return_index + 1:]
+        return front_command + f"data modify storage {STORAGE_NAME} {function_temp} set from storage {STORAGE_NAME} {return_value}\n" + back_command
+    
+
     def function_def(self, items):
         name = items[0].value
         if name in self.functions:raise ValueError(error_as_txt(
@@ -269,8 +286,21 @@ class DatapackGenerater(Transformer):
         current_file = self.current_file
         self.current_file = name + ".mcfunction"
         self.write("\n")
-        self.start(items[2].children)
+        for item in items[2].children:
+            if type(item) == CometToken:
+                return_index = item.command.find(NEW_LINE)
+                if return_index != -1:
+                    self.write(self.parse_return(item.command, function_.temp))
+                else: self.write(item.command)
+
+        for filename in self.return_filenames:
+            self.current_file = filename
+            filename_key = self.current_dir + filename
+            filedata[filename_key] = self.parse_return(filedata[filename_key], function_.temp)
+        self.return_filenames = []
         self.current_file = current_file
+
+        self.add_var(function_.temp, function_.temp)
 
         # return 쓰인 temp 메모리 풀어주기
         for return_temp in self.used_return:
@@ -1083,7 +1113,7 @@ execute if score #{temp} {SCOREBOARD_NAME} matches ..0 run data modify storage {
     def return_(self, items):
         temp, command = self.to_storage(items[0])
         self.used_return[temp] = temp
-        command += f"scoreboard players set #{temp} {SCOREBOARD_NAME} 1\nreturn run data get storage {STORAGE_NAME} {temp}\n"
+        command += f"scoreboard players set #{temp} {SCOREBOARD_NAME} 1\n{NEW_LINE}{temp}{NEW_LINE}return run data get storage {STORAGE_NAME} {temp}\n"
         return CometToken("operation", "return", items[0].start_pos, end_pos=items[0].end_pos, column=items[0].column, command=command, line=items[0].line)
 
 

@@ -1,7 +1,29 @@
-var card_effects_stack
-var info
-append(card_effects_stack, {
-    function: info.function,
-    owner_id: get_score("@s", "40planet_id"),
-    enabled: 1b
-})
+
+# 확률형 카드 성공 실패 판정
+def roll(var percent){
+    set_data("storage", "40planet:tcg", "percent", percent)
+    /execute store result score #percent 40planet_num run data get storage 40planet:tcg percent 10000
+    /execute store result score #random_result 40planet_num run random value 0..1000000
+    
+    # 성공
+    execute(if score "#random_result" 40planet_num >= "#percent" 40planet_num){
+        /tellraw @a[tag=40planet_card_player] {"text":"성공!"}
+        return 1
+    }
+    
+    # 실패 한거 구제
+        # 빅 핸드 - 내 다음 확률성 카드는 성공합니다
+        # 엉뚱한 마법공학도 - 앞으로 내가 내는 모든 확률성 카드는 두번 시도한다
+
+    /tellraw @a[tag=40planet_card_player] {"text":"실패.."}
+    return 0
+}
+def roll_function(){
+    /$\$data modify storage 40planet:tcg roll set value {percent:\$(percent), function:'\$(function)'}
+    var roll_data = get_data("storage", "40planet:tcg", "roll")
+    set_score("#result", "40planet_num", roll(roll_data.percent))
+    execute(if score "#result" 40planet_num matches 1){
+        var function = roll_data.function
+        /$$(function)
+    }
+}

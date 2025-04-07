@@ -21,7 +21,8 @@ datapack_versions = {
     "1.21.1": "48",
     "1.21.2": "57",
     "1.21.3": "57",
-    "1.21.4": "61"
+    "1.21.4": "61",
+    "1.21.5": "71"
 }
 
 def search_functions(function_folder_dir):
@@ -139,7 +140,7 @@ def write_all_files():
     logger.debug("write_datapack", f"Took {logger.prYello(int((datetime.datetime.now() - now).total_seconds() * 1000) / 1000)}s")
 
 import argparse
-values = ["1.20.4", "1.20.6", "1.21", "1.21.1", "1.21.2", "1.21.3", "1.21.4"]
+values = ["1.20.4", "1.20.6", "1.21", "1.21.1", "1.21.2", "1.21.3", "1.21.4", "1.21.5"]
 if __name__ == "__main__":
     
     # if os.path.isfile(COMET_CACHE_FILE):

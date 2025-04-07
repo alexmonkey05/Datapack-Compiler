@@ -114,6 +114,7 @@ address: "&" "(" variable ")"
 array.-9999: "[" _seperated{condition, ","} "]"
 nbt: "{" _seperated{pair, ","} "}"
 ?pair: CNAME ":" condition
+    | ESCAPED_STRING ":" condition
 
 ?number:/\d+[bdf]?/
     | /\d+\.\d+[bdf]?/
@@ -239,7 +240,7 @@ execute_parameter: /as/ selector
     | /boime/ coordinate_set minecraft_id_tag
     | /block/ coordinate_set minecraft_id_tag
     | /blocks/ coordinate_set coordinate_set coordinate_set /(all|masked)/
-    | /data/ execute_if_data nbt_dir
+    | /data/ execute_if_data (nbt_dir|dot_operation|member_operation)
     | /dimension/ minecraft_id_tag
     | /entity/ selector
     | /function/ execute_if_function
