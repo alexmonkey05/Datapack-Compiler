@@ -464,7 +464,6 @@ execute if score #{temp} {SCOREBOARD_NAME} matches 5 run data modify storage {ST
         value, result = self.to_storage(input_nodes[2].children[0])
         temp = self.get_temp()
         result += f"execute store result score "
-        print(result)
         result = self.merge_string(result, input_nodes[0].children[0])
         result = self.merge_string(result, input_nodes[1].children[0], end=f" run data get storage {STORAGE_NAME} {value}\n")
 
