@@ -809,12 +809,19 @@ execute if score #{temp} {SCOREBOARD_NAME} matches ..0 run data modify storage {
     def no_dot_minecraft_id(self, items):
         return Token("minecraft_id", f"{items[0]}:{items[1]}", items[0].start_pos, end_pos=items[0].end_pos, column=items[0].column, line=items[0].line)
     def dot_operation(self, items):
+        
         var1 = items[0].value
         var2 = items[1].value
 
         self.is_defined(items[0])
+        first_var = var1
         var1 = self.variables[var1][-1].temp
-        self.add_var(f"{var1}.{var2}", f"{var1}.{var2}")
+        var_name = f"{var1}.{var2}"
+        if var1 == NEW_LINE + "module":
+            return Token(CNAME, first_var + "." + var2, items[0].start_pos, end_pos=items[1].end_pos, column=items[0].column, line=items[0].line)
+
+
+        self.add_var(var_name, f"{var1}.{var2}")
         self.add_used_temp(var1)
         
         if type(items[0]) == CometToken:
@@ -1023,7 +1030,7 @@ execute if score #{temp} {SCOREBOARD_NAME} matches ..0 run data modify storage {
 
         logger.debug("interprete_file",f"{logger.fit(filename, 20)} took {logger.prYello(int((datetime.datetime.now() - now).total_seconds() * 1000) / 1000)}s")
 
-        self.variables[name] = [VariableComet(name, "module", False)]
+        self.variables[name] = [VariableComet(name, NEW_LINE + "module", False)]
         self.modules[name] = {
             "variables": datapack_generator.variables,
             "functions": datapack_generator.functions
