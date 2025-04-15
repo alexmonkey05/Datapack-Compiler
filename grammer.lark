@@ -275,7 +275,7 @@ item: (/\*/ | minecraft_id_tag) /\[.*\]/?
 block_state: "[" _seperated{block_state_pair, ","} "]"
 execute_if_block: minecraft_id_tag
     | minecraft_id_tag block_state
-    // | minecraft_id_tag block_state "{" _seperated{pair, ","} "}"
+    | minecraft_id_tag block_state "{" _seperated{pair, ","} "}"
 
 
 // TODO : class 설정

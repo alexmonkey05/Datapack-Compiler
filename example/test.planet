@@ -1,3 +1,4 @@
-execute(if block ~ ~ ~ barrel[open=true]{Items:[{Slot:0b,id:"minecraft:stone",Count:1b}]}){
+var a = [[1]]
+execute(if block ~ ~ ~ barrel[open=true]{Items:[{Slot:26b,id:"minecraft:stone",count:1}]}){
     /say a
 }

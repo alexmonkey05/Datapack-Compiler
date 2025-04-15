@@ -923,6 +923,14 @@ execute if score #{temp} {SCOREBOARD_NAME} matches ..0 run data modify storage {
                     f"\"{value.value}\" is not defined"
                 ))
             if value.value in self.variables:
+                if type(value) == CometToken:
+                    item_commands = value.command.split("\n")
+                    if (value.command[:39] == f"data remove storage {STORAGE_NAME} data" and len(item_commands) == 3):
+                        not_include_var += f"{key}:{item_commands[1].split('set value ')[-1]},"
+                        continue
+                    elif (value.command[:39] == f"data modify storage {STORAGE_NAME} data" and len(item_commands) == 2 and "set value" in item_commands[0]):
+                        not_include_var += f"{key}:{item_commands[0].split('set value ')[-1]},"
+                        continue
                 if is_first and len(not_include_var) > 2:
                     result = f"data modify storage {STORAGE_NAME} {temp} set value {not_include_var[:-1]}" + "}\n" + result
                     is_first = False
@@ -962,7 +970,15 @@ execute if score #{temp} {SCOREBOARD_NAME} matches ..0 run data modify storage {
                     f"\"{item.value}\" is not defined"
                 ))
             
-            if type(item) == CometToken: result += item.command
+            if type(item) == CometToken:
+                item_commands = item.command.split("\n")
+                if (item.command[:39] == f"data remove storage {STORAGE_NAME} data" and len(item_commands) == 3):
+                    not_include_var += f"{item_commands[1].split('set value ')[-1]},"
+                    continue
+                elif (item.command[:39] == f"data modify storage {STORAGE_NAME} data" and len(item_commands) == 2 and "set value" in item_commands[0]):
+                    not_include_var += f"{item_commands[0].split('set value ')[-1]},"
+                    continue
+                else: result += item.command
 
             if item.value in self.variables:
                 if is_first and len(not_include_var) > 2:
@@ -1183,8 +1199,29 @@ execute if score #{temp} {SCOREBOARD_NAME} matches ..0 run data modify storage {
         items_len = len(items)
         if items_len < 3: return self.execute_merge(items, seperator="")
 
-        # TODO : 블록 nbt 감지
-        print(items[2].pretty())
+        result = items[0].value + items[1].value + "{"
+        for item in items[2:]:
+            key = item.children[0].value
+            value = item.children[1]
+            if type(value) != CometToken:
+                result += f"{key}:{value.value},"
+                continue
+
+
+            item_commands = value.command.split("\n")
+            if (value.command[:39] == f"data remove storage {STORAGE_NAME} data" and len(item_commands) == 3):
+                result += f"{key}:{item_commands[1].split('set value ')[-1]},"
+            elif (value.command[:39] == f"data modify storage {STORAGE_NAME} data" and len(item_commands) == 2 and "set value" in item_commands[0]):
+                result += f"{key}:{item_commands[0].split('set value ')[-1]},"
+            else: raise ValueError(error_as_txt(
+                value[2],
+                "InvalidSyntaxError",
+                self.filename,
+                f"Cannot put variable in block nbt detection",
+            ))
+
+        result = result[:-1] + "}"
+        return Token("execute_if_block", result, items[0].start_pos, end_pos=items[0].end_pos, column=items[0].column, line=items[0].line)
 
     def execute_if_predicate(self, items):
         command = items[0].value
