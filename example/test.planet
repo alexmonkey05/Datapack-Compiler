@@ -1,2 +1,3 @@
-import test2
-print(test2.asdf)
+execute(if block ~ ~ ~ barrel[open=true]{Items:[{Slot:0b,id:"minecraft:stone",Count:1b}]}){
+    /say a
+}

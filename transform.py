@@ -1169,6 +1169,23 @@ execute if score #{temp} {SCOREBOARD_NAME} matches ..0 run data modify storage {
     def execute_store_list(self, items): return self.execute_merge(items)
     def nbt_dir(self, items): return self.execute_merge(items, seperator="")
     def execute_if(self, items): return self.execute_merge(items)
+    def block_state_pair(self, items):
+        result = items[0]
+        result.value += "=" + items[1].value
+        return result
+    def block_state(self, items):
+        result = "["
+        for item in items:
+            result += item.value + ","
+        result = result[:-1] + "]"
+        return CometToken("block_state", result, items[0].start_pos, end_pos=items[-1].end_pos, column=items[0].column, command=result, line=items[0].line)
+    def execute_if_block(self, items):
+        items_len = len(items)
+        if items_len < 3: return self.execute_merge(items, seperator="")
+
+        # TODO : 블록 nbt 감지
+        print(items[2].pretty())
+
     def execute_if_predicate(self, items):
         command = items[0].value
         if len(items) > 1 or "\"" in command:

@@ -236,9 +236,10 @@ execute_parameter: /as/ selector
     | /score/ (selector|MINECRAFT_NAME) MINECRAFT_NAME
     | /storage/ minecraft_id
 
+
 ?execute_if: /predicate/ execute_if_predicate
     | /boime/ coordinate_set minecraft_id_tag
-    | /block/ coordinate_set minecraft_id_tag
+    | /block/ coordinate_set execute_if_block
     | /blocks/ coordinate_set coordinate_set coordinate_set /(all|masked)/
     | /data/ execute_if_data (nbt_dir|dot_operation|member_operation)
     | /dimension/ minecraft_id_tag
@@ -267,7 +268,14 @@ item: (/\*/ | minecraft_id_tag) /\[.*\]/?
 ?execute_if_score: /matches/ minecraft_range
     | /(>=|<=|>|=|<)/ scoreboard
 ?scoreboard: (selector|ESCAPED_STRING|MINECRAFT_NAME) (ESCAPED_STRING|MINECRAFT_NAME)
-
+// execute if block ~ ~ ~ stone_button[facing=north,face=floor,powered=false]
+// execute if block ~ ~ ~ barrel[open=true]{Items:[{Slot:0b,id:"minecraft:stone",Count:1b}]}
+// 이런거 감지하는거
+?block_state_pair: CNAME "=" CNAME
+block_state: "[" _seperated{block_state_pair, ","} "]"
+execute_if_block: minecraft_id_tag
+    | minecraft_id_tag block_state
+    // | minecraft_id_tag block_state "{" _seperated{pair, ","} "}"
 
 
 // TODO : class 설정

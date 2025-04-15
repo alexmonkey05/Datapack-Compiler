@@ -368,3 +368,5 @@ df"
 - `set_data`, `set_score`의 마지막 인수에 함수를 사용했을 때 함수가 두번씩 실행되던 오류 해결
 # 2025/04/14 3.2
 - import한 다른 파일의 전역변수에 접근 가능하게 됨
+# 2025/04/15 3.2.1
+- `if block ~ ~ ~ stone_button[facing=north,face=floor,powered=false]` 감지가 안 되던 버그 해결
