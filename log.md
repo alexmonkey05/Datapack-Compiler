@@ -372,3 +372,5 @@ df"
 - `if block`의 문법오류 해결
   - block_state : `if block ~ ~ ~ stone_button[facing=north,face=floor,powered=false]`
   - nbt : `if block ~ ~ ~ barrel[open=true]{Items:[{Slot:26b,id:"minecraft:stone",count:1}]}`
+# 2025.05.18 3.2.3
+- `divide`에서 결과값이 항상 양수던 에러 해결

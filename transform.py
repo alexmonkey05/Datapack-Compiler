@@ -650,11 +650,11 @@ data modify storage {STORAGE_NAME} {temp} set from storage {STORAGE_NAME} var1\n
             command += to_storage_command
 
         temp = self.get_temp()
-        command += f"data modify storage 40planet:calc list set value [0f,0f,0f,0f, 0f,0f,0f,0f, 0f,0f,0f,0f, 0f,0f,0f,0f]\n\
-execute store result storage 40planet:calc list[0] float 0.00001 run data get storage {STORAGE_NAME} {var} 100000\n\
+        command += f"data modify storage 40planet:calc list set value [0f,0f,0f,0f, 0f,0f,0f,1f, 0f,0f,0f,0f, 0f,0f,0f,0f]\n\
+execute store result storage 40planet:calc list[3] float 0.00001 run data get storage {STORAGE_NAME} {var} 100000\n\
 execute store result storage 40planet:calc list[-1] float 0.00001 run data get storage {STORAGE_NAME} {var2} 100000\n\
 data modify entity 0-0-0-0-a transformation set from storage 40planet:calc list\n\
-data modify storage {STORAGE_NAME} {temp} set from entity 0-0-0-0-a transformation.scale[0]\n"
+data modify storage {STORAGE_NAME} {temp} set from entity 0-0-0-0-a transformation.translation[0]\n"
         self.add_var(temp, temp)
         return CometToken("divide", temp, items[0].start_pos, end_pos=items[0].end_pos, column=items[0].column, command=command, line=items[0].line)
     def fun_multiply(self, items):
@@ -684,16 +684,16 @@ data modify storage {STORAGE_NAME} {temp} set from entity 0-0-0-0-a transformati
             command += to_storage_command
 
         temp = self.get_temp()
-        command += f"data modify storage 40planet:calc list set value [0f,0f,0f,0f, 0f,0f,0f,0f, 0f,0f,0f,0f, 0f,0f,0f,0f]\n\
-data modify storage 40planet:calc list[0] set value 1f\n\
+        command += f"data modify storage 40planet:calc list set value [0f,0f,0f,0f, 0f,0f,0f,1f, 0f,0f,0f,0f, 0f,0f,0f,0f]\n\
+data modify storage 40planet:calc list[3] set value 1f\n\
 execute store result storage 40planet:calc list[-1] float 0.00001 run data get storage {STORAGE_NAME} {var} 100000\n\
 data modify entity 0-0-0-0-a transformation set from storage 40planet:calc list\n\
 \
-data modify storage 40planet:calc list set value [0f,0f,0f,0f, 0f,0f,0f,0f, 0f,0f,0f,0f, 0f,0f,0f,0f]\n\
+data modify storage 40planet:calc list set value [0f,0f,0f,0f, 0f,0f,0f,1f, 0f,0f,0f,0f, 0f,0f,0f,0f]\n\
 execute store result storage 40planet:calc list[0] float 0.00001 run data get storage {STORAGE_NAME} {var2} 100000\n\
-data modify storage 40planet:calc list[-1] set from entity 0-0-0-0-a transformation.scale[0]\n\
+data modify storage 40planet:calc list[-1] set from entity 0-0-0-0-a transformation.translation[0]\n\
 data modify entity 0-0-0-0-a transformation set from storage 40planet:calc list\n\
-data modify storage {STORAGE_NAME} {temp} set from entity 0-0-0-0-a transformation.scale[0]\n"
+data modify storage {STORAGE_NAME} {temp} set from entity 0-0-0-0-a transformation.translation[0]\n"
         self.add_var(temp, temp)
         return CometToken("multiply", temp, items[0].start_pos, end_pos=items[0].end_pos, column=items[0].column, command=command, line=items[0].line)
 
@@ -1010,7 +1010,16 @@ execute if score #{temp} {SCOREBOARD_NAME} matches ..0 run data modify storage {
                 "variables": imported_files[name]["variables"],
                 "functions": imported_files[name]["functions"]
             }
-            self.variables[name] = [VariableComet(name, "module", False)]
+            self.variables[name] = [VariableComet(name, NEW_LINE + "module", False)]
+
+            for fun_name in imported_files[name]["functions"]:
+                fun = imported_files[name]["functions"][fun_name]
+                self.variables[fun.temp] = [VariableComet(fun.name, fun.temp)]
+                self.functions[f"{name}.{fun.name}"] = Function(f"{name}/{fun.name}", fun.type, fun.inputs, fun.temp)
+            for var_name in imported_files[name]["variables"]:
+                var = imported_files[name]["variables"][var_name][0]
+                if var_name == var.temp: continue
+                self.variables[f"{name}.{var.name}"] = [var]
             return None
 
         # 모듈 폴더 생성
