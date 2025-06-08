@@ -236,12 +236,12 @@ execute_parameter: /as/ selector
     | /score/ (selector|MINECRAFT_NAME) MINECRAFT_NAME
     | /storage/ minecraft_id
 
-
+nbt_pair: "{" _seperated{pair, ","} "}"
 ?execute_if: /predicate/ execute_if_predicate
     | /boime/ coordinate_set minecraft_id_tag
     | /block/ coordinate_set execute_if_block
     | /blocks/ coordinate_set coordinate_set coordinate_set /(all|masked)/
-    | /data/ execute_if_data (nbt_dir|dot_operation|member_operation)
+    | /data/ execute_if_data (nbt_dir|dot_operation|member_operation|nbt_pair)
     | /dimension/ minecraft_id_tag
     | /entity/ selector
     | /function/ execute_if_function
@@ -275,7 +275,7 @@ item: (/\*/ | minecraft_id_tag) /\[.*\]/?
 block_state: "[" _seperated{block_state_pair, ","} "]"
 execute_if_block: minecraft_id_tag
     | minecraft_id_tag block_state
-    | minecraft_id_tag block_state "{" _seperated{pair, ","} "}"
+    | minecraft_id_tag block_state nbt_pair
 
 
 // TODO : class 설정

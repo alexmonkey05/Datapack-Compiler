@@ -1193,23 +1193,9 @@ execute if score #{temp} {SCOREBOARD_NAME} matches ..0 run data modify storage {
     def execute_store(self, items): return self.execute_merge(items)
     def execute_store_list(self, items): return self.execute_merge(items)
     def nbt_dir(self, items): return self.execute_merge(items, seperator="")
-    def execute_if(self, items): return self.execute_merge(items)
-    def block_state_pair(self, items):
-        result = items[0]
-        result.value += "=" + items[1].value
-        return result
-    def block_state(self, items):
-        result = "["
+    def nbt_pair(self, items):
+        result = "{"
         for item in items:
-            result += item.value + ","
-        result = result[:-1] + "]"
-        return CometToken("block_state", result, items[0].start_pos, end_pos=items[-1].end_pos, column=items[0].column, command=result, line=items[0].line)
-    def execute_if_block(self, items):
-        items_len = len(items)
-        if items_len < 3: return self.execute_merge(items, seperator="")
-
-        result = items[0].value + items[1].value + "{"
-        for item in items[2:]:
             key = item.children[0].value
             value = item.children[1]
             if type(value) != CometToken:
@@ -1228,8 +1214,47 @@ execute if score #{temp} {SCOREBOARD_NAME} matches ..0 run data modify storage {
                 self.filename,
                 f"Cannot put variable in block nbt detection",
             ))
-
         result = result[:-1] + "}"
+        return Token("nbt_pair", result, items[0].children[0].start_pos, end_pos=items[-1].children[0].end_pos, column=items[0].children[0].column, line=items[0].children[0].line)
+    def execute_if(self, items): return self.execute_merge(items)
+    def block_state_pair(self, items):
+        result = items[0]
+        result.value += "=" + items[1].value
+        return result
+    def block_state(self, items):
+        result = "["
+        for item in items:
+            result += item.value + ","
+        result = result[:-1] + "]"
+        return CometToken("block_state", result, items[0].start_pos, end_pos=items[-1].end_pos, column=items[0].column, command=result, line=items[0].line)
+    def execute_if_block(self, items):
+        items_len = len(items)
+        if items_len < 3: return self.execute_merge(items, seperator="")
+
+        result = items[0].value + items[1].value + items[2].value
+        # print(result)
+        # print(items)
+        # for item in items[2:]:
+        #     key = item.children[0].value
+        #     value = item.children[1]
+        #     if type(value) != CometToken:
+        #         result += f"{key}:{value.value},"
+        #         continue
+
+
+        #     item_commands = value.command.split("\n")
+        #     if (value.command[:39] == f"data remove storage {STORAGE_NAME} data" and len(item_commands) == 3):
+        #         result += f"{key}:{item_commands[1].split('set value ')[-1]},"
+        #     elif (value.command[:39] == f"data modify storage {STORAGE_NAME} data" and len(item_commands) == 2 and "set value" in item_commands[0]):
+        #         result += f"{key}:{item_commands[0].split('set value ')[-1]},"
+        #     else: raise ValueError(error_as_txt(
+        #         value[2],
+        #         "InvalidSyntaxError",
+        #         self.filename,
+        #         f"Cannot put variable in block nbt detection",
+        #     ))
+
+        # result = result[:-1] + "}"
         return Token("execute_if_block", result, items[0].start_pos, end_pos=items[0].end_pos, column=items[0].column, line=items[0].line)
 
     def execute_if_predicate(self, items):

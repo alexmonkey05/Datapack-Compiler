@@ -374,3 +374,5 @@ df"
   - nbt : `if block ~ ~ ~ barrel[open=true]{Items:[{Slot:26b,id:"minecraft:stone",count:1}]}`
 # 2025.05.18 3.2.3
 - `divide`에서 결과값이 항상 양수던 에러 해결
+# 2025.06.08 3.2.4
+- `if data storage fish {temp:"W"}`와 같이 if data 문법 추가
