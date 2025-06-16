@@ -1049,10 +1049,11 @@ execute if score #{temp} {SCOREBOARD_NAME} matches ..0 run data modify storage {
         with open(filename, "r", encoding="utf-8") as file:
             file_data = modify_file_data(file.read())
         parser_tree = planet_parser.parse(file_data + "\n")
+        logger.debug("parse_file",f"{logger.fit(filename, 20)} took {logger.prYello(int((datetime.datetime.now() - now).total_seconds() * 1000) / 1000)}s")
 
+        now = datetime.datetime.now()
         datapack_generator = DatapackGenerater(self.version, self.result_dir, self.namespace, filename, True, name, logger_level=logger)
         datapack_generator.transform(parser_tree)
-
         logger.debug("interprete_file",f"{logger.fit(filename, 20)} took {logger.prYello(int((datetime.datetime.now() - now).total_seconds() * 1000) / 1000)}s")
 
         self.variables[name] = [VariableComet(name, NEW_LINE + "module", False)]
