@@ -22,7 +22,9 @@ datapack_versions = {
     "1.21.2": "57",
     "1.21.3": "57",
     "1.21.4": "61",
-    "1.21.5": "71"
+    "1.21.5": "71",
+    "1.21.6": "71",
+    "1.21.7": "80"
 }
 
 def search_functions(function_folder_dir):
@@ -70,8 +72,8 @@ def make_basic_files(version, file_dir, namespace = "pack"):
     if not os.path.isfile(load_mcfunction):
         file = open(load_mcfunction, "w+")
         file.write(f"\
-    # This data pack was compiled with the 40planet's compiler.\n\
-    # https://github.com/alexmonkey05/Datapack-Compiler\n\n")
+# This data pack was compiled with the 40planet's compiler.\n\
+# https://github.com/alexmonkey05/Datapack-Compiler\n\nscoreboard objectives add 40planet_num dummy\n")
         file.close()
     if not os.path.isfile(tick_mcfunction):
         file = open(tick_mcfunction, "w+")
@@ -140,7 +142,7 @@ def write_all_files():
     logger.debug("write_datapack", f"Took {logger.prYello(int((datetime.datetime.now() - now).total_seconds() * 1000) / 1000)}s")
 
 import argparse
-values = ["1.20.4", "1.20.6", "1.21", "1.21.1", "1.21.2", "1.21.3", "1.21.4", "1.21.5"]
+values = ["1.20.4", "1.20.6", "1.21", "1.21.1", "1.21.2", "1.21.3", "1.21.4", "1.21.5", "1.21.6"]
 if __name__ == "__main__":
     
     # if os.path.isfile(COMET_CACHE_FILE):

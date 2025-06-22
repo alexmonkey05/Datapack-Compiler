@@ -1,4 +1,3 @@
-# TODO : 1.21.5보다 낮은 버전에선 SNBT 문법 못 쓰게 하기
 
 
 from lark import Transformer, Token, Lark, Tree
@@ -199,6 +198,18 @@ class DatapackGenerater(Transformer):
                 f"{fun_name} expected to get {cnt} parameters, but it give only {len(inputs)} parameters",
             ))
         
+    def check_version_error(self, tok, over_version = 0, less_version = 999, message = "VersionError"):
+        print(self.version, over_version, less_version)
+        # over_version : 이 버전 이상이어야 에러 안 남
+        # less_version : 이 버전 이하이어야 에러 안 남
+        # 요구 최소 버전보다 낮거나, 요구 최대 버전보다 높으면 에러
+        if self.version <= over_version or self.version >= less_version: raise ValueError(error_as_txt(
+                tok,
+                "InvalidSyntaxError",
+                self.filename,
+                message
+            ))
+        
     def merge_string(self, str1, str2_tok, end = " "):
         str2 = str2_tok.value
         if str2 in self.variables:
@@ -394,6 +405,7 @@ class DatapackGenerater(Transformer):
         self.add_var(temp, temp)
         return CometToken("random", temp, items[0].start_pos, end_pos=items[0].end_pos, column=items[0].column, command=command, line=items[0].line)
     def fun_type(self, items):
+        self.check_version_error(items[0], 0, 21.5,"In version over 1.21.5, type conversion, type function, and binary operations are not possible.")
         input_nodes = items[1].children
         self.is_parameter_cnt("type", input_nodes, 1, items[0])
         var_name = input_nodes[0].children[0].value
@@ -528,6 +540,7 @@ execute if score #{temp} {SCOREBOARD_NAME} matches 5 run data modify storage {ST
 #         self.add_var(temp, temp)
 #         return CometToken("bool", temp, items[0].start_pos, end_pos=items[0].end_pos, column=items[0].column, command=command, line=items[0].line)
     def fun_float(self, items, type_ = "float"):
+        self.check_version_error(items[0], 0, 21.5,"In version over 1.21.5, type conversion, type function, and binary operations are not possible.")
         input_nodes = items[1].children
         self.is_parameter_cnt(type_, input_nodes, 1, items[0])
 
@@ -707,6 +720,7 @@ data modify storage {STORAGE_NAME} {temp} set from entity 0-0-0-0-a transformati
     ##############
 
     def operator_basic(self, items, operator):
+        self.check_version_error(items[0], 0, 21.5,"In version over 1.21.5, type conversion, type function, and binary operations are not possible.")
         result = ""
         var1 = items[0].value
         var2 = items[1].value

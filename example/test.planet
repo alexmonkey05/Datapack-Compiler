@@ -1,12 +1,6 @@
-def is_correct_key(){
-   var player_id = get_score("@s","id")
-   /$data modify storage minecraft:fish temp append from storage minecraft:fish q_$(player_id)[0]
+import test2
 
-  execute(if block ~ ~ ~ trapdoor[open=false]{test:"asdf"})
-
-  execute(if predicate minecraft:a if data storage fish {temp:"A"}) { return 1 }
-  execute(if predicate minecraft:s if data storage fish {temp:"S"}) { return 1 }
-  execute(if predicate minecraft:d if data storage fish {temp:"D"}) { return 1 }
-  execute(if predicate minecraft:w if data storage fish {temp:"W"}) { return 1 }
-  return 0;
-}
+print(1.2 + 1)
+var a
+float(a)
+type(a)
