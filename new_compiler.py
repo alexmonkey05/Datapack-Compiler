@@ -142,7 +142,7 @@ def write_all_files():
     logger.debug("write_datapack", f"Took {logger.prYello(int((datetime.datetime.now() - now).total_seconds() * 1000) / 1000)}s")
 
 import argparse
-values = ["1.20.4", "1.20.6", "1.21", "1.21.1", "1.21.2", "1.21.3", "1.21.4", "1.21.5", "1.21.6"]
+values = ["1.20.4", "1.20.6", "1.21", "1.21.1", "1.21.2", "1.21.3", "1.21.4", "1.21.5", "1.21.6", "1.21.7", "1.21.8"]
 if __name__ == "__main__":
     
     # if os.path.isfile(COMET_CACHE_FILE):

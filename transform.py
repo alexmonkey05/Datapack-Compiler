@@ -852,10 +852,12 @@ execute if score #{temp} {SCOREBOARD_NAME} matches ..0 run data modify storage {
         if type(items[0]) == CometToken: result += items[0].command
         if var2 in self.variables:
             if type(items[1]) == CometToken: result += items[1].command
+            result_var = f"{var1}[$({self.variables[var2][-1].temp[5:]})]"
+            self.add_var(result_var, result_var)
+            return CometToken("operation", result_var, items[0].start_pos, end_pos=items[1].end_pos, column=items[0].column, command=result, line=items[0].line)
             temp = self.get_temp()
             result += f"data modify storage {STORAGE_NAME} {temp} set from storage {STORAGE_NAME} {var1}[$({self.variables[var2][-1].temp[5:]})]\n"
             self.add_var(temp, temp)
-            return CometToken("operation", temp, items[0].start_pos, end_pos=items[1].end_pos, column=items[0].column, command=result, line=items[0].line)
         if items[1].type == CNAME: self.is_defined(items[1])
         self.add_var(f"{var1}[{var2}]", f"{var1}[{var2}]")
         if result == "": return Token(CNAME, f"{var1}[{var2}]", items[0].start_pos, end_pos=items[1].end_pos, column=items[0].column, line=items[0].line)
@@ -910,6 +912,7 @@ execute if score #{temp} {SCOREBOARD_NAME} matches ..0 run data modify storage {
         self.is_defined(items[0])
         
         result = ""
+        if type(items[0]) == CometToken: result += items[0].command
         if value in self.variables:
             if type(items[1]) == CometToken: result += items[1].command
             result += f"data modify storage {STORAGE_NAME} {self.variables[variable][-1].temp} set from storage {STORAGE_NAME} {self.variables[value][-1].temp}\n"

@@ -1,6 +1,13 @@
-import test2
+# Compiler Path = C:\Users\alexm\AppData\Roaming\PrismLauncher\instances\1.21.5\minecraft\saves\데이터팩_컴파일러\datapacks\dist\new_compiler.exe
+# Datapack Name = pack
+# Minecraft Version = 1.21.6
+# Output Folder = C:\Users\alexm\AppData\Roaming\PrismLauncher\instances\1.21.5\minecraft\saves\데이터팩_컴파일러\datapacks
+# Log Level = DEBUG
 
-print(1.2 + 1)
-var a
-float(a)
-type(a)
+var field = [
+    {}, {}, {}, 
+    {}, {}, {}, 
+    {}, {}, {}, 
+    {}, {}, {}
+]
+field[get_score("#x", "slot_num")][get_score("#y", "slot_num")] = get_data("entity", "@s", "item")

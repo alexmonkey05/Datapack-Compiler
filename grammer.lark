@@ -32,7 +32,7 @@ minecraft_command: /\/[^\$][^\n]*/
 command_macro: "/$" ( macro_ | word )+
 // minecraft_command.10: "/" (macro | word)+ eol
 macro_: "$(" CNAME ")"
-word.1: /(\\\$|[^\n\$^䗻])+/
+word.1: /(\\\$|[^\n\$䗻])+/
 
 new_line.2: /\n/
 ?eol: new_line | ";" | "䗻"
