@@ -133,7 +133,7 @@ def write_all_files():
     for filename in filedata:
         if filename in existing_functions: del existing_functions[filename]
         # if filename in comet_cache and filedata[filename] == comet_cache[filename]: continue
-        with open(filename, "w+", encoding="utf-8") as file:
+        with open(filename, "a+", encoding="utf-8") as file:
             file.write(filedata[filename])
     # with open(COMET_CACHE_FILE, "w+", encoding="utf-8") as file:
     #     file.write(str(filedata))
