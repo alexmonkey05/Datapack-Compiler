@@ -11,3 +11,5 @@ var field = [
     {}, {}, {}
 ]
 field[get_score("#x", "slot_num")][get_score("#y", "slot_num")] = get_data("entity", "@s", "item")
+
+/say __main__

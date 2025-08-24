@@ -387,3 +387,11 @@ df"
 - `a.b = c`처럼 대입연산자 왼쪽에 멤버연산 혹은 `.`연산이 있는 경우 대입이 되지 않는 오류 해결
 # 2025.08.07 3.4.1
 - `load.mcfunction`에 `40planet_num` 스코어보드를 생성하는 구문과 `This data pack was compiled with the 40planet's compiler.` 문구가 누락되던 에러 해결
+# 2025.08.25 3.5
+- `__main__` 추가
+  - import 된 파일에서도 네임스페이스로 바뀜
+  - `__namespace__`는 `pack:test2/`와 같이 바뀌었다
+```
+import test2
+/function __main__:test2/foo
+```

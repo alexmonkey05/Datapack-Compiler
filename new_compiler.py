@@ -24,7 +24,8 @@ datapack_versions = {
     "1.21.4": "61",
     "1.21.5": "71",
     "1.21.6": "71",
-    "1.21.7": "80"
+    "1.21.7": "80",
+    "1.21.8": "80"
 }
 
 def search_functions(function_folder_dir):

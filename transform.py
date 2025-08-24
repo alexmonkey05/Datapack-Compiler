@@ -4,7 +4,7 @@ from lark import Transformer, Token, Lark, Tree
 import os
 import json
 
-from consts import NEW_LINE, SCORE_TYPES, MINECRAFT_TYPES, TYPES, SCOREBOARD_NAME, STORAGE_NAME, NAMESPACE, BUILT_IN_FUNCTION, OPERATION, OPERATOR_ID, CNAME, INT, ESCAPED_STRING, VariableComet, error_as_txt, Function, CometToken, planet_parser, CometClass
+from consts import NEW_LINE, SCORE_TYPES, MINECRAFT_TYPES, TYPES, SCOREBOARD_NAME, STORAGE_NAME, NAMESPACE, MAIN_NAMESPACE, BUILT_IN_FUNCTION, OPERATION, OPERATOR_ID, CNAME, INT, ESCAPED_STRING, VariableComet, error_as_txt, Function, CometToken, planet_parser, CometClass
 from logger import L, LOGLEVEL
 import datetime
 
@@ -234,6 +234,8 @@ class DatapackGenerater(Transformer):
         if NAMESPACE in command:
             if self.is_module: command = command.replace(NAMESPACE + ":", f"{self.namespace}:{self.module_name}/")
             command = command.replace(NAMESPACE, f"{self.namespace}")
+        if MAIN_NAMESPACE in command:
+            command = command.replace(MAIN_NAMESPACE, f"{self.namespace}")
         if "\\$" in command: command = command.replace("\\$", "$")
         return CometToken("command", items[0][1:], items[0].start_pos, end_pos=items[0].end_pos, column=items[0].column, command=command, line=items[0].line)
     # /$로 시작하는 커맨드

@@ -8,6 +8,7 @@ TYPES = ("entity", "nbt", "string") + SCORE_TYPES
 SCOREBOARD_NAME = "40planet_num"
 STORAGE_NAME = "40planet:value"
 NAMESPACE = "__namespace__"
+MAIN_NAMESPACE = "__main__"
 DIGITS = '0123456789'
 
 INTERPRETE_THESE = ("operator", "call_function", "make_array", "make_nbt", "make_selector", "define_var")
