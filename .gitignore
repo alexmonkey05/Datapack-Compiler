@@ -25,3 +25,4 @@ new_compiler.spec
 new_compiler.exe
 __pycache__/
 .venv
+/old_versions

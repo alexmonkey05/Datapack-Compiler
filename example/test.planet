@@ -1,15 +1,231 @@
-# Compiler Path = C:\Users\alexm\AppData\Roaming\PrismLauncher\instances\1.21.5\minecraft\saves\데이터팩_컴파일러\datapacks\dist\new_compiler.exe
-# Datapack Name = pack
-# Minecraft Version = 1.21.6
-# Output Folder = C:\Users\alexm\AppData\Roaming\PrismLauncher\instances\1.21.5\minecraft\saves\데이터팩_컴파일러\datapacks
-# Log Level = DEBUG
 
-var field = [
-    {}, {}, {}, 
-    {}, {}, {}, 
-    {}, {}, {}, 
-    {}, {}, {}
-]
-field[get_score("#x", "slot_num")][get_score("#y", "slot_num")] = get_data("entity", "@s", "item")
+# 색깔 제한
+    # 2색까지 가능
+    # 두 색 모두 10장 이상이면 안 됨
+    # 적어도 둘 중 하나의 색은 10장 이하여야 함
 
-/say __main__
+
+
+
+/scoreboard objectives add click_deck minecraft.used:minecraft.paper
+/scoreboard objectives add current_page dummy
+
+var player_id
+
+
+def return_item(){
+    /execute unless items entity @s container.0 * run return 0
+
+    /data modify storage 40planet:tcg item set from entity @s item
+    /summon item ~ ~ ~ {Tags:[unset],Item:{id:"stone",count:1b,components:{"minecraft:item_name":"이 아이템을 얻었다면 버그이니 개발자에게 알려주세요"}}}
+    execute(as @e[distance=..0.001,tag=unset,type=item]){
+        /data modify entity @s Item set from storage 40planet:tcg item
+        /tag @s remove unset
+        /data modify entity @s Owner set from entity @p[tag=this] UUID
+        /execute at @p[tag=this] run tp @s ~ ~ ~
+    }
+    /item replace entity @s container.0 with air
+}
+
+
+
+def deck_update_page(){
+    var current_page = get_score("@s", "current_page")
+    player_id = get_score("@s", "40planet_id")
+    /$execute unless data storage 40planet:tcg player.$(player_id).deck run data modify storage 40planet:tcg player.$(player_id).deck set value [[{},{},{},{},{},{},{},{},{},{}], [{},{},{},{},{},{},{},{},{},{}], [{},{},{},{},{},{},{},{},{},{}]]
+    /$data modify storage 40planet:tcg data.deck set from storage 40planet:tcg player.$(player_id).deck[$(current_page)]
+    /tag @s add deck_update_page_this
+    /scoreboard players operation #temp 40planet_id = @s 40planet_id
+    execute(positioned as @s as @e[distance=..0.001] if score @s 40planet_id = "#temp" 40planet_id){
+        /execute if entity @s[tag=1] run data modify entity @s item set from storage 40planet:tcg data.deck[0]
+        /execute if entity @s[tag=2] run data modify entity @s item set from storage 40planet:tcg data.deck[1]
+        /execute if entity @s[tag=3] run data modify entity @s item set from storage 40planet:tcg data.deck[2]
+        /execute if entity @s[tag=4] run data modify entity @s item set from storage 40planet:tcg data.deck[3]
+        /execute if entity @s[tag=5] run data modify entity @s item set from storage 40planet:tcg data.deck[4]
+        /execute if entity @s[tag=6] run data modify entity @s item set from storage 40planet:tcg data.deck[5]
+        /execute if entity @s[tag=7] run data modify entity @s item set from storage 40planet:tcg data.deck[6]
+        /execute if entity @s[tag=8] run data modify entity @s item set from storage 40planet:tcg data.deck[7]
+        /execute if entity @s[tag=9] run data modify entity @s item set from storage 40planet:tcg data.deck[8]
+        /execute if entity @s[tag=10] run data modify entity @s item set from storage 40planet:tcg data.deck[9]
+    }
+    /tag @s remove deck_update_page_this
+}
+
+def summon_ui(){
+    /scoreboard players operation #temp 40planet_id = @s 40planet_id
+    /summon minecraft:item_display ~ ~ ~ {Tags:[unset,card_ui],Passengers: [ \
+    /   {Tags:[unset,deck_set_slot_display,"1"],id: "minecraft:item_display", item: {components: {"minecraft:item_model": "tcg:cards/sleepground/police", "minecraft:item_name": "잠뜰 경위"}, count: 1, id: "minecraft:paper"}, item_display: "gui", transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [0.04875f, 0.04875f, 0.01f], translation: [0.078457028f, 1.6512219141f, 0.11f]}}, \
+    /   {Tags:[unset,deck_set_slot_display,"2"],id: "minecraft:item_display", item: {components: {"minecraft:item_model": "tcg:cards/sleepground/police", "minecraft:item_name": "잠뜰 경위"}, count: 1, id: "minecraft:paper"}, item_display: "gui", transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [0.04875f, 0.04875f, 0.01f], translation: [0.039228514f, 1.6512219141f, 0.11f]}}, \
+    /   {Tags:[unset,deck_set_slot_display,"3"],id: "minecraft:item_display", item: {components: {"minecraft:item_model": "tcg:cards/sleepground/police", "minecraft:item_name": "잠뜰 경위"}, count: 1, id: "minecraft:paper"}, item_display: "gui", transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [0.04875f, 0.04875f, 0.01f], translation: [0.0f, 1.6512219141f, 0.11f]}}, \
+    /   {Tags:[unset,deck_set_slot_display,"4"],id: "minecraft:item_display", item: {components: {"minecraft:item_model": "tcg:cards/sleepground/police", "minecraft:item_name": "잠뜰 경위"}, count: 1, id: "minecraft:paper"}, item_display: "gui", transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [0.04875f, 0.04875f, 0.01f], translation: [-0.039228514f, 1.6512219141f, 0.11f]}}, \
+    /   {Tags:[unset,deck_set_slot_display,"5"],id: "minecraft:item_display", item: {components: {"minecraft:item_model": "tcg:cards/sleepground/police", "minecraft:item_name": "잠뜰 경위"}, count: 1, id: "minecraft:paper"}, item_display: "gui", transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [0.04875f, 0.04875f, 0.01f], translation: [-0.078457028f, 1.6512219141f, 0.11f]}}, \
+    /   {Tags:[unset,deck_set_slot_display,"6"],id: "minecraft:item_display", item: {components: {"minecraft:item_model": "tcg:cards/sleepground/police", "minecraft:item_name": "잠뜰 경위"}, count: 1, id: "minecraft:paper"}, item_display: "gui", transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [0.04875f, 0.04875f, 0.01f], translation: [0.078457028f, 1.5977759852f, 0.11f]}}, \
+    /   {Tags:[unset,deck_set_slot_display,"7"],id: "minecraft:item_display", item: {components: {"minecraft:item_model": "tcg:cards/sleepground/police", "minecraft:item_name": "잠뜰 경위"}, count: 1, id: "minecraft:paper"}, item_display: "gui", transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [0.04875f, 0.04875f, 0.01f], translation: [0.039228514f, 1.5977759852f, 0.11f]}}, \
+    /   {Tags:[unset,deck_set_slot_display,"8"],id: "minecraft:item_display", item: {components: {"minecraft:item_model": "tcg:cards/sleepground/police", "minecraft:item_name": "잠뜰 경위"}, count: 1, id: "minecraft:paper"}, item_display: "gui", transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [0.04875f, 0.04875f, 0.01f], translation: [0.0f, 1.5977759852f, 0.11f]}}, \
+    /   {Tags:[unset,deck_set_slot_display,"9"],id: "minecraft:item_display", item: {components: {"minecraft:item_model": "tcg:cards/sleepground/police", "minecraft:item_name": "잠뜰 경위"}, count: 1, id: "minecraft:paper"}, item_display: "gui", transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [0.04875f, 0.04875f, 0.01f], translation: [-0.039228514f, 1.5977759852f, 0.11f]}}, \
+    /   {Tags:[unset,deck_set_slot_display,"10"],id: "minecraft:item_display", item: {components: {"minecraft:item_model": "tcg:cards/sleepground/police", "minecraft:item_name": "잠뜰 경위"}, count: 1, id: "minecraft:paper"}, item_display: "gui", transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [0.04875f, 0.04875f, 0.01f], translation: [-0.078457028f, 1.5977759852f, 0.11f]}}, \
+    /], item: {components: {"minecraft:item_model": "tcg:ui/set_deck"}, count: 1, id: "minecraft:stone"}, item_display: "gui", transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [0.13f,0.13f,0.001f], translation: [0f,1.62f,0.11f]}}
+    /summon interaction ^0.078457028 ^1.6262219141 ^0.12 {width:0.025f,height:0.05f,Tags:[deck_set_ui_interaction, "1",unset,card_tick]}
+    /summon interaction ^0.039228514 ^1.6262219141 ^0.12 {width:0.025f,height:0.05f,Tags:[deck_set_ui_interaction, "2",unset,card_tick]}
+    /summon interaction ^ ^1.6262219141 ^0.12 {width:0.025f,height:0.05f,Tags:[deck_set_ui_interaction, "3",unset,card_tick]}
+    /summon interaction ^-0.039228514 ^1.6262219141 ^0.12 {width:0.025f,height:0.05f,Tags:[deck_set_ui_interaction, "4",unset,card_tick]}
+    /summon interaction ^-0.078457028 ^1.6262219141 ^0.12 {width:0.025f,height:0.05f,Tags:[deck_set_ui_interaction, "5",unset,card_tick]}
+    /summon interaction ^0.078457028 ^1.5727759852 ^0.12 {width:0.025f,height:0.05f,Tags:[deck_set_ui_interaction, "6",unset,card_tick]}
+    /summon interaction ^0.039228514 ^1.5727759852 ^0.12 {width:0.025f,height:0.05f,Tags:[deck_set_ui_interaction, "7",unset,card_tick]}
+    /summon interaction ^ ^1.5727759852 ^0.12 {width:0.025f,height:0.05f,Tags:[deck_set_ui_interaction, "8",unset,card_tick]}
+    /summon interaction ^-0.039228514 ^1.5727759852 ^0.12 {width:0.025f,height:0.05f,Tags:[deck_set_ui_interaction, "9",unset,card_tick]}
+    /summon interaction ^-0.078457028 ^1.5727759852 ^0.12 {width:0.025f,height:0.05f,Tags:[deck_set_ui_interaction, "10",unset,card_tick]}
+    /summon interaction ^-0.102 ^1.619 ^0.11 {response:1b,width:0.01f,height:0.01f,Tags:[deck_set_ui_next_page_interaction,unset,card_tick]}
+    /summon interaction ^0.102 ^1.619 ^0.11 {response:1b,width:0.01f,height:0.01f,Tags:[deck_set_ui_pre_page_interaction,unset,card_tick]}
+    execute(as @e[distance=..3,tag=unset]){
+        /scoreboard players operation @s 40planet_id = #temp 40planet_id
+        /tag @s remove unset
+        execute(if entity @s[tag=card_ui]){
+            /rotate @s ~ 0
+            /execute on passengers run rotate @s ~ 0
+            /data merge entity @s {Tags:[deck_set_ui_display,card_tick]}
+        }
+
+        /execute if entity @s[tag=1] run scoreboard players set @s tag 1
+        /execute if entity @s[tag=2] run scoreboard players set @s tag 2
+        /execute if entity @s[tag=3] run scoreboard players set @s tag 3
+        /execute if entity @s[tag=4] run scoreboard players set @s tag 4
+        /execute if entity @s[tag=5] run scoreboard players set @s tag 5
+        /execute if entity @s[tag=6] run scoreboard players set @s tag 6
+        /execute if entity @s[tag=7] run scoreboard players set @s tag 7
+        /execute if entity @s[tag=8] run scoreboard players set @s tag 8
+        /execute if entity @s[tag=9] run scoreboard players set @s tag 9
+        /execute if entity @s[tag=10] run scoreboard players set @s tag 10
+    }
+}
+
+def tick_player(){
+    execute(if score @s click_deck matches 1.. at @s rotated ~ 0){
+        /scoreboard players reset @s click_deck
+        /playsound minecraft:entity.arrow.hit_player weather @s ~ ~ ~
+        /clear @s *[custom_data~{40planet_nether_star:1b}]
+        /execute unless score InGame card_setting matches 1 run item replace entity @s weapon with paper[minecraft:item_name={"text":"덱 설정하기(움직이면 닫힌다)","color":"aqua"},item_model="tcg:deck_open",enchantment_glint_override=true,minecraft:max_stack_size=1,custom_data={40planet_nether_star:1b}]
+        execute(unless score InGame card_setting matches 1){
+            /scoreboard players set @s current_page 0
+            /tp @s 0 0 0
+            /tp @s ~ ~ ~
+            summon_ui()
+            deck_update_page()
+        }
+    }
+}
+
+def tick_entity(){
+    execute(if entity @s[tag=deck_set_ui_display] positioned as @s){
+        execute(as @a[distance=..0.0001]){
+            /scoreboard players operation #temp 40planet_num = @s current_page
+            /scoreboard players add #temp 40planet_num 1
+            /title @s actionbar [{"score":{"name":"#temp","objective":"40planet_num"}},"/3"]
+        }
+        execute(unless entity @a[distance=..0.001]){
+            /scoreboard players operation #temp 40planet_id = @s 40planet_id
+            /execute on passengers run kill @s
+            /kill @s
+            /execute as @e[distance=..3,tag=deck_set_ui_interaction] if score @s 40planet_id = #temp 40planet_id run kill @s
+            /execute as @e[distance=..3,tag=deck_set_ui_next_page_interaction] if score @s 40planet_id = #temp 40planet_id run kill @s
+            /execute as @e[distance=..3,tag=deck_set_ui_pre_page_interaction] if score @s 40planet_id = #temp 40planet_id run kill @s
+            execute(as @a if score @s 40planet_id = "#temp" 40planet_id){
+                /clear @s *[custom_data~{40planet_nether_star:1b}]
+                /execute if items entity @s weapon * run give @s paper[minecraft:item_name={"text":"덱 설정하기","color":"aqua"},minecraft:consumable={consume_seconds:0.1,has_consume_particles:0b,sound:{sound_id:""},animation:none},item_model="tcg:deck",enchantment_glint_override=true,minecraft:max_stack_size=1,custom_data={40planet_nether_star:1b}]
+                /execute unless items entity @s weapon * run item replace entity @s weapon with paper[minecraft:item_name={"text":"덱 설정하기","color":"aqua"},minecraft:consumable={consume_seconds:0.1,has_consume_particles:0b,sound:{sound_id:""},animation:none},item_model="tcg:deck",enchantment_glint_override=true,minecraft:max_stack_size=1,custom_data={40planet_nether_star:1b}]
+
+                /scoreboard players reset @s current_page
+
+                /execute if score @s 40planet_id matches -1 run scoreboard players operation @s 40planet_id = #origin_id 40planet_id
+            }
+        }
+    }
+    execute(if entity @s[tag=deck_set_ui_interaction]){
+        /scoreboard players reset #is_update 40planet_num
+        # 카드 넣기
+        execute(if data entity @s interaction positioned as @s){
+            /execute on target positioned as @s run playsound minecraft:entity.item_frame.place weather @s
+            /execute on target run tag @s add this
+            /data remove entity @s interaction
+            /execute unless items entity @p[tag=this] weapon *[minecraft:custom_data~{40planet_card:1b}] run return 0
+
+            /scoreboard players set #is_update 40planet_num 1
+            /scoreboard players operation #temp 40planet_id = @s 40planet_id
+            /scoreboard players operation #temp tag = @s tag
+
+            /scoreboard players set #has_card 40planet_num 0
+            execute (as @e[distance=..3,tag=deck_set_slot_display] if score @s tag = "#temp" tag if score @s 40planet_id = "#temp" 40planet_id){
+                /execute if items entity @s container.0 * run scoreboard players set #has_card 40planet_num 1
+                /execute if items entity @s container.0 * run return 0
+                /item replace entity @s container.0 from entity @p[tag=this] weapon
+                /data modify entity @s item.count set value 1b
+            }
+            /execute if score #has_card 40planet_num matches 0 as @a[tag=this] run item modify entity @s weapon pack:minus
+        }
+        # 카드 빼기
+        execute(if data entity @s attack positioned as @s){
+            /execute on attacker positioned as @s run playsound minecraft:entity.item_frame.remove_item weather @s
+            /scoreboard players set #is_update 40planet_num 1
+            /scoreboard players operation #temp 40planet_id = @s 40planet_id
+            /scoreboard players operation #temp tag = @s tag
+            /execute on attacker run tag @s add this
+            /data remove entity @s attack
+
+            /execute as @e[distance=..3,tag=deck_set_slot_display] if score @s tag = #temp tag if score @s 40planet_id = #temp 40planet_id run function __namespace__:return_item
+        }
+
+        # 덱 구성이 바뀌었다면 스토리지에 덱 업데이트
+        execute(if score "#is_update" 40planet_num matches 1 as @a if score @s 40planet_id = "#temp" 40planet_id positioned as @s){
+            player_id = get_score("@s", "40planet_id")
+            var current_page = get_score("@s", "current_page")
+            
+            /data modify storage 40planet:tcg data.deck set value [{},{},{},{},{},{},{},{},{},{}]
+            execute(as @e[distance=..0.001] if score @s 40planet_id = "#temp" 40planet_id){
+                /execute if entity @s[tag=1] run data modify storage 40planet:tcg data.deck[0] set from entity @s item
+                /execute if entity @s[tag=2] run data modify storage 40planet:tcg data.deck[1] set from entity @s item
+                /execute if entity @s[tag=3] run data modify storage 40planet:tcg data.deck[2] set from entity @s item
+                /execute if entity @s[tag=4] run data modify storage 40planet:tcg data.deck[3] set from entity @s item
+                /execute if entity @s[tag=5] run data modify storage 40planet:tcg data.deck[4] set from entity @s item
+                /execute if entity @s[tag=6] run data modify storage 40planet:tcg data.deck[5] set from entity @s item
+                /execute if entity @s[tag=7] run data modify storage 40planet:tcg data.deck[6] set from entity @s item
+                /execute if entity @s[tag=8] run data modify storage 40planet:tcg data.deck[7] set from entity @s item
+                /execute if entity @s[tag=9] run data modify storage 40planet:tcg data.deck[8] set from entity @s item
+                /execute if entity @s[tag=10] run data modify storage 40planet:tcg data.deck[9] set from entity @s item
+            }
+            /$data modify storage 40planet:tcg player.$(player_id).deck[$(current_page)] set from storage 40planet:tcg data.deck
+        }
+    }
+
+    # 덱 페이지 넘기기
+    execute(if entity @s[tag=deck_set_ui_pre_page_interaction] if data entity @s interaction){
+        execute(on target){
+            /execute positioned as @s run playsound minecraft:item.book.page_turn weather @s ~ ~ ~
+            /execute positioned as @s run playsound minecraft:item.book.page_turn weather @s ~ ~ ~
+            /execute positioned as @s run playsound minecraft:item.book.page_turn weather @s ~ ~ ~
+
+            /scoreboard players remove @s current_page 1
+            /execute if score @s current_page matches 0.. run function __namespace__:deck_update_page
+            /execute if score @s current_page matches ..-1 run scoreboard players set @s current_page 0
+        }
+        /data remove entity @s interaction
+    }
+    execute(if entity @s[tag=deck_set_ui_next_page_interaction] if data entity @s interaction){
+        execute(on target){
+            /execute positioned as @s run playsound minecraft:item.book.page_turn weather @s ~ ~ ~
+            /execute positioned as @s run playsound minecraft:item.book.page_turn weather @s ~ ~ ~
+            /execute positioned as @s run playsound minecraft:item.book.page_turn weather @s ~ ~ ~
+
+            /scoreboard players add @s current_page 1
+            /execute if score @s current_page matches ..2 run function __namespace__:deck_update_page
+            /execute if score @s current_page matches 3.. run scoreboard players set @s current_page 2
+        }
+        /data remove entity @s interaction
+    }
+}
+
+
+def open_bot_deck(){
+    /scoreboard players operation #origin_id 40planet_id = @s 40planet_id
+    /scoreboard players set @s 40planet_id -1
+    /scoreboard players set @s click_deck 1
+}

@@ -1,0 +1,43 @@
+
+
+var schedule = []
+
+/scoreboard objectives add 40planet_num dummy
+
+def wait_tick(){
+    var schedule_copy = schedule
+    schedule = []
+    while(schedule_copy[0]){
+        var function_fun = schedule_copy[0].function
+        var condition_fun = schedule_copy[0].condition
+        /scoreboard players set #is_wait_end 40planet_num 0
+        /$execute store result score #is_wait_end 40planet_num run $(condition_fun)
+        execute(if score "#is_wait_end" 40planet_num matches 1..){
+            /$$(function_fun)
+        }
+        execute(if score "#is_wait_end" 40planet_num matches ..0){
+            append(schedule, schedule_copy[0])
+        }
+        del(schedule_copy[0])
+    }
+    if(schedule[0]){
+        /schedule function __namespace__:wait_tick 1t
+    }
+}
+
+# condition 될 때까지 기다리기
+def wait(var condition_param, var function_param){
+    # condition = condition_param
+    # function = function_param
+    append(schedule, {
+        condition: condition_param,
+        function: function_param
+    })
+
+    /schedule function __namespace__:wait_tick 1t
+}
+
+def test(){
+    /scoreboard players set wait_test 40planet_num 0
+    wait("execute if score wait_test 40planet_num matches 1", "say wait 끝남")
+}

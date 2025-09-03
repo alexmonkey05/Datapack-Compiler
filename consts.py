@@ -39,8 +39,23 @@ OPERATION = "operation"
 
 NEW_LINE = "䗻"
 
-lark_directory = os.path.join(os.path.dirname(__file__), "grammer.lark")
-planet_parser = Lark.open(lark_directory)
+lark_directory = os.path.join(os.path.dirname(__file__), "grammer_v3.6_lalr_final.lark")
+
+with open(lark_directory, encoding="utf-8") as f:
+    grammar = f.read()
+
+planet_parser = Lark(
+    grammar,
+    parser="lalr",            # Earley -> LALR (대폭 가속)
+    # parser="earley",            # Earley -> LALR (대폭 가속)
+    lexer="contextual",       # 토큰 충돌시 백트래킹 감소
+    start="start",            # 프로젝트의 시작 심볼로 교체
+    propagate_positions=True, # 에러/디버깅 편의
+    maybe_placeholders=False, # 불필요한 None 삽입 방지(속도↑)
+    cache=True,                # 문법 분석 캐시 (초기화 속도↑)
+    debug=True
+)
+
   
 
 #######################################

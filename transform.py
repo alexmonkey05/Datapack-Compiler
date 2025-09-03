@@ -19,7 +19,8 @@ def modify_file_data(file_data):
     file_lines = file_data.split("\n")
     for i in range(len(file_lines)):
         line = file_lines[i].strip()
-        if "/$" in line:
+        # 마크 매크로와 마크 명령어 전부 NEW_LINE 추가하기
+        if "/$" in line or (len(line) > 0 and line[0] == "/"):
             file_lines[i] += NEW_LINE
     return "\n".join(file_lines)
 
@@ -75,6 +76,16 @@ class DatapackGenerater(Transformer):
         with open(self.filename, "r", encoding="utf-8") as file:
             self.file_data = file.read().split("\n")
 
+
+
+    # 줄바꿈 토큰 제거
+    def NEWLINE(self, items): return None
+
+    def __default__(self, data, children, meta):
+        # 규칙명이 Token이면 문자열로 변환
+        if isinstance(data, Token):
+            data = data.value
+        return Tree(data, children, meta)
 
 
     def reset_temp(self):
@@ -229,7 +240,7 @@ class DatapackGenerater(Transformer):
 
     # /로 시작하는 커맨드
     def minecraft_command(self, items):
-        command = items[0][1:]
+        command = items[0]
         # __namespace__ 바꾸기
         if NAMESPACE in command:
             if self.is_module: command = command.replace(NAMESPACE + ":", f"{self.namespace}:{self.module_name}/")
@@ -244,11 +255,14 @@ class DatapackGenerater(Transformer):
         # with open(self.filename, "r", encoding="utf-8") as file:
         #     result = file.read().split("\n")[items[0].children[0].line - 1].strip()
         result = self.file_data
-        result = result[items[0].children[0].line - 1].strip()
+        line_token = items[0]
+        while type(line_token) != CometToken and type(line_token) != Token:
+            line_token = line_token.children[0]
+        result = result[line_token.line - 1].strip()
         result = result[result.index("/$") + 1:]
         for item in items:
-            name = item.data
-            if name == "word": pass #result += item.children[0]
+            # name = item.data
+            if type(item) == Token or type(item) == CometToken: pass #result += item.children[0]
             else:
                 macro_var = f"$({self.variables[item.children[0].value][-1].temp[5:]})"
                 if f"$({item.children[0].value})" not in result: raise ValueError(error_as_txt(
@@ -265,7 +279,54 @@ class DatapackGenerater(Transformer):
             result = result.replace(NAMESPACE, f"{self.namespace}")
         if "\\$" in result: result = result.replace("\\$", "$")
         result = result[1:]
-        return CometToken("command", result, items[0].children[0].start_pos, end_pos=items[-1].children[0].end_pos, column=items[0].children[0].column, command=result, line=items[0].children[0].line)
+        return CometToken("command", result, line_token.start_pos, end_pos=line_token.end_pos, column=line_token.column, command=result, line=line_token.line)
+    
+    def prepend_string(self, string, items, function):
+        del(items[0])
+        return eval(f"self.{function}(items, string=\"{string}\")")
+
+
+    ##############
+    ## 고정문자열 ##
+    ##############
+
+    def if_(self, items): return Token("CNAME", "if")
+    def unless_(self, items): return Token("CNAME", "unless")
+    def positioned_(self, items): return Token("CNAME", "positioned")
+    def in_(self, items): return Token("CNAME", "in")
+    def align_(self, items): return Token("CNAME", "align")
+    def anchored_(self, items): return Token("CNAME", "anchored")
+    def as_(self, items): return Token("CNAME", "as")
+    def at_(self, items): return Token("CNAME", "at")
+    def facing_(self, items): return Token("CNAME", "facing")
+    def on_(self, items): return Token("CNAME", "on")
+    def rotated_(self, items): return Token("CNAME", "rotated")
+    def store_(self, items): return Token("CNAME", "store")
+    def summon_(self, items): return Token("CNAME", "summon")
+    def align_type(self, items): return items[0]
+    def anchored_type(self, items): return items[0]
+    def store_type(self, items): return items[0]
+    def on_type(self, items): return items[0]
+    def over_(self, items): return Token("CNAME", "over")
+    def entity_(self, items): return Token("CNAME", "entity")
+    def score_(self, items): return Token("CNAME", "score")
+    def bossbar_(self, items): return Token("CNAME", "bossbar")
+    def storage_(self, items): return Token("CNAME", "storage")
+    def predicate_(self, items): return Token("CNAME", "predicate")
+    def biome_(self, items): return Token("CNAME", "biome")
+    def block_(self, items): return Token("CNAME", "block")
+    def blocks_(self, items): return Token("CNAME", "blocks")
+    def data_(self, items): return Token("CNAME", "data")
+    def dimension_(self, items): return Token("CNAME", "dimension")
+    def entity_(self, items): return Token("CNAME", "entity")
+    def function_(self, items): return Token("CNAME", "function")
+    def items_(self, items): return Token("CNAME", "items")
+    def loaded_(self, items): return Token("CNAME", "loaded")
+    def contents_(self, items): return Token("CNAME", "contents")
+    def weapon_(self, items): return Token("CNAME", "weapon")
+    def player_cursor_(self, items): ("CNAME", "player.cursor")
+    def face_angle(self, items): return items[0]
+
 
     ##############
     ## function ##
@@ -290,6 +351,9 @@ class DatapackGenerater(Transformer):
             f"{name} already defined",
         ))
         function_= Function(name, "function", [], self.get_fun_temp())
+        if type(items[1]) != list:
+            items.insert(1, [])
+
         for variable in items[1]:
             # variable = VariableComet(child.value, self.get_var_temp())
             function_.inputs.append(variable)
@@ -344,7 +408,9 @@ class DatapackGenerater(Transformer):
 
         command = ""
         function_ = self.functions[name]
-        arguments = items[1].children
+        # 인자가 없는 경우
+        arguments = []
+        if len(items) > 1: arguments = items[1].children
 
         # 주어진 인자 개수와 받을 인자 개수가 맞는지 판단
         # 만약 안 맞다면 에러 던지기
@@ -827,23 +893,23 @@ execute if score #{temp} {SCOREBOARD_NAME} matches ..0 run data modify storage {
     def dot_operation(self, items):
         
         var1 = items[0].value
-        var2 = items[1].value
+        var2 = items[2].value
 
         self.is_defined(items[0])
         first_var = var1
         var1 = self.variables[var1][-1].temp
         var_name = f"{var1}.{var2}"
         if var1 == NEW_LINE + "module":
-            return Token(CNAME, first_var + "." + var2, items[0].start_pos, end_pos=items[1].end_pos, column=items[0].column, line=items[0].line)
+            return Token(CNAME, first_var + "." + var2, items[0].start_pos, end_pos=items[2].end_pos, column=items[0].column, line=items[0].line)
 
 
         self.add_var(var_name, f"{var1}.{var2}")
         self.add_used_temp(var1)
         
         if type(items[0]) == CometToken:
-            return CometToken(CNAME, f"{var1}.{var2}", items[0].start_pos, end_pos=items[1].end_pos, column=items[0].column, line=items[0].line, command=items[0].command)
+            return CometToken(CNAME, f"{var1}.{var2}", items[0].start_pos, end_pos=items[2].end_pos, column=items[0].column, line=items[0].line, command=items[0].command)
 
-        return Token(CNAME, f"{var1}.{var2}", items[0].start_pos, end_pos=items[1].end_pos, column=items[0].column, line=items[0].line)
+        return Token(CNAME, f"{var1}.{var2}", items[0].start_pos, end_pos=items[2].end_pos, column=items[0].column, line=items[0].line)
     def member_operation(self, items):
         var1 = items[0].value
         var2 = items[1].value
@@ -909,7 +975,7 @@ execute if score #{temp} {SCOREBOARD_NAME} matches ..0 run data modify storage {
     
     def variable_set(self, items):
         variable = items[0].value
-        value = items[1].value
+        value = items[1].children[1].value
 
         self.is_defined(items[0])
         
@@ -1174,8 +1240,8 @@ execute if score #{temp} {SCOREBOARD_NAME} matches ..0 run data modify storage {
     ##############
 
     def execute(self, items):
-        command = "execute "
-        for item in items[:-1]:
+        command = ""
+        for item in items[1:-1]:
             command += item.command
 
         execute_filename = self.make_dump_function()
@@ -1184,8 +1250,8 @@ execute if score #{temp} {SCOREBOARD_NAME} matches ..0 run data modify storage {
         self.write("\n")
         self.start(items[-1].children)
         self.current_file = current_file
-        if self.is_module: command = f"{command}run function {self.namespace}:{self.module_name}/{execute_filename[:-11]}\n"
-        else: command = f"{command}run function {self.namespace}:{execute_filename[:-11]}\n"
+        if self.is_module: command = f"execute {command}run function {self.namespace}:{self.module_name}/{execute_filename[:-11]}\n"
+        else: command = f"execute {command}run function {self.namespace}:{execute_filename[:-11]}\n"
 
         for temp in self.used_return:
             value = self.used_return[temp]
@@ -1205,7 +1271,10 @@ execute if score #{temp} {SCOREBOARD_NAME} matches ..0 run data modify storage {
                     command += item.value
                 if command[-1] != seperator: command += seperator
         return CometToken("minecraft", command, items[0].start_pos, end_pos=items[-1].end_pos, column=items[0].column, command=command, line=items[0].line)
-    def execute_parameter(self, items): return self.execute_merge(items)
+    def execute_merge_without_first_letter(self,items):
+        items[0].value = items[0].value[1:]
+        return self.execute_merge(items)
+    def execute_parameter(self, items): return self.execute_merge_without_first_letter(items)
     def coordinate_set(self, items): return self.execute_merge(items)
     def execute_positioned(self, items): return self.execute_merge(items)
     def execute_rotated(self, items): return self.execute_merge(items)
@@ -1307,6 +1376,7 @@ execute if score #{temp} {SCOREBOARD_NAME} matches ..0 run data modify storage {
         return CometToken("execute_if", command, command=command)
 
     def item(self, items): return self.execute_merge(items, seperator="")
+    def item_slot(self, items): return self.execute_merge(items)
     
 
     def selector(self, items):
@@ -1371,6 +1441,7 @@ execute if score #{temp} {SCOREBOARD_NAME} matches ..0 run data modify storage {
             print(item, type(item), item.type)
     
     def method(self, items):
+        del(items[1])
         variable = items[0]
 
         if variable.type == CNAME:
@@ -1388,10 +1459,13 @@ execute if score #{temp} {SCOREBOARD_NAME} matches ..0 run data modify storage {
                 self.filename,
                 f"call method of \"{variable.value}\" is not implemented",
             ))
+            
+            # 인자가 없는 경우
+            arguments = []
+            if len(items) > 2: arguments = items[2].children
 
             # 파일명.함수()
             command = ""
-            arguments = items[2].children
             name = items[1].value
             functions = self.modules[variable.value]["functions"]
             if name not in functions: raise ValueError(error_as_txt(

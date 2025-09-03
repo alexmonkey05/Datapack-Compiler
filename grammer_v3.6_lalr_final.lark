@@ -1,0 +1,412 @@
+
+// ==== 토큰 우선순위 설정용 정의 ====
+%declare MINECRAFT_COMMAND
+// ==== LALR-friendly keyword tokens (added) ====
+IF_.50: "(" "if " | " if "
+AS_.50: "(" "as " | " as "
+UNLESS_.50: "(" "unless " | " unless "
+ROTATED_.50: "(" "rotated " | " rotated "
+POSITIONED_.50: "(" "positioned " | " positioned "
+IN_.50: "(" "in " | " in "
+ALIGN_.50: "(" "align " | " align "
+ANCHORED_.50: "(" "anchored " | " anchored "
+AT_.50: "(" "at " | " at "
+FACING_.50: "(" "facing " | " facing "
+ON_.50: "(" "on " | " on "
+STORE_.50: "(" "store " | " store "
+SUMMON_.50: "(" "summon " | " summon "
+
+// anchored
+EYES_.50: "eyes"
+FEET_.50: "feet"
+
+// over surface token (motion surfaces)
+OVER_.50: "over"
+MOTION_SURFACE.50: /(motion_blocking_no_leaves|motion_blocking|ocean_floor|world_surface)/
+POSITIONED_AS_.50: "as"
+
+// on-type (attacker/controller/...)
+ON_TYPE.50: /(attacker|controller|leasher|origin|owner|passengers|target|vehicle)/
+
+// store type
+STORE_TYPE.50: /(success|result)/
+
+// blocks mode
+BLOCKS_MODE.50: /(all|masked)/
+
+// -------------------- align 옵션 --------------------
+ALIGN_TYPE.50: /(xyz|xzy|yxz|yzx|zxy|zyx|xy|yx|xz|zx|yz|zy|x|y|z_)/
+
+// -------------------- anchored 옵션 --------------------
+ANCHORED_TYPE.50: /(eyes|feet)/
+
+
+
+// auto-generated simple keyword tokens
+PREDICATE_.50: "predicate"
+BIOME_.50: "biome"
+BLOCK_.50: "block"
+BLOCKS_.50: "blocks"
+DATA_.50: "data"
+DIMENSION_.50: "dimension"
+ENTITY_.50: "entity"
+FUNCTION_.50: "function"
+ITEMS_.50: "items"
+LOADED_.50: "loaded"
+SCORE_.50: "score"
+MATCHES_.50: "matches"
+
+
+// selector parameter
+SELECTOR_TAG.50: "tag="
+SELECTOR_ADVANCEMENTS.50: "advancements="
+SELECTOR_DISTANCE.50: "distance="
+SELECTOR_GAMEMODE.50: "gamemode="
+SELECTOR_LEVEL.50: "level="
+SELECTOR_LIMIT.50: "limit="
+SELECTOR_NAME.50: "name="
+SELECTOR_PREDICATE.50: "predicate="
+SELECTOR_SORT.50: "sort="
+SELECTOR_TEAM.50: "team="
+SELECTOR_TYPE.50: "type="
+SELECTOR_SCORES.50: "scores="
+SELECTOR_DX.50: /d[xyz]=/
+SELECTOR_X.50: /[xyz]=/
+SELECTOR_ROTATION.50: /[xy]_rotation=/
+
+
+?score_operation: EQUAL | GE | LE | GT | LT
+GE: ">="
+LE: "<="
+GT: ">"
+LT: "<"
+EQUAL: "="
+
+
+//%import common.FLOAT
+FLOAT: /\d+\.\d+/
+//%import common.INT
+INT: /\d+/
+// %import common.ESCAPED_STRING
+ESCAPED_STRING: /"([^"\\\n]|\\.)*"/
+    | /'([^'\\\n]|\\.)*'/
+    // | /[a-zA-z]+/
+%import common.WS_INLINE
+%import common.WS
+// %import common.NEWLINE
+
+
+start: statement*
+
+
+?statement: simple_statement | control_statement | declaration | condition
+
+?simple_statement: minecraft_command | command_macro | variable_def | variable_set | eol
+?control_statement: if_statement | while_statement | return_ | break_ | execute
+?declaration: function_def | import_statement
+
+
+// minecraft_command: /\/[^\$][^\n]*/
+command_macro: "/$" ( ESCAPED_DOLOR | ESCAPED_MACRO | macro_ | NO_DOLOR_WORD )+ "䗻"
+minecraft_command.-1: "/" /[^䗻]+/ "䗻"
+// minecraft_command.10: "/" (macro | word)+ eol
+ESCAPED_DOLOR.100: "\$"
+ESCAPED_MACRO.100: ESCAPED_DOLOR "(" CNAME ")"
+macro_: "$(" CNAME ")"
+NO_DOLOR_WORD.-1: /(?:(?!\\\$)[^$\n䗻])+/
+// WORD: /[^\n䗻]+/
+// new_line.2: /\n/
+EOL: "䗻"
+// EOL: "䗻" | NEWLINE
+?eol: ";" | EOL
+
+// 중괄호 블럭
+block: "{" statement* "}"
+    | statement
+
+parameter_list: _seperated{parameter, ","}
+?parameter: "var" CNAME
+arguments: _seperated{argument, ","}
+argument: condition
+    | selector //-> selector
+
+
+// import문
+import_statement: "import" CNAME
+
+//멤버연산
+//--------------------------------------------------------------
+member_operation: variable "[" expression "]"
+    | array "[" INT "]"
+    | array "[" /[+-]\d+/ "]"
+dot_operation.30: dot_operation DOT ESCAPED_STRING
+    | dot_operation DOT CNAME
+    | CNAME DOT CNAME
+    | variable DOT ESCAPED_STRING
+    | variable DOT CNAME
+    | dot_operation DOT no_dot_minecraft_id
+no_dot_minecraft_id : CNAME ":" CNAME
+
+//함수 선언, 실행
+//--------------------------------------------------------------
+function_def: "def" CNAME "(" [parameter_list] ")" block
+function_call: CNAME "(" [arguments] ")"
+method.-1: CNAME DOT CNAME "(" [arguments] ")"
+
+
+
+//변수 설정
+//--------------------------------------------------------------
+variable_def: "var" CNAME
+variable_set: CNAME set_value
+    | variable set_value
+    | variable_def set_value
+?set_value : EQUAL condition
+
+//사칙연산
+//--------------------------------------------------------------
+
+// expression = 어떠한 값 (변수, 사칙연산 등)
+?expression: expression "+" term    -> add
+        | expression "-" term       -> sub
+        | term
+
+?term: term "*" factor  -> mul
+    // | term "/" factor   -> div
+    | term "%" factor   -> mod
+    | factor
+
+?factor: value
+    | "-" factor    -> neg
+    | "(" condition ")"
+
+    
+
+//값 토큰 설정
+//--------------------------------------------------------------
+_seperated{x, sep}: (x (sep x)*)?
+
+?variable.30: dot_operation
+    | member_operation
+    | CNAME
+    | function_call
+    | method
+    // | pointer
+    // | address
+// pointer: "*" "(" variable ")"
+//     | "*" variable
+// address: "&" "(" variable ")"
+//     | "&" variable -> address
+
+array.-9999: "[" _seperated{condition, ","} "]"
+nbt: "{" _seperated{pair, ","} "}"
+?pair: CNAME ":" condition
+    | ESCAPED_STRING ":" condition
+
+?number:/-?\d+[bdf]?/
+    | /-?\d+\.\d+[bdf]?/
+    | /-?\.\d+[bdf]?/
+?value: ESCAPED_STRING
+    | variable
+    | FLOAT
+    | INT
+    | array
+    | nbt
+    | number
+
+
+//키워드 설정
+//--------------------------------------------------------------
+return_: "return" condition
+break_.10: "break"
+
+//조건문, 반복문 설정
+//--------------------------------------------------------------
+if_statement: "if" "(" condition ")" block ("else" block)?
+while_statement: "while" "(" condition ")" block
+
+
+//논리연산
+//--------------------------------------------------------------
+?logic_operation : expression
+    | expression "==" expression    -> equal
+    | expression ">" expression     -> bigger
+    | expression ">=" expression    -> bigger_equal
+    | expression "<" expression     -> smaller
+    | expression "<=" expression    -> smaller_equal
+    | expression "!=" expression    -> not_equal
+    | "!" "(" logic_operation ")"   -> not_operation
+?condition: logic_operation
+    | condition "and" condition -> and_operation
+    | condition "or" condition  -> or_operation
+
+
+// execute 설정
+//--------------------------------------------------------------
+MINECRAFT_NUMBER.101: /-?\.\d+/
+    | /-?\d+\.\d+/
+    | /-?\d+/
+MINECRAFT_RANGE: MINECRAFT_NUMBER
+    | MINECRAFT_NUMBER TWO_DOT
+    | TWO_DOT MINECRAFT_NUMBER
+    | MINECRAFT_NUMBER TWO_DOT MINECRAFT_NUMBER
+TWO_DOT: ".."
+?minecraft_id: minecraft_name ":" minecraft_name
+    | minecraft_name
+?minecraft_id_tag: "#" minecraft_id
+    | minecraft_id
+?json_pair: /"([^"\\]|\\.)*"/ ":" json_value
+?json_value: /"([^"\\]|\\.)*"/ 
+    | number
+    | "true"
+    | "false"
+    | "{" _seperated{json_pair, ","} "}" -> json_
+
+?selector: /@[parsen]/ ("[" _seperated{selector_parameter, ","} "]")?
+    | /"?[a-z\d]+-[a-z\d]+-[a-z\d]+-[a-z\d]+-[a-z\d]+"?/
+selector_parameter: SELECTOR_TAG (/!/? minecraft_name)?
+    | SELECTOR_ADVANCEMENTS minecraft_id_tag
+    | SELECTOR_DISTANCE MINECRAFT_RANGE
+    | SELECTOR_DX INT
+    | SELECTOR_GAMEMODE /!?(?:adventure|creative|survival|spectator)/
+    | SELECTOR_LEVEL MINECRAFT_RANGE
+    | SELECTOR_LIMIT INT
+    | SELECTOR_NAME /!/? minecraft_name
+    // | "nbt=" /!/? nbt                                                -> selector_nbt
+    | SELECTOR_PREDICATE minecraft_id
+    | SELECTOR_SCORES "{" (minecraft_name EQUAL MINECRAFT_RANGE)? ("," minecraft_name EQUAL MINECRAFT_RANGE)* "}" -> scores
+    | SELECTOR_SORT /(arbitrary|furthest|nearest|random)/
+    | SELECTOR_TEAM minecraft_name
+    | SELECTOR_X MINECRAFT_NUMBER
+    | SELECTOR_ROTATION MINECRAFT_RANGE
+    | SELECTOR_TYPE /!/? minecraft_id_tag
+
+
+
+?coordinate_set: coord coord coord
+    | face_angle face_angle face_angle
+face_angle: /\^([+-]?(\d+(\.\d+)?|\.\d+))?/
+?coord: /~([+-]?(\d+(\.\d+)?|\.\d+))?/
+    | MINECRAFT_NUMBER
+
+execute: "execute" execute_parameter+ ")" block
+execute_parameter: AS_ selector
+    | IF_ execute_if
+    | UNLESS_ execute_if
+    | POSITIONED_ execute_positioned
+    | IN_ minecraft_id_tag
+    | ALIGN_ ALIGN_TYPE
+    | ANCHORED_ ANCHORED_TYPE
+    | AT_ selector
+    | FACING_ execute_facing
+    | ON_ ON_TYPE
+    | ROTATED_ execute_rotated
+    | STORE_ STORE_TYPE execute_store
+    | SUMMON_ minecraft_id
+
+
+
+
+?execute_positioned: coordinate_set
+    | OVER_ /(motion_blocking_no_leaves|motion_blocking|ocean_floor|world_surface)/
+    | POSITIONED_AS_ selector
+?execute_rotated: coord coord
+    | POSITIONED_AS_ selector
+
+?execute_facing: coordinate_set
+    | ENTITY_ selector ANCHORED_TYPE
+
+?nbt_dir: MINECRAFT_NAME_NOT_DOT
+    | ESCAPED_STRING
+    | nbt_dir /\[[+-]?\d+\]/
+    | nbt_dir /\./ (MINECRAFT_NAME_NOT_DOT | ESCAPED_STRING)
+?execute_store: execute_store_list nbt_dir /(byte|double|float|int|long|short)/ MINECRAFT_NUMBER
+    | SCORE_ (selector|minecraft_name) minecraft_name
+?execute_store_list: block_entity
+    | BOSSBAR_ minecraft_id
+    | SCORE_ (selector|minecraft_name) minecraft_name
+    | STORAGE_ minecraft_id
+BOSSBAR_.50:"bossbar"
+STORAGE_.50:"storage"
+
+nbt_pair: "{" _seperated{pair, ","} "}"
+// -------------------- execute_if --------------------
+?execute_if: PREDICATE_ execute_if_predicate
+    | BIOME_ coordinate_set minecraft_id_tag
+    | BLOCK_ coordinate_set execute_if_block
+    | BLOCKS_ coordinate_set coordinate_set coordinate_set /(all|masked)/
+    | DATA_ execute_if_data (nbt_dir|nbt_pair)
+    | DIMENSION_ minecraft_id_tag
+    | ENTITY_ selector
+    | FUNCTION_ execute_if_function
+    | ITEMS_ block_entity item_slot item
+    | LOADED_ coordinate_set
+    | SCORE_ scoreboard execute_if_score
+
+// -------------------- 키워드 토큰 --------------------
+CONTENTS_.50: "contents"
+WEAPON_.50: "weapon"
+WEAPON_OPTION.50: "mainhand" | "offhand"
+PLAYER_CURSOR_.50: "player.cursor"
+
+?execute_if_predicate: "{" _seperated{json_pair, ","} "}"
+    | minecraft_id
+?execute_if_data: block_entity
+    | STORAGE_ minecraft_id
+execute_if_function: minecraft_id_tag
+    | if_function_block
+if_function_block: "{" statement* "}"
+?block_entity: BLOCK_ coordinate_set
+    | ENTITY_ selector
+?item_slot: /(container|enderchest|horse|hotbar|inventory|player\.crafting|villager)\.(\d+|\*)/
+    | CONTENTS_
+    | WEAPON_ DOT WEAPON_OPTION
+    | WEAPON_
+    | /horse\.(?:chest|saddle)/
+    | /armor\.(?:\*|body|chest|feet|head|legs)/
+    | PLAYER_CURSOR_
+item: (/\*/ | minecraft_id_tag) /\[.*\]/?
+?execute_if_score: MATCHES_ MINECRAFT_RANGE
+    | score_operation scoreboard
+?scoreboard: (selector|ESCAPED_STRING|minecraft_name) (ESCAPED_STRING|minecraft_name)
+// execute if block ~ ~ ~ stone_button[facing=north,face=floor,powered=false]
+// execute if block ~ ~ ~ barrel[open=true]{Items:[{Slot:0b,id:"minecraft:stone",Count:1b}]}
+// 이런거 감지하는거
+?block_state_pair: CNAME EQUAL CNAME
+block_state: "[" _seperated{block_state_pair, ","} "]"
+execute_if_block: minecraft_id_tag
+    | minecraft_id_tag block_state
+    | minecraft_id_tag block_state nbt_pair
+
+
+// TODO : class 설정
+//--------------------------------------------------------------
+// class_def: "class" CNAME "{" ((function_def | variable_def) eol?)* "}"
+// method: variable DOT CNAME "(" [arguments] ")"
+
+
+
+// %ignore WS_INLINE
+%ignore WS
+%ignore /#[^\n;]*/       // 주석
+// %ignore /\n/
+// %ignore NEWLINE
+
+
+MINECRAFT_NAME_NOT_DOT: /[a-zA-Z0-9_]+/
+?minecraft_name: MINECRAFT_NAME_NOT_DOT (DOT MINECRAFT_NAME_NOT_DOT)*
+
+// MINECRAFT_NAME_NOT_DOT: /[a-zA-Z0-9_]+/
+// minecraft_name.-1: MINECRAFT_NAME_NOT_DOT | /[a-zA-Z0-9_.]+/
+
+
+
+// Helper for dotted member access (accept CNAME or ESCAPED_STRING as name)
+DOT: "."
+NAME: CNAME | ESCAPED_STRING
+
+member_access: NAME ( "[" INT "]" )* ( DOT NAME ( "[" INT "]" )* )*
+
+
+// %import common.CNAME
+CNAME: /[A-Za-z_][A-Za-z0-9_]*/

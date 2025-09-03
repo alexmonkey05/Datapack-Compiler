@@ -380,14 +380,14 @@ df"
 - `1.21.5`, `1.21.6` 버전 추가
 - `1.21.5` 이상의 버전으로 컴파일을 했는데 basic 데이터팩에 의존하는 기능을 썼다면, 에러메시지 출력
 - 메인 `load.mcfunction`에 40planet_num 스코어보드를 추가하는 구문 추가
-# 2025.08.04 3.4
+# 2025.08.04 3.4 버전 추가
 - `1.21.7`, `1.21.8` 추가
 - `field[get_score("#x", "slot_num")] = get_data("entity", "@s", "item")`와 같이 접근하는 경우에 `data modify storage 40planet:value data.pack_temp18 set from entity @s item`와 같이 컴파일 되는 문제를 해결함
   - 변수를 쓰는 멤버 접근이 데이터팩에서 누락됨
 - `a.b = c`처럼 대입연산자 왼쪽에 멤버연산 혹은 `.`연산이 있는 경우 대입이 되지 않는 오류 해결
 # 2025.08.07 3.4.1
 - `load.mcfunction`에 `40planet_num` 스코어보드를 생성하는 구문과 `This data pack was compiled with the 40planet's compiler.` 문구가 누락되던 에러 해결
-# 2025.08.25 3.5
+# 2025.08.25 3.5 __main__ 추가
 - `__main__` 추가
   - import 된 파일에서도 네임스페이스로 바뀜
   - `__namespace__`는 `pack:test2/`와 같이 바뀌었다
@@ -395,3 +395,4 @@ df"
 import test2
 /function __main__:test2/foo
 ```
+# 2025.09.03 3.5.1 최적화
