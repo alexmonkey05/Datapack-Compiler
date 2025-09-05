@@ -66,6 +66,17 @@ This extension only displays colors and does not have an auto-completion feature
 pyinstaller --noconfirm --onefile --console --add-data "<location>\grammer.lark;." --add-data "<location>\web;web/" "<location>\new_compiler.py"
 ```
 
+# Used libraries
+```python
+import datetime
+from lark import Transformer, Token, Tree, Lark
+import os
+import json
+import shutil
+import sys
+import time
+```
+
 # Syntax
 ## General
 ### Data types

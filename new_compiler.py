@@ -1,4 +1,3 @@
-from lark import Lark, Token
 from logger import L, LOGLEVEL
 import os
 import shutil
@@ -6,7 +5,6 @@ from transform import DatapackGenerater, error_as_txt, modify_file_data, filedat
 from consts import planet_parser, NEW_LINE
 import datetime
 import sys
-import json
 
   
 logger = L()

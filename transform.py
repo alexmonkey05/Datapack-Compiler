@@ -1,6 +1,6 @@
 
 
-from lark import Transformer, Token, Lark, Tree
+from lark import Transformer, Token, Tree
 import os
 import json
 
@@ -284,6 +284,8 @@ class DatapackGenerater(Transformer):
     def prepend_string(self, string, items, function):
         del(items[0])
         return eval(f"self.{function}(items, string=\"{string}\")")
+    
+    def minecraft_name(self, items): return self.execute_merge(items, seperator="")
 
 
     ##############
@@ -982,7 +984,7 @@ execute if score #{temp} {SCOREBOARD_NAME} matches ..0 run data modify storage {
         result = ""
         if type(items[0]) == CometToken: result += items[0].command
         if value in self.variables:
-            if type(items[1]) == CometToken: result += items[1].command
+            if type(items[1].children[1]) == CometToken: result += items[1].children[1].command
             result += f"data modify storage {STORAGE_NAME} {self.variables[variable][-1].temp} set from storage {STORAGE_NAME} {self.variables[value][-1].temp}\n"
         else:
             result += f"data modify storage {STORAGE_NAME} {self.variables[variable][-1].temp} set value {value}\n"
@@ -1241,7 +1243,7 @@ execute if score #{temp} {SCOREBOARD_NAME} matches ..0 run data modify storage {
 
     def execute(self, items):
         command = ""
-        for item in items[1:-1]:
+        for item in items[:-1]:
             command += item.command
 
         execute_filename = self.make_dump_function()
@@ -1308,7 +1310,7 @@ execute if score #{temp} {SCOREBOARD_NAME} matches ..0 run data modify storage {
     def execute_if(self, items): return self.execute_merge(items)
     def block_state_pair(self, items):
         result = items[0]
-        result.value += "=" + items[1].value
+        result.value += "=" + items[2].value
         return result
     def block_state(self, items):
         result = "["
@@ -1316,36 +1318,7 @@ execute if score #{temp} {SCOREBOARD_NAME} matches ..0 run data modify storage {
             result += item.value + ","
         result = result[:-1] + "]"
         return CometToken("block_state", result, items[0].start_pos, end_pos=items[-1].end_pos, column=items[0].column, command=result, line=items[0].line)
-    def execute_if_block(self, items):
-        items_len = len(items)
-        if items_len < 3: return self.execute_merge(items, seperator="")
-
-        result = items[0].value + items[1].value + items[2].value
-        # print(result)
-        # print(items)
-        # for item in items[2:]:
-        #     key = item.children[0].value
-        #     value = item.children[1]
-        #     if type(value) != CometToken:
-        #         result += f"{key}:{value.value},"
-        #         continue
-
-
-        #     item_commands = value.command.split("\n")
-        #     if (value.command[:39] == f"data remove storage {STORAGE_NAME} data" and len(item_commands) == 3):
-        #         result += f"{key}:{item_commands[1].split('set value ')[-1]},"
-        #     elif (value.command[:39] == f"data modify storage {STORAGE_NAME} data" and len(item_commands) == 2 and "set value" in item_commands[0]):
-        #         result += f"{key}:{item_commands[0].split('set value ')[-1]},"
-        #     else: raise ValueError(error_as_txt(
-        #         value[2],
-        #         "InvalidSyntaxError",
-        #         self.filename,
-        #         f"Cannot put variable in block nbt detection",
-        #     ))
-
-        # result = result[:-1] + "}"
-        return Token("execute_if_block", result, items[0].start_pos, end_pos=items[0].end_pos, column=items[0].column, line=items[0].line)
-
+    def execute_if_block(self, items): return self.execute_merge(items, seperator="")
     def execute_if_predicate(self, items):
         command = items[0].value
         if len(items) > 1 or "\"" in command:
@@ -1417,6 +1390,7 @@ execute if score #{temp} {SCOREBOARD_NAME} matches ..0 run data modify storage {
     def scoreboard(self, items):
         player = items[0]
         scoreboard = items[1]
+        print(scoreboard)
         result = ""
 
         if player.type == ESCAPED_STRING: result += player[1:-1]
@@ -1426,6 +1400,7 @@ execute if score #{temp} {SCOREBOARD_NAME} matches ..0 run data modify storage {
         result += " "
         if scoreboard.type == ESCAPED_STRING: result += scoreboard[1:-1]
         elif scoreboard.value in self.variables: result += f"$({self.variables[scoreboard.value][-1].temp[5:]})"
+        elif type(scoreboard) == CometToken: result += scoreboard.value
         else: result += scoreboard
         
         return Token("scoreboard", result, player.start_pos, player.line, player.column, scoreboard.end_line, scoreboard.end_column, scoreboard.end_pos)

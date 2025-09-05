@@ -1,6 +1,5 @@
 import os
 from lark import Token, Lark
-import sys
 
 SCORE_TYPES = ("int", "float", "double", "bool")
 MINECRAFT_TYPES = ("bool", "short", "int", "float", "double", "long")
@@ -39,7 +38,7 @@ OPERATION = "operation"
 
 NEW_LINE = "䗻"
 
-lark_directory = os.path.join(os.path.dirname(__file__), "grammer_v3.6_lalr_final.lark")
+lark_directory = os.path.join(os.path.dirname(__file__), "grammer.lark")
 
 with open(lark_directory, encoding="utf-8") as f:
     grammar = f.read()

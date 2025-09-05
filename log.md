@@ -395,4 +395,10 @@ df"
 import test2
 /function __main__:test2/foo
 ```
-# 2025.09.03 3.5.1 최적화
+# 2025.09.04 3.6b 최적화
+- earley 파서에서 lalr 파서로 변경
+  - 40배 정도의 성능 향상
+# 2025/04/15 3.6.1b
+- `if block`의 문법오류 해결
+  - block_state : `if block ~ ~ ~ stone_button[facing=north,face=floor,powered=false]`
+  - nbt : `if block ~ ~ ~ barrel[open=true]{Items:[{Slot:26b,id:"minecraft:stone",count:1}]}`

@@ -68,6 +68,17 @@ compiler.exe --cli -p ./a.planet -v 1.21 -d ./world/datapacks -n packpack -l DEB
 pyinstaller --noconfirm --onefile --console --add-data "<location>\grammer.lark;." --add-data "<location>\web;web/" "<location>\new_compiler.py"
 ```
 
+# 사용된 라이브러리 목록
+```python
+import datetime
+from lark import Transformer, Token, Tree, Lark
+import os
+import json
+import shutil
+import sys
+import time
+```
+
 # 문법
 ## 일반
 ### 자료형 목록
