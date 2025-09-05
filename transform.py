@@ -1311,6 +1311,7 @@ execute if score #{temp} {SCOREBOARD_NAME} matches ..0 run data modify storage {
     def block_state_pair(self, items):
         result = items[0]
         result.value += "=" + items[2].value
+        result.type = "block_state_pair"
         return result
     def block_state(self, items):
         result = "["
@@ -1318,7 +1319,12 @@ execute if score #{temp} {SCOREBOARD_NAME} matches ..0 run data modify storage {
             result += item.value + ","
         result = result[:-1] + "]"
         return CometToken("block_state", result, items[0].start_pos, end_pos=items[-1].end_pos, column=items[0].column, command=result, line=items[0].line)
-    def execute_if_block(self, items): return self.execute_merge(items, seperator="")
+    def execute_if_block(self, items):
+        block_state_items = []
+        for item in items:
+            if item.type == "block_state_pair": block_state_items.append(item)
+        merged_items = [items[0], self.block_state(block_state_items), items[-1]]
+        return self.execute_merge(merged_items, seperator="")
     def execute_if_predicate(self, items):
         command = items[0].value
         if len(items) > 1 or "\"" in command:
@@ -1348,7 +1354,10 @@ execute if score #{temp} {SCOREBOARD_NAME} matches ..0 run data modify storage {
 
         return CometToken("execute_if", command, command=command)
 
-    def item(self, items): return self.execute_merge(items, seperator="")
+    def item(self, items):
+        result = items[0].value
+        if len(items) > 1: result += "[" + items[1].value + "]"
+        return CometToken("block_state", result, items[0].start_pos, end_pos=items[-1].end_pos, column=items[0].column, command=result, line=items[0].line)
     def item_slot(self, items): return self.execute_merge(items)
     
 
@@ -1390,7 +1399,6 @@ execute if score #{temp} {SCOREBOARD_NAME} matches ..0 run data modify storage {
     def scoreboard(self, items):
         player = items[0]
         scoreboard = items[1]
-        print(scoreboard)
         result = ""
 
         if player.type == ESCAPED_STRING: result += player[1:-1]

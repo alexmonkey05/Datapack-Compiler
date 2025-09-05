@@ -1,5 +1,2 @@
-var arr
-while(arr[0]){
-    print(arr[0])
-    del(arr[0])
-}
+
+execute(if block ~ ~ ~ stone_button[facing=floor,face=east]{Command:"a",fdsa:123} if items entity @s weapon stone[custom_data~{a:1},custom_name="fdsa"]){}

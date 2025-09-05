@@ -120,7 +120,7 @@ def generate_datapack(filename, version, result_dir = "./", namespace = "pack"):
 
     # 트랜스폼
     now = datetime.datetime.now()
-    # print(parser_tree.pretty())
+    print(parser_tree.pretty())
     datapack_generator = DatapackGenerater(version, result_dir, namespace, filename, logger_level=logger)
     datapack_generator.transform(parser_tree)
     logger.debug("interprete_file", f"{logger.fit(filename, 20)} took {logger.prYello(int((datetime.datetime.now() - now).total_seconds() * 1000) / 1000)}s")

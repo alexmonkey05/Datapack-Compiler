@@ -80,8 +80,6 @@ GT: ">"
 LT: "<"
 EQUAL: "="
 
-LSQB: "["
-RSQB: "]"
 
 
 //%import common.FLOAT
@@ -137,9 +135,9 @@ import_statement: "import" CNAME
 
 //멤버연산
 //--------------------------------------------------------------
-member_operation: variable LSQB expression RSQB
-    | array LSQB INT RSQB
-    | array LSQB /[+-]\d+/ RSQB
+member_operation: variable "[" expression "]"
+    | array "[" INT "]"
+    | array "[" /[+-]\d+/ "]"
 dot_operation.30: dot_operation DOT ESCAPED_STRING
     | dot_operation DOT CNAME
     | CNAME DOT CNAME
@@ -199,7 +197,7 @@ _seperated{x, sep}: (x (sep x)*)?
 // address: "&" "(" variable ")"
 //     | "&" variable -> address
 
-array.-9999: LSQB _seperated{condition, ","} RSQB
+array.-9999: "[" _seperated{condition, ","} "]"
 nbt: "{" _seperated{pair, ","} "}"
 ?pair: CNAME ":" condition
     | ESCAPED_STRING ":" condition
@@ -263,7 +261,7 @@ TWO_DOT: ".."
     | "false"
     | "{" _seperated{json_pair, ","} "}" -> json_
 
-?selector: /@[parsen]/ (LSQB _seperated{selector_parameter, ","} RSQB)?
+?selector: /@[parsen]/ ("[" _seperated{selector_parameter, ","} "]")?
     | /"?[a-z\d]+-[a-z\d]+-[a-z\d]+-[a-z\d]+-[a-z\d]+"?/
 selector_parameter: SELECTOR_TAG (/!/? minecraft_name)?
     | SELECTOR_ADVANCEMENTS minecraft_id_tag
@@ -366,8 +364,8 @@ if_function_block: "{" statement* "}"
     | /horse\.(?:chest|saddle)/
     | /armor\.(?:\*|body|chest|feet|head|legs)/
     | PLAYER_CURSOR_
-item: (/\*/ | minecraft_id_tag) (LSQB /[^\]]+/ RSQB)?
-// COMPONENTS: LSQB /[^\]]*/ RSQB
+item: (/\*/ | minecraft_id_tag) ("[" /[^\]]+/ "]")?
+// COMPONENTS: "[" /[^\]]*/ "]"
 ?execute_if_score: MATCHES_ MINECRAFT_RANGE
     | score_operation scoreboard
 ?scoreboard: (selector|ESCAPED_STRING|minecraft_name) (ESCAPED_STRING|minecraft_name)
@@ -375,8 +373,8 @@ item: (/\*/ | minecraft_id_tag) (LSQB /[^\]]+/ RSQB)?
 // execute if block ~ ~ ~ barrel[open=true]{Items:[{Slot:0b,id:"minecraft:stone",Count:1b}]}
 // 이런거 감지하는거
 ?block_state_pair: CNAME EQUAL CNAME
-// block_state.50: LSQB _seperated{block_state_pair, ","} RSQB
-execute_if_block: minecraft_id_tag (LSQB _seperated{block_state_pair, ","} RSQB)? (nbt_pair)?
+// block_state.50: "[" _seperated{block_state_pair, ","} "]"
+execute_if_block: minecraft_id_tag ("[" _seperated{block_state_pair, ","} "]")? (nbt_pair)?
 
 
 // TODO : class 설정
@@ -405,7 +403,7 @@ MINECRAFT_NAME_NOT_DOT: /[a-zA-Z0-9_]+/
 DOT: "."
 NAME: CNAME | ESCAPED_STRING
 
-member_access: NAME ( LSQB INT RSQB )* ( DOT NAME ( LSQB INT RSQB )* )*
+member_access: NAME ( "[" INT "]" )* ( DOT NAME ( "[" INT "]" )* )*
 
 
 // %import common.CNAME
