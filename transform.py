@@ -1358,7 +1358,7 @@ execute if score #{temp} {SCOREBOARD_NAME} matches ..0 run data modify storage {
         result = items[0].value
         if len(items) > 1: result += "[" + items[1].value + "]"
         return CometToken("block_state", result, items[0].start_pos, end_pos=items[-1].end_pos, column=items[0].column, command=result, line=items[0].line)
-    def item_slot(self, items): return self.execute_merge(items)
+    def item_slot(self, items): return self.execute_merge(items, seperator="")
     
 
     def selector(self, items):

@@ -1,2 +1,5 @@
 
-execute(if block ~ ~ ~ stone_button[facing=floor,face=east]{Command:"a",fdsa:123} if items entity @s weapon stone[custom_data~{a:1},custom_name="fdsa"]){}
+        execute(unless items entity @s armor.head *[minecraft:custom_data~{memory_head:1b}]){
+            /tellraw @s "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"
+            /function pack:teleport/back
+        }

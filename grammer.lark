@@ -361,9 +361,11 @@ if_function_block: "{" statement* "}"
     | CONTENTS_
     | WEAPON_ DOT WEAPON_OPTION
     | WEAPON_
-    | /horse\.(?:chest|saddle)/
-    | /armor\.(?:\*|body|chest|feet|head|legs)/
+    | HORSE_ DOT /(?:chest|saddle)/
+    | ARMOR_ DOT /(?:\*|body|chest|feet|head|legs)/
     | PLAYER_CURSOR_
+ARMOR_: "armor"
+HORSE_: "horse"
 item: (/\*/ | minecraft_id_tag) ("[" /[^\]]+/ "]")?
 // COMPONENTS: "[" /[^\]]*/ "]"
 ?execute_if_score: MATCHES_ MINECRAFT_RANGE

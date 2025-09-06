@@ -402,3 +402,4 @@ import test2
 - `if block`의 문법오류 해결
   - block_state : `if block ~ ~ ~ stone_button[facing=north,face=floor,powered=false]`
   - nbt : `if block ~ ~ ~ barrel[open=true]{Items:[{Slot:26b,id:"minecraft:stone",count:1}]}`
+- `armor.head`와 같이 아이템 슬롯 사이에 `.`이 들어가면 에러가 나던 현상 해결
