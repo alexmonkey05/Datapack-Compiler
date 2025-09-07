@@ -398,8 +398,10 @@ import test2
 # 2025.09.04 3.6b 최적화
 - earley 파서에서 lalr 파서로 변경
   - 40배 정도의 성능 향상
-# 2025/04/15 3.6.1b
+# 2025/09/06 3.6.1b
 - `if block`의 문법오류 해결
   - block_state : `if block ~ ~ ~ stone_button[facing=north,face=floor,powered=false]`
   - nbt : `if block ~ ~ ~ barrel[open=true]{Items:[{Slot:26b,id:"minecraft:stone",count:1}]}`
-- `armor.head`와 같이 아이템 슬롯 사이에 `.`이 들어가면 에러가 나던 현상 해결
+- `armor.head`와 같이 아이템 슬롯 사이에 `.`이 들어가면 에러가 나던 현상 해결 
+# 2025/09/07 3.6 정식 릴리즈
+- 테스트 케이스 모두 통과

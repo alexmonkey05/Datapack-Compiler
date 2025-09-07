@@ -262,7 +262,8 @@ TWO_DOT: ".."
     | "{" _seperated{json_pair, ","} "}" -> json_
 
 ?selector: /@[parsen]/ ("[" _seperated{selector_parameter, ","} "]")?
-    | /"?[a-z\d]+-[a-z\d]+-[a-z\d]+-[a-z\d]+-[a-z\d]+"?/
+    | UUID
+UUID: /"?[a-z\d]+-[a-z\d]+-[a-z\d]+-[a-z\d]+-[a-z\d]+"?/
 selector_parameter: SELECTOR_TAG (/!/? minecraft_name)?
     | SELECTOR_ADVANCEMENTS minecraft_id_tag
     | SELECTOR_DISTANCE MINECRAFT_RANGE
