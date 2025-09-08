@@ -14,7 +14,8 @@ If you are english speaker, check out [README_en.md](https://github.com/alexmonk
 	- [내장 함수](#내장-함수)
 
 # 사용법
-영상 튜토리얼이 있습니다! [Comet Tutorial](https://youtu.be/vzlmWR5MqCY)을 참고하세요.
+~~영상 튜토리얼이 있습니다! [Comet Tutorial](https://youtu.be/vzlmWR5MqCY)을 참고하세요.~~
+현재 영상이 소실되었습니다. 빠른 시일 내에 업로드 하겠습니다.
 
 ## 설치 및 실행
 ### 컴파일 버전 사용 (Windows 한정)
@@ -55,6 +56,7 @@ compiler.exe --cli -p ./a.planet -v 1.21 -d ./world/datapacks -n packpack -l DEB
  - 네임스페이스는 소문자만 입력받습니다. 기본값은 `pack`입니다.
  - `컴파일` 버튼을 눌러 코드를 컴파일합니다.
  - 마인크래프트 세이브파일의 `datapacks` 폴더에 생성된 데이터팩과 `basic_1.20.zip` 또는 `basic_1.21.zip`을 넣어줍니다.
+	- 마인크래프트 버전 `1.21.5` 이상에선 basic 데이터팩이 작동하지 않습니다
  - 이제 마인크래프트에 접속해 `/reload`를 실행해 데이터팩을 새로고침하면 실행됩니다.
 
 # Vscode 문법 강조 확장
@@ -81,15 +83,21 @@ import time
 
 # 문법
 ## 일반
+### 주석
+`#`을 사용해 주석을 달 수 있다
+```
+# 이건 개쩌는 주석이다. 와!
+```
 ### 자료형 목록
 - int
 	- `1`, `-2`, `100`과 같은 정수 자료형
 - float, double
 	- `1.0`, `3.14`와 같은 소수 자료형
+	- float는 `1f`, `2.7f`처럼 뒤에 `f`를 붙여야 합니다
 - string
 	- `"This is string"`과 같은 문자열 자료형
 - nbt
-	- `{id:"minecraft:block_display",Tags:["temp"]}`와 같은 json 자료형
+	- `{id:"minecraft:block_display",Tags:["temp"]}`처럼 json과 유사한 자료형
 ### 변수 선언
 `var <변수명>`의 형태로 선언한다
 ```
@@ -113,7 +121,7 @@ if (조건) {
 또한, if문 안에서는 a가 선언 되었으므로 밖의 a에 접근하지 못한다
 ### 줄바꿈
 `\n` 또는 `;`를 명령어의 끝으로 생각한다
-- 단, `[`, `{` 등의 몇몇 예외가 있다
+- 단, `[`, `{` 등의 몇몇 예외가 있다. 이때는 `\n`을 명령어의 끝으로 생각하지 않는다
 ```
 var a
 var b = {
@@ -127,8 +135,94 @@ var b = {
 	test: "asdf"
 };
 ```
+
+### 마인크래프트 명령어
+`/`를 맨 앞에 쓰면 그것은 마인크래프트 명령어로 인식한다
+```
+/say a
+/gamemode creative @a
+```
+커맨드에서 `;`는 명령어의 끝으로 인식되지 않기 때문에 줄바꿈을 해주어야 한다   
+매크로의 경우에도 마찬가지이다
+
+### __namespace__, __main__
+`__namespace__`와 `__main__`는 메인 파일에서는 동일하지만 import 된 파일에서는 다르게 변환된다   
+아래와 같이 동일한 내용의 `test`, `test2` 파일이 있고, `test`가 `test2`를 import 한다   
+```
+def foo(){ print("foo") }
+
+/function __namespace__:foo
+/function __main__:foo
+```
+이때 `/function __namespace__:foo`와 `/functino __main__:foo`는 아래와 같이 변환된다 (네임스페이스는 pack으로 설정했다)
+- test
+```
+/function pack:foo
+/function pack:foo
+```
+- test2
+```
+/function pack:test2/foo
+/function pack:foo
+```
+요컨대, `__namespace__`는 모듈까지의 경로로 변환되고 `__main__`은 오직 설정한 네임스페이스로만 변환된다
+   
+### 매크로
+커맨드의 시작에 `$`를 적고, `$(변수명)`처럼 적으면 매크로처럼 사용 가능하다
+```
+var a = 123
+/$say $(a)
+var command = "say a"
+/$$(command)
+```
+
+```
+[@] 123
+[@] a
+```
+`\$`를 입력하면 컴파일 할 때 `$`로 바뀐다   
+- 잘못된 예
+```
+var a = 123
+/$say $(a) $
+```
+
+```
+lark.exceptions.UnexpectedToken: Unexpected token Token('__ANON_21', '$䗻\n') at line 2, column 12.
+Expected one of:
+        * EOL
+        * NO_DOLOR_WORD
+        * ESCAPED_DOLOR
+        * "$("
+        * ESCAPED_MACRO
+Previous tokens: [Token('RPAR', ')')]
+```
+- 옳은 예
+```
+var a = 123
+/$say $(a) \$
+```
+
+```
+[@] 123 $
+```
+
+조금 복잡하긴 하지만 인게임 매크로도 사용 가능하다
+```
+def foo(){
+	/$\$say \$(text)
+}
+/function __namespace__:foo {text:"asdf"}
+```
+
+```
+[@] asdf
+```
+
+
 ### 연산
 괄호 > 멤버 > 산술 > 관계(부등식) > 논리(and, or) > 대입 순으로 연산이 진행된다
+- **!! 1.21.5 이상의 버전에서는 산술, 관계 연산이 작동하지 않습니다 !!**
 - 괄호
 	- `()`
 - 멤버(배열의 원소에 접근하는 연산)
@@ -154,7 +248,7 @@ var b = {
 - 대입
 	- `=`
 만약 연산의 피연산자들의 자료형이 서로 다른 경우, 에러가 발생한다   
-단, `double`과 `float`, `int`의 경우엔 에러가 나지 않는다
+단, `double`과 `float`, `int`처럼 숫자끼리 연산하는 경우엔 에러가 나지 않는다
 ```
 1 + "1"
 ```
@@ -217,7 +311,8 @@ if(a){ # true
 }
 ```
 이때, 참/거짓을 판단하는 기준은 마인크래프트의 `execute store` 구문을 따른다   
-때문애 다음과 같은 값이 들어가는 경우, 거짓이 나올 수 있다
+`store`의 결과가 0 이하라면 거짓으로 판단한다   
+때문에 다음과 같은 값이 들어가는 경우, 거짓이 나올 수 있다
 - "" (빈 문자열)
 - 0.4 (반올림 했을 때 0이 되는 소수)
 - -1 (음수)
@@ -257,9 +352,16 @@ def test(var a, var b){
 ~~멍청이이다~~   
 그러니 함수명에 대문자를 쓰지 않도록 하자   
    
-- `def tick`을 통해 tick이라는 이름의 함수를 선언한 경우, 이 함수는 매틱 실행된다
-- `def load`을 통해 load이라는 이름의 함수를 선언한 경우, 이 함수는 맵이 로딩될 때 1회 실행된다
-- 이렇게 실행되는 `load`와 `tick`은 인수를 받을 수 없다
+- `def tick`을 통해 tick이라는 이름의 함수를 선언한 경우, 이 함수는 매틱 실행된다(`#tick`에서 실행된다)
+- `def load`을 통해 load이라는 이름의 함수를 선언한 경우, 이 함수는 맵이 로딩될 때 1회 실행된다(`#load`에서 실행된다)
+- 이렇게 실행되는 `load`와 `tick`은 인자를 받을 수 없다
+- 아래와 같이 작성하는 경우엔 인자를 받을 수 있다
+```
+def tick(var a){
+	print(a)
+}
+tick("asdf")
+```
 ### 함수 호출
 `함수명(인자)`와 같이 작성하여 함수를 호출 할 수 있다
 ```
@@ -272,7 +374,7 @@ def load(){
 }
 ```
 만약 `/function`명령어를 사용해 함수를 호출하고 싶다면 아래와 같이 쓰면 된다   
-이때, 인자는 가장 최근에 사용된 인자를 한번 더 사용한다
+이때, 인자는 가장 최근에 사용된 인자를 한번 더 사용한다 (정크 데이터를 사용한다)
 ```
 def dumb_function(var a){
 	return a
@@ -282,33 +384,7 @@ def dumb_function(var a){
 ```
 `__namespace__`는 사용자가 입력한 네임스페이스로 바뀐다   
 만약 모듈로서 `import` 되었다면 `__namespace__`는 `namespace:filename/`의 형식으로 바뀌므로 걱정할 필요 없다
-### 마인크래프트 명령어
-`/`를 맨 앞에 쓰면 그것은 마인크래프트 명령어로 인식한다
-```
-/say a
-/gamemode creative @a
-```
-   
-커맨드의 시작에 `$`를 적고, `$(변수명)`처럼 적으면 매크로처럼 사용 가능하다
-```
-var a = 123
-/$say $(a)
-var command = "say a"
-/$$(command)
-```
 
-```
-[@] 123
-[@] a
-```
-
-### 주석
-`#` 또는 `/#`을 사용해 주석을 달 수 있다
-```
-# 데이터팩에 적히지 않는 주석
-/# 데이터팩에 적히는 주석
-```
-~~사실 `/#`이 필요할까 하긴 싶은데 일단 적어봤습니다~~
 
 ## import
 `import <파일명>`의 형태로 같은 디렉토리에 있는 `파일명.planet`을 가져올 수 있다.
