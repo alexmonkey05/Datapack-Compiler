@@ -207,8 +207,30 @@ if __name__ == "__main__":
 
     import eel
     import tkinter
+    import json
     from tkinter import filedialog
     from eel import chrome, edge
+
+    CONFIG_FILE = "./settings.json"
+
+    @eel.expose
+    def load_settings():
+        if os.path.exists(CONFIG_FILE):
+            with open(CONFIG_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        else:
+            default_settings = {
+                "file": "",
+                "folder": "",
+                "namespace": "pack"
+            }
+            save_settings(default_settings)
+            return default_settings
+
+    @eel.expose
+    def save_settings(settings):
+        with open(CONFIG_FILE, "w", encoding="utf-8") as f:
+            json.dump(settings, f, indent=4, ensure_ascii=False)
 
     parentDir = os.path.dirname(__file__)
 
