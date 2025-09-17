@@ -1323,7 +1323,7 @@ execute if score #{temp} {SCOREBOARD_NAME} matches ..0 run data modify storage {
         block_state_items = []
         for item in items:
             if item.type == "block_state_pair": block_state_items.append(item)
-        merged_items = [items[0], self.block_state(block_state_items), items[-1]]
+        merged_items = [items[0], self.block_state(block_state_items)]
         return self.execute_merge(merged_items, seperator="")
     def execute_if_predicate(self, items):
         command = items[0].value
@@ -1374,9 +1374,9 @@ execute if score #{temp} {SCOREBOARD_NAME} matches ..0 run data modify storage {
         return self.execute_merge(items, seperator="")
     def scores(self, items):
         command = "scores={"
-        for i in range(int(len(items) / 2)):
-            i *= 2
-            command += f"{items[i].value}={items[i+1].value},"
+        for i in range(0, int((len(items)-1) / 3)):
+            i *= 3
+            command += f"{items[i + 1].value}={items[i + 3].value},"
         command = command[:-1] + "}"
         return CometToken("minecraft", "scores_selector", items[0].start_pos, end_pos=items[-1].end_pos, column=items[0].column, command=command, line=items[0].line)
     def selelctor_nbt(self, items):

@@ -1,5 +1,4 @@
-
-        execute(unless items entity @s armor.head *[minecraft:custom_data~{memory_head:1b}]){
-            /tellraw @s "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"
-            /function pack:teleport/back
-        }
+def reset(){
+    /kill @e[tag=tuto_reset]
+    /summon interaction -167 -52 -60 {UUID:[I;6851,0,0,0],Tags:[tuto_reset]}
+}
