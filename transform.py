@@ -686,8 +686,12 @@ data modify storage {STORAGE_NAME} {temp} set from storage {STORAGE_NAME} var1\n
         
         return CometToken("append", arr_node.value, items[0].start_pos, end_pos=items[0].end_pos, column=items[0].column, command=command, line=items[0].line)
     def fun_is_module(self, items):
-        input_nodes = items[1].children
-        self.is_parameter_cnt("is_module", input_nodes, 0, items[0])
+        if len(items) > 1: raise ValueError(error_as_txt(
+            items[0],
+            "InvalidSyntaxError",
+            self.filename,
+            f"is_module expected to get 0 parameters, but it give only {len(items[1].children)} parameters",
+        ))
         temp = self.get_temp()
         self.add_var(temp, temp)
         if self.is_module:
