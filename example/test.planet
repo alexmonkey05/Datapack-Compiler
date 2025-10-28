@@ -1,4 +1,17 @@
-def reset(){
-    /kill @e[tag=tuto_reset]
-    /summon interaction -167 -52 -60 {UUID:[I;6851,0,0,0],Tags:[tuto_reset]}
+def change_text_to_translate(){
+    /data modify storage asdf: text set from entity @s text
+    execute(if data entity @s text.extra){
+        var extra = get_data("entity", "@s", "text.extra")
+        var result = []
+        while(extra[0]){
+            append(result, extra[0])
+            del(extra[0])
+            result[-1].translate = result[-1].text
+            del(result[-1].text)
+        }
+        set_data("storage", "asdf:", "text.extra", result)
+    }
+    /data modify storage asdf: text.translate set from storage asdf: text.text
+    /data remove storage asdf: text.text
+    /data modify entity @s text set from storage asdf: text
 }
