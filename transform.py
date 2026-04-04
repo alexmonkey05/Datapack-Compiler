@@ -33,7 +33,15 @@ class DatapackGenerater(Transformer):
         # logger.verboseLevel = LOGLEVEL[logger_level]
         logger = logger_level
         # 파라미터 가공
-        if type(version) == str: version = float(version[2:])
+        print("init")
+        if type(version) == str:
+            if(version[:2] == "1."): version = float(version[2:])
+            else:
+                version_arr = version.split(".")
+                version = (int(version_arr[0])) * 100 * 100 + int(version_arr[1]) * 100
+                if len(version_arr) > 2:
+                    version += int(version_arr[2])
+            print(version)
         self.version = version
         if self.version < 21: self.function_folder = "functions"
         else: self.function_folder = "function"
