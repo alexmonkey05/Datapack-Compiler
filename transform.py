@@ -41,7 +41,6 @@ class DatapackGenerater(Transformer):
                 version = (int(version_arr[0])) * 100 * 100 + int(version_arr[1]) * 100
                 if len(version_arr) > 2:
                     version += int(version_arr[2])
-            print(version)
         self.version = version
         if self.version < 21: self.function_folder = "functions"
         else: self.function_folder = "function"
