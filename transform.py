@@ -33,7 +33,6 @@ class DatapackGenerater(Transformer):
         # logger.verboseLevel = LOGLEVEL[logger_level]
         logger = logger_level
         # 파라미터 가공
-        print("init")
         if type(version) == str:
             if(version[:2] == "1."): version = float(version[2:])
             else:
