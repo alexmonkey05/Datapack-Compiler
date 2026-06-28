@@ -1,6 +1,6 @@
 
 
-from lark import Transformer, Token, Tree
+from lark import Token, Tree
 import os
 import json
 
@@ -25,10 +25,43 @@ def modify_file_data(file_data):
     return "\n".join(file_lines)
 
 imported_files = {}
-class DatapackGenerater(Transformer):
+class DatapackGenerater:
+
+    #######################################
+    # 전처리
+    #######################################
+    def pre_scan_functions(self, tree):
+        from lark import Tree
+        if not isinstance(tree, Tree):
+            return
+        if tree.data == "function_def":
+            name = str(tree.children[0])
+            if name not in self.functions:
+                fun_temp = self.get_fun_temp()
+                
+                # 파라미터는 함수 본문을 변환할 때만 스코프에 등록한다.
+                inputs = []
+                for child in tree.children[1:]:
+                    if isinstance(child, Tree) and child.data == "parameter_list":
+                        for param in child.children:
+                            inputs.append(VariableComet(str(param), self.get_var_temp()))
+                        break
+                
+                self.functions[name] = Function(name, "function", inputs, fun_temp)
+                self.add_var(fun_temp, fun_temp)
+            else: raise ValueError(error_as_txt(
+                tree.children[0],
+                "InvalidSyntaxError",
+                self.filename,
+                f"{name} already defined",
+            ))
+        else:
+            for child in tree.children:
+                self.pre_scan_functions(child)
+
     def __init__(self, version, result_dir = "./", namespace = "pack", filename = "", is_module = False, module_name = "", visit_tokens = True, logger_level = None) -> None:
         global logger
-        super().__init__(visit_tokens)
+        super().__init__()
         # self.logger_level = logger_level
         # logger.verboseLevel = LOGLEVEL[logger_level]
         logger = logger_level
@@ -84,6 +117,45 @@ class DatapackGenerater(Transformer):
 
 
 
+    def transform(self, tree):
+        return self.visit(tree)
+
+    def visit(self, node):
+        if isinstance(node, Token):
+            return node
+        if not isinstance(node, Tree):
+            return node
+
+        visitor = getattr(self, f"visit_{node.data}", None)
+        if visitor is not None:
+            return visitor(node)
+
+        children = [self.visit(child) for child in node.children]
+        method = getattr(self, node.data, None)
+        if method is not None:
+            return method(children)
+        return self.__default__(node.data, children, node.meta)
+
+    def visit_start(self, tree):
+        for child in tree.children:
+            item = self.visit(child)
+            if type(item) == CometToken:
+                self.write(item.command)
+        return None
+
+    def visit_block(self, tree, create_scope = True):
+        if create_scope:
+            self.enter_scope()
+        try:
+            for child in tree.children:
+                item = self.visit(child)
+                if type(item) == CometToken:
+                    self.write(item.command)
+        finally:
+            if create_scope:
+                self.leave_scope()
+        return None
+
     # 줄바꿈 토큰 제거
     def NEWLINE(self, items): return None
 
@@ -105,16 +177,16 @@ class DatapackGenerater(Transformer):
     def get_temp(self):
         if self.used_temp.__len__() == 0:
             self.temp_cnt += 1
-            temp = "data.%s_temp%d" % (self.namespace, self.temp_cnt)
-            if self.is_module: temp = "data.%s_%s_temp%d" % (self.namespace, self.module_name, self.temp_cnt)
+            temp = "temp.%s_temp%d" % (self.namespace, self.temp_cnt)
+            if self.is_module: temp = "temp.%s_%s_temp%d" % (self.namespace, self.module_name, self.temp_cnt)
         else:
             temp = self.used_temp.pop()
         return temp
 
     def get_fun_temp(self):
         self.fun_temp_cnt += 1
-        temp = "data.%s_fun_temp%d" % (self.namespace, self.fun_temp_cnt)
-        if self.is_module: temp = "data.%s_%s_fun_temp%d" % (self.namespace, self.module_name, self.fun_temp_cnt)
+        temp = "temp.%s_fun_temp%d" % (self.namespace, self.fun_temp_cnt)
+        if self.is_module: temp = "temp.%s_%s_fun_temp%d" % (self.namespace, self.module_name, self.fun_temp_cnt)
         return temp
 
     def get_var_temp(self):
@@ -190,6 +262,13 @@ class DatapackGenerater(Transformer):
         if self.is_module: self.write(f"function {self.namespace}:{self.module_name}/{dump_file[:-11]} with storage {STORAGE_NAME} data\n")
         else: self.write(f"function {self.namespace}:{dump_file[:-11]} with storage {STORAGE_NAME} data\n")
 
+    def enter_scope(self):
+        self.using_variables.append([])
+
+    def leave_scope(self):
+        for var in reversed(self.using_variables.pop()):
+            self.remove_var(var)
+
     def add_var(self, name, temp):
         if name not in self.variables: self.variables[name] = []
         self.variables[name].append(VariableComet(name, temp))
@@ -216,7 +295,6 @@ class DatapackGenerater(Transformer):
             ))
         
     def check_version_error(self, tok, over_version = 0, less_version = 999, message = "VersionError"):
-        print(self.version, over_version, less_version)
         # over_version : 이 버전 이상이어야 에러 안 남
         # less_version : 이 버전 이하이어야 에러 안 남
         # 요구 최소 버전보다 낮거나, 요구 최대 버전보다 높으면 에러
@@ -283,6 +361,8 @@ class DatapackGenerater(Transformer):
         if NAMESPACE in result:
             if self.is_module: result = result.replace(NAMESPACE + ":", f"{self.namespace}:{self.module_name}/")
             result = result.replace(NAMESPACE, f"{self.namespace}")
+        if MAIN_NAMESPACE in result:
+            result = result.replace(MAIN_NAMESPACE, f"{self.namespace}")
         if "\\$" in result: result = result.replace("\\$", "$")
         result = result[1:]
         return CometToken("command", result, line_token.start_pos, end_pos=line_token.end_pos, column=line_token.column, command=result, line=line_token.line)
@@ -350,33 +430,30 @@ class DatapackGenerater(Transformer):
         return front_command + f"data modify storage {STORAGE_NAME} {function_temp} set from storage {STORAGE_NAME} {return_value}\n" + back_command
     
 
-    def function_def(self, items):
-        name = items[0].value
-        if name in self.functions:raise ValueError(error_as_txt(
-            items[0],
-            "InvalidSyntaxError",
-            self.filename,
-            f"{name} already defined",
-        ))
-        function_= Function(name, "function", [], self.get_fun_temp())
-        if type(items[1]) != list:
-            items.insert(1, [])
-
-        for variable in items[1]:
-            # variable = VariableComet(child.value, self.get_var_temp())
-            function_.inputs.append(variable)
-            self.remove_var(variable.name)
-        self.functions[name] = function_
+    def visit_function_def(self, tree):
+        name = tree.children[0].value
+        function_ = self.functions[name]
+        body = tree.children[-1]
 
         current_file = self.current_file
         self.current_file = name + ".mcfunction"
         self.write("\n")
-        for item in items[2].children:
-            if type(item) == CometToken:
-                return_index = item.command.find(NEW_LINE)
-                if return_index != -1:
-                    self.write(self.parse_return(item.command, function_.temp))
-                else: self.write(item.command)
+
+        self.enter_scope()
+        try:
+            for variable in function_.inputs:
+                if variable.name in self.using_variables[-1]:
+                    raise ValueError(error_as_txt(
+                        tree.children[0],
+                        "InvalidSyntaxError",
+                        self.filename,
+                        f"\"{variable.name}\" already defined",
+                    ))
+                self.add_var(variable.name, variable.temp)
+                self.using_variables[-1].append(variable.name)
+            self.visit_block(body, create_scope=False)
+        finally:
+            self.leave_scope()
 
         for filename in self.return_filenames:
             self.current_file = filename
@@ -385,20 +462,13 @@ class DatapackGenerater(Transformer):
         self.return_filenames = []
         self.current_file = current_file
 
-        self.add_var(function_.temp, function_.temp)
-
-        # return 쓰인 temp 메모리 풀어주기
-        # for return_temp in self.used_return:
-        #     self.add_used_temp(return_temp)
         self.used_return = {}
-        return Token("function_def", name, items[0].start_pos, items[0].line, items[0].column, items[0].end_line, items[0].end_column, items[0].end_pos)
+        return Token("function_def", name, tree.children[0].start_pos, tree.children[0].line, tree.children[0].column, tree.children[0].end_line, tree.children[0].end_column, tree.children[0].end_pos)
     # function_def에서 파라미터를 지역변수 리스트(self.variables)에 추가
     def parameter_list(self, items):
         parameters = []
         for child in items:
-            variable = VariableComet(child.value, self.get_var_temp())
-            parameters.append(variable)
-            self.add_var(variable.name, variable.temp)
+            parameters.append(VariableComet(child.value, self.get_var_temp()))
         return parameters
 
     def function_call(self, items):
@@ -799,52 +869,87 @@ data modify storage {STORAGE_NAME} {temp} set from entity 0-0-0-0-a transformati
     ## operator ##
     ##############
 
-    def operator_basic(self, items, operator):
+    def score_operator(self, items, operator, uses_assignment = True):
         self.check_version_error(items[0], 0, 21.5,"In version over 1.21.5, type conversion, type function, and binary operations are not possible.")
         result = ""
         var1 = items[0].value
         var2 = items[1].value
 
-        temp = self.get_temp()
-        if var1 != "var1":
-            if var1 in self.variables:
-                if type(items[0]) == CometToken: result += items[0].command
-                result += f"data modify storage {STORAGE_NAME} var1 set from storage {STORAGE_NAME} {self.variables[var1][-1].temp}\n"
-            elif items[0].type == CNAME: self.is_defined(items[0])
-            else: result += f"data modify storage {STORAGE_NAME} var1 set value {var1}\n"
+        if var1 in self.variables:
+            if type(items[0]) == CometToken: result += items[0].command
+            result += f"execute store result score #temp {SCOREBOARD_NAME} run data get storage {STORAGE_NAME} {self.variables[var1][-1].temp}\n"
+        elif items[0].type == CNAME: self.is_defined(items[0])
+        else: result += f"scoreboard players set #temp {SCOREBOARD_NAME} {var1}\n"
+
         if var2 in self.variables:
             if type(items[1]) == CometToken: result += items[1].command
-            result += f"data modify storage {STORAGE_NAME} var2 set from storage {STORAGE_NAME} {self.variables[var2][-1].temp}\n"
+            result += f"execute store result score #temp2 {SCOREBOARD_NAME} run data get storage {STORAGE_NAME} {self.variables[var2][-1].temp}\n"
         elif items[1].type == CNAME: self.is_defined(items[1])
-        else: result += f"data modify storage {STORAGE_NAME} var2 set value {var2}\n"
-        operator_id = OPERATOR_ID[operator]
-        result += f"scoreboard players set #operator_type {SCOREBOARD_NAME} {operator_id}\n"
-        if OPERATOR_ID["=="] <= operator_id and operator_id <= OPERATOR_ID["<"]: result += f"execute store result storage {STORAGE_NAME} var1 int 1 run "
-        result += f"function basic:operation\ndata modify storage {STORAGE_NAME} {temp} set from storage {STORAGE_NAME} var1\n"
+        else: result += f"scoreboard players set #temp2 {SCOREBOARD_NAME} {var2}\n"
+
+        temp = self.get_temp()
+        if uses_assignment:
+            result += f"scoreboard players operation #temp {SCOREBOARD_NAME} {operator}= #temp2 {SCOREBOARD_NAME}\n"
+            result += f"execute store result storage {STORAGE_NAME} {temp} int 1 run scoreboard players get #temp {SCOREBOARD_NAME}\n"
+        else:
+            result += f"execute store success storage {STORAGE_NAME} {temp} byte 1 run execute if score #temp {SCOREBOARD_NAME} {operator} #temp2 {SCOREBOARD_NAME}\n"
         self.add_var(temp, temp)
         self.add_used_temp(var1)
         self.add_used_temp(var2)
-        
         return CometToken("operator", temp, items[0].start_pos, end_pos=items[1].end_pos, column=items[0].column, command=result, line=items[0].line)
+
+    def equality_operator(self, items, is_equal):
+        result = ""
+        var1 = items[0].value
+        var2 = items[1].value
+        temp = self.get_temp()
+
+        if var1 in self.variables:
+            if type(items[0]) == CometToken: result += items[0].command
+            result += f"data modify storage {STORAGE_NAME} {temp} set from storage {STORAGE_NAME} {self.variables[var1][-1].temp}\n"
+        elif items[0].type == CNAME: self.is_defined(items[0])
+        else: result += f"data modify storage {STORAGE_NAME} {temp} set value {var1}\n"
+
+        if var2 in self.variables:
+            if type(items[1]) == CometToken: result += items[1].command
+            result += f"execute store success score #temp {SCOREBOARD_NAME} run data modify storage {STORAGE_NAME} {temp} set from storage {STORAGE_NAME} {self.variables[var2][-1].temp}\n"
+        elif items[1].type == CNAME: self.is_defined(items[1])
+        else: result += f"execute store success score #temp {SCOREBOARD_NAME} run data modify storage {STORAGE_NAME} {temp} set value {var2}\n"
+
+        if is_equal:
+            result += f"execute if score #temp {SCOREBOARD_NAME} matches 0 run data modify storage {STORAGE_NAME} {temp} set value 1b\n"
+            result += f"execute if score #temp {SCOREBOARD_NAME} matches 1.. run data modify storage {STORAGE_NAME} {temp} set value 0b\n"
+        else:
+            result += f"execute if score #temp {SCOREBOARD_NAME} matches 0 run data modify storage {STORAGE_NAME} {temp} set value 0b\n"
+            result += f"execute if score #temp {SCOREBOARD_NAME} matches 1.. run data modify storage {STORAGE_NAME} {temp} set value 1b\n"
+
+        self.add_var(temp, temp)
+        self.add_used_temp(var1)
+        self.add_used_temp(var2)
+        return CometToken("operator", temp, items[0].start_pos, end_pos=items[1].end_pos, column=items[0].column, command=result, line=items[0].line)
+
+
     
-    def add(self, items): return self.operator_basic(items, "+")
-    def sub(self, items): return self.operator_basic(items, "-")
-    def mul(self, items): return self.operator_basic(items, "*")
-    def div(self, items): return self.operator_basic(items, "/")
-    def mod(self, items): return self.operator_basic(items, "%")
-    def equal(self, items): return self.operator_basic(items, "==")
-    def not_equal(self, items): return self.operator_basic(items, "!=")
-    def bigger_equal(self, items): return self.operator_basic(items, ">=")
-    def smaller_equal(self, items): return self.operator_basic(items, "<=")
-    def smaller(self, items): return self.operator_basic(items, "<")
-    def bigger(self, items): return self.operator_basic(items, ">")
-    # def member_operation(self, items): return self.operator_basic(items, "member")
+    def add(self, items): return self.score_operator(items, "+")
+    def sub(self, items): return self.score_operator(items, "-")
+    def mul(self, items): return self.score_operator(items, "*")
+    def div(self, items): return self.score_operator(items, "/")
+    def mod(self, items): return self.score_operator(items, "%")
+    def equal(self, items): return self.equality_operator(items, True)
+    def not_equal(self, items): return self.equality_operator(items, False)
+    def bigger_equal(self, items): return self.score_operator(items, ">=", False)
+    def smaller_equal(self, items): return self.score_operator(items, "<=", False)
+    def smaller(self, items): return self.score_operator(items, "<", False)
+    def bigger(self, items): return self.score_operator(items, ">", False)
 
     def neg(self, items):
         variable = items[0]
         if variable.value in self.variables:
-            return self.operator_basic([Token("INT", "0", items[0].start_pos, end_pos=items[0].end_pos, column=items[0].column, line=items[0].line), items[0]], "-")
-        return Token("INT", f"-{variable.value}", items[0].start_pos, end_pos=items[0].end_pos, column=items[0].column, line=items[0].line)
+            return self.score_operator([
+                variable,
+                Token("INT", "-1", variable.start_pos, end_pos=variable.end_pos, column=variable.column, line=variable.line)
+            ], "*")
+        return Token("INT", f"-{variable.value}", variable.start_pos, end_pos=variable.end_pos, column=variable.column, line=variable.line)
 
     def and_operation(self, items):
         result = ""
@@ -973,13 +1078,13 @@ execute if score #{temp} {SCOREBOARD_NAME} matches ..0 run data modify storage {
 
     def variable_def(self, items):
         var_name = items[0].value
-        # if var_name in self.using_variables[-1]:
-        #     raise ValueError(error_as_txt(
-        #         items[0],
-        #         "InvalidSyntaxError",
-        #         self.filename,
-        #         f"\"{var_name}\" already defined",
-        #     ))
+        if var_name in self.using_variables[-1]:
+            raise ValueError(error_as_txt(
+                items[0],
+                "InvalidSyntaxError",
+                self.filename,
+                f"\"{var_name}\" already defined",
+            ))
         var_temp = self.get_var_temp()
         self.add_var(var_name, var_temp)
         self.using_variables[-1].append(var_name)
@@ -1150,6 +1255,7 @@ execute if score #{temp} {SCOREBOARD_NAME} matches ..0 run data modify storage {
 
         now = datetime.datetime.now()
         datapack_generator = DatapackGenerater(self.version, self.result_dir, self.namespace, filename, True, name, logger_level=logger)
+        datapack_generator.pre_scan_functions(parser_tree)
         datapack_generator.transform(parser_tree)
         logger.debug("interprete_file",f"{logger.fit(filename, 20)} took {logger.prYello(int((datetime.datetime.now() - now).total_seconds() * 1000) / 1000)}s")
 
@@ -1173,30 +1279,24 @@ execute if score #{temp} {SCOREBOARD_NAME} matches ..0 run data modify storage {
         
         return None
     
-    def if_statement(self, items, is_while = False):
+    def build_if_statement(self, tree, is_while = False):
         filename = self.make_dump_function()
 
-        # 조건 판단
-        condition, command = self.to_storage(items[0])
-        # if type(items[0]) == CometToken: command = items[0].command + command
+        condition_token = self.visit(tree.children[0])
+        condition, command = self.to_storage(condition_token)
         if_temp = self.get_temp()
         command += f"execute store result score #{if_temp} {SCOREBOARD_NAME} run data get storage {STORAGE_NAME} {condition}\n"
-        # block 실행
         if self.is_module:
             command += f"execute if score #{if_temp} {SCOREBOARD_NAME} matches 1.. run function {self.namespace}:{self.module_name}/{filename[:-11]}\n"
         else:
             command += f"execute if score #{if_temp} {SCOREBOARD_NAME} matches 1.. run function {self.namespace}:{filename[:-11]}\n"
 
-        # while에서 호출한 경우 반복을 위한 구문 추가
-        if is_while:
-            items[1].children.append(CometToken("while_temp", "asdf", command=command))
-        # else 노드 처리
-        elif len(items) >= 3:
+        if not is_while and len(tree.children) >= 3:
             else_filename = self.make_dump_function()
             current_file = self.current_file
             self.current_file = else_filename
             self.write("\n")
-            self.start(items[2].children)
+            self.visit_block(tree.children[2])
             self.current_file = current_file
             if self.is_module:
                 command += f"execute if score #{if_temp} {SCOREBOARD_NAME} matches ..0 run function {self.namespace}:{self.module_name}/{else_filename[:-11]}\n"
@@ -1206,7 +1306,9 @@ execute if score #{temp} {SCOREBOARD_NAME} matches ..0 run data modify storage {
         current_file = self.current_file
         self.current_file = filename
         self.write("\n")
-        self.start(items[1].children)
+        self.visit_block(tree.children[1])
+        if is_while:
+            self.write(command)
         self.current_file = current_file
 
         if not is_while:
@@ -1216,13 +1318,16 @@ execute if score #{temp} {SCOREBOARD_NAME} matches ..0 run data modify storage {
             command = f"scoreboard players reset #{return_temp} {SCOREBOARD_NAME}\n" + command + f"execute if score #{return_temp} {SCOREBOARD_NAME} matches 1 run return run data get storage {STORAGE_NAME} {value}\n"
 
         self.add_used_temp(if_temp)
-        return CometToken("operation", "set_variable", items[0].start_pos, end_pos=items[0].end_pos, column=items[0].column, command=command, line=items[0].line)
+        return CometToken("operation", "set_variable", condition_token.start_pos, end_pos=condition_token.end_pos, column=condition_token.column, command=command, line=condition_token.line)
 
-    def while_statement(self, items):
+    def visit_if_statement(self, tree):
+        return self.build_if_statement(tree)
+
+    def visit_while_statement(self, tree):
         command = ""
         for break_temp in self.used_break:
             command += f"scoreboard players reset #{break_temp} {SCOREBOARD_NAME}\n"
-        result = self.if_statement(items, True)
+        result = self.build_if_statement(tree, True)
         result.command = command + result.command
         # break에 쓰인 temp 메모리 풀어주기
         for break_temp in self.used_break:
@@ -1251,16 +1356,17 @@ execute if score #{temp} {SCOREBOARD_NAME} matches ..0 run data modify storage {
     ## execute  ##
     ##############
 
-    def execute(self, items):
+    def visit_execute(self, tree):
+        items = [self.visit(child) for child in tree.children[:-1]]
         command = ""
-        for item in items[:-1]:
+        for item in items:
             command += item.command
 
         execute_filename = self.make_dump_function()
         current_file = self.current_file
         self.current_file = execute_filename
         self.write("\n")
-        self.start(items[-1].children)
+        self.visit_block(tree.children[-1])
         self.current_file = current_file
         if self.is_module: command = f"execute {command}run function {self.namespace}:{self.module_name}/{execute_filename[:-11]}\n"
         else: command = f"execute {command}run function {self.namespace}:{execute_filename[:-11]}\n"

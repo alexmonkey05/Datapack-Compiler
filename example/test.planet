@@ -1,17 +1,101 @@
-def change_text_to_translate(){
-    /data modify storage asdf: text set from entity @s text
-    execute(if data entity @s text.extra){
-        var extra = get_data("entity", "@s", "text.extra")
-        var result = []
-        while(extra[0]){
-            append(result, extra[0])
-            del(extra[0])
-            result[-1].translate = result[-1].text
-            del(result[-1].text)
-        }
-        set_data("storage", "asdf:", "text.extra", result)
-    }
-    /data modify storage asdf: text.translate set from storage asdf: text.text
-    /data remove storage asdf: text.text
-    /data modify entity @s text set from storage asdf: text
+# Top-down transformer smoke test
+# - control flow: if / else / else if, with and without braces
+# - loops: while, with and without braces
+# - functions: no params, params, nested return
+# - locals: parameter scope, shadowing, function/variable name collision
+
+def two(){
+    return 2
 }
+
+def no_params(){
+    return 7
+}
+
+def choose_param(var left, var right){
+    return left
+}
+
+def return_in_if(var value){
+    if(value > 0){
+        var scoped_value = value
+        return scoped_value
+    }
+    print("error: should not reach here")
+    return 0
+}
+
+def return_in_while(var value){
+    while(value > 0){
+        var loop_value = value
+        return loop_value
+    }
+    print("error: should not reach here")
+    return 0
+}
+
+def name_collision(){
+    return 11
+}
+
+var name_collision = 3
+var equal_true = true
+var equal_false = false
+var not_equal_true = true
+
+var no_param_result = no_params()
+var param_result = choose_param(10, two())
+var return_if_result = return_in_if(5)
+var return_while_result = return_in_while(4)
+var function_variable_name_result = name_collision()
+
+if(equal_true){
+    var if_block_local = 1
+    print("if block", if_block_local)
+}
+
+if(equal_false)
+    print("if no braces true branch should not run")
+
+if(equal_false){
+    print("else-if first branch should not run")
+} else if(not_equal_true){
+    var else_if_local = 2
+    print("else if block", else_if_local)
+} else {
+    print("else branch should not run")
+}
+
+if(equal_false)
+    print("else no braces first branch should not run")
+else
+    print("else no braces")
+
+var while_block_i = 0
+while(while_block_i < 2){
+    var while_block_local = while_block_i
+    print("while block", while_block_local)
+    while_block_i = while_block_i + 1
+}
+
+var while_line_i = 0
+while(while_line_i < 2)
+    while_line_i = while_line_i + 1
+
+var outer_shadow = 100
+if(equal_true){
+    var outer_shadow = 200
+    print("inner shadow", outer_shadow)
+}
+print("outer shadow", outer_shadow)
+
+print("no params", no_param_result)
+print("params", param_result)
+print("return if", return_if_result)
+print("return while", return_while_result)
+print("function and variable same name", function_variable_name_result, name_collision)
+
+# Negative tests: uncomment one at a time to verify diagnostics.
+# choose_param(10)
+# var duplicate_name = 1
+# var duplicate_name = 2
