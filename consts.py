@@ -62,7 +62,6 @@ planet_parser = Lark(
 #######################################
 
 def error_as_txt(token, error_name, filename, details, line = ""):
-    print(type(token))
     with open(filename, "r", encoding="utf-8") as file:
         line = file.read().split("\n")[token.line - 1]
 

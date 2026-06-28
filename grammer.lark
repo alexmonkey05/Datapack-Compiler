@@ -171,7 +171,7 @@ variable_set: CNAME set_value
         | term
 
 ?term: term "*" factor  -> mul
-    // | term "/" factor   -> div
+    | term "/" factor   -> div
     | term "%" factor   -> mod
     | factor
 

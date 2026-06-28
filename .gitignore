@@ -27,3 +27,6 @@ __pycache__/
 .venv
 /old_versions
 settings.json
+CODE_SUMMARY.md
+AGENTS.md
+transform-backup.py

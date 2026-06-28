@@ -77,7 +77,7 @@ def make_basic_files(version, file_dir, namespace = "pack"):
         file = open(load_mcfunction, "w+")
         file.write(f"\
 # This data pack was compiled with the 40planet's compiler.\n\
-# https://github.com/alexmonkey05/Datapack-Compiler\n\nscoreboard objectives add 40planet_num dummy\n")
+# https://github.com/alexmonkey05/Datapack-Compiler\n\nscoreboard objectives add 40planet_num dummy\ndata remove storage 40planet:value temp\n")
         file.close()
     if not os.path.isfile(tick_mcfunction):
         file = open(tick_mcfunction, "w+")
@@ -127,6 +127,7 @@ def generate_datapack(filename, version, result_dir = "./", namespace = "pack"):
     now = datetime.datetime.now()
     # print(parser_tree.pretty())
     datapack_generator = DatapackGenerater(version, result_dir, namespace, filename, logger_level=logger)
+    datapack_generator.pre_scan_functions(parser_tree)
     datapack_generator.transform(parser_tree)
     logger.debug("interprete_file", f"{logger.fit(filename, 20)} took {logger.prYello(int((datetime.datetime.now() - now).total_seconds() * 1000) / 1000)}s")
     write_all_files()
