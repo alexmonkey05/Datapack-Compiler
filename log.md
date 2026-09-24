@@ -414,7 +414,7 @@ import test2
 - execute if block에서 properties, nbt 설정이 없는 경우 발생하던 에러 해결
 # 2026/04/04 3.8 26.1 대응
 - `26.1`, `26.1.1` 버전 추가
-# 아직 릴리즈 안 함 3.8.1
+# 2026/06/28 3.9
 - `__main__`이 아래와 같은 매크로 명령어에서는 작동하지 않던 오류 해결
   - `/$execute as $(uuid) run function __main__:ingame/ask_chain`
 - 이제 재귀함수를 써도 `not defined` 에러가 뜨지 않습니다
@@ -426,3 +426,11 @@ import test2
 - `+`, `-`, `*`, `/`, `%`, 단항 `-`, `>=`, `<=`, `>`, `<` 연산을 스코어보드 기반으로 컴파일하도록 변경
 - `==`, `!=` 연산을 `execute store success`와 임시 storage 복사 기반으로 컴파일하도록 변경
   - 원본 변수가 비교 과정에서 수정되지 않도록 변경
+# 2026/09/24 3.10 Minecraft 26.3 compute 지원
+- CLI/GUI 버전 목록에 26.2, 26.3 추가 및 최신 데이터팩 min_format/max_format 생성 지원
+- 26.3 이상에서 이항 산술연산과 int/float 형변환을 compute로 처리
+- abs, avg, min, max, pow, sqrt, sin, cos 등을 포함한 수치 내장 함수 23개 추가
+- 일반 Minecraft 명령 전처리를 분리해 나눗셈 문법과의 충돌 방지
+- example/compute.planet에 정상/경계값 136개와 선택 실행 실패 사례 10개 추가
+- compute 함수·형변환·버전 분기 회귀 테스트 10개 추가
+- README.md 및 README_en.md에 함수 목록, 형변환 규칙, 사용 예제 반영

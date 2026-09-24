@@ -3,6 +3,10 @@
 from lark import Token, Tree
 import os
 import json
+from compute_operations import compute_operator
+from compute_functions import compute_function
+from compute_conversions import compute_conversion
+from consts import COMPUTE_FUNCTIONS
 
 from consts import NEW_LINE, SCORE_TYPES, MINECRAFT_TYPES, TYPES, SCOREBOARD_NAME, STORAGE_NAME, NAMESPACE, MAIN_NAMESPACE, BUILT_IN_FUNCTION, OPERATION, OPERATOR_ID, CNAME, INT, ESCAPED_STRING, VariableComet, error_as_txt, Function, CometToken, planet_parser, CometClass
 from logger import L, LOGLEVEL
@@ -19,9 +23,12 @@ def modify_file_data(file_data):
     file_lines = file_data.split("\n")
     for i in range(len(file_lines)):
         line = file_lines[i].strip()
-        # 마크 매크로와 마크 명령어 전부 NEW_LINE 추가하기
-        if "/$" in line or (len(line) > 0 and line[0] == "/"):
+        # 일반 마크 명령어는 "/"가 나눗셈 토큰과 충돌하지 않도록 전처리 토큰으로 바꾼다.
+        if line.startswith("/$"):
             file_lines[i] += NEW_LINE
+        elif line.startswith("/"):
+            indent_len = len(file_lines[i]) - len(file_lines[i].lstrip())
+            file_lines[i] = file_lines[i][:indent_len] + "㊙" + line[1:] + NEW_LINE
     return "\n".join(file_lines)
 
 imported_files = {}
@@ -324,7 +331,11 @@ class DatapackGenerater:
 
     # /로 시작하는 커맨드
     def minecraft_command(self, items):
-        command = items[0]
+        command = str(items[0])
+        if command[0] == "㊙":
+            command = command[1:]
+        if command.endswith(NEW_LINE):
+            command = command[:-len(NEW_LINE)]
         # __namespace__ 바꾸기
         if NAMESPACE in command:
             if self.is_module: command = command.replace(NAMESPACE + ":", f"{self.namespace}:{self.module_name}/")
@@ -332,7 +343,7 @@ class DatapackGenerater:
         if MAIN_NAMESPACE in command:
             command = command.replace(MAIN_NAMESPACE, f"{self.namespace}")
         if "\\$" in command: command = command.replace("\\$", "$")
-        return CometToken("command", items[0][1:], items[0].start_pos, end_pos=items[0].end_pos, column=items[0].column, command=command, line=items[0].line)
+        return CometToken("command", command, items[0].start_pos, end_pos=items[0].end_pos, column=items[0].column, command=command, line=items[0].line)
     # /$로 시작하는 커맨드
     def command_macro(self, items):
         # result = ""
@@ -473,6 +484,8 @@ class DatapackGenerater:
 
     def function_call(self, items):
         name = items[0].value
+        if name in COMPUTE_FUNCTIONS and (name != "round" or self.version >= 260300):
+            return compute_function(self, items)
         if name in BUILT_IN_FUNCTION:
             method_name = f'fun_{name}'
             method = getattr(self, method_name)
@@ -670,7 +683,10 @@ execute if score #{temp} {SCOREBOARD_NAME} matches 5 run data modify storage {ST
             if type(input_node.children[0]) == CometToken: result = input_node.children[0].command + result
 
         return CometToken("get_score", temp, items[0].start_pos, end_pos=items[0].end_pos, column=items[0].column, command=result, line=items[0].line)
-    def fun_int(self, items): return self.fun_round(items)
+    def fun_int(self, items):
+        if self.version >= 260300:
+            return compute_conversion(self, items, "int")
+        return self.fun_round(items)
 #     def fun_bool(self, items):
         
 #         input_nodes = items[1].children
@@ -686,6 +702,8 @@ execute if score #{temp} {SCOREBOARD_NAME} matches 5 run data modify storage {ST
 #         self.add_var(temp, temp)
 #         return CometToken("bool", temp, items[0].start_pos, end_pos=items[0].end_pos, column=items[0].column, command=command, line=items[0].line)
     def fun_float(self, items, type_ = "float"):
+        if self.version >= 260300 and type_ == "float":
+            return compute_conversion(self, items, "float")
         self.check_version_error(items[0], 0, 21.5,"In version over 1.21.5, type conversion, type function, and binary operations are not possible.")
         input_nodes = items[1].children
         self.is_parameter_cnt(type_, input_nodes, 1, items[0])
@@ -870,7 +888,8 @@ data modify storage {STORAGE_NAME} {temp} set from entity 0-0-0-0-a transformati
     ##############
 
     def score_operator(self, items, operator, uses_assignment = True):
-        self.check_version_error(items[0], 0, 21.5,"In version over 1.21.5, type conversion, type function, and binary operations are not possible.")
+        if self.version >= 260300 and uses_assignment:
+            return compute_operator(self, items, operator)
         result = ""
         var1 = items[0].value
         var2 = items[1].value

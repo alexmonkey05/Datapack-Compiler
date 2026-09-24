@@ -1,0 +1,280 @@
+// Minecraft 26.3 이상에서 컴파일하세요.
+var value = -2.5
+var absolute = abs(value)
+var average = avg(1, 2, absolute)
+var minimum = min(3, 1, 2)
+var maximum = max(3, 1, 2)
+var total = add(1, 2, 3)
+var product = mul(2, 3, 4)
+var difference = sub(5.5, 2)
+var quotient = div(5, 2)
+var remainder = mod(5.5, 2)
+var power = pow(2, 3)
+var magnitude = length(3, 4)
+var root = sqrt(abs(-9))
+var negative = negate(value)
+var down = floor(value)
+var up = ceil(value)
+var truncated = truncate(value)
+var rounded = round(value)
+var sine = sin(0)
+var cosine = cos(0)
+var random_value = uniform(0, 1)
+var trials = binomial(10, 0.5)
+var integer_quotient = floor_div(-7, 3)
+var integer_remainder = floor_mod(-7, 3)
+print(absolute, average, magnitude, root, quotient)
+
+# ============================================================
+# Minecraft 26.3+ compute / 이항연산 수동 검증
+# 아래 정상 테스트는 /reload 때 한 번 실행된다.
+# 각 줄: [번호] 식 | expected=예상값 | actual=실제값
+# float는 f 접미사/표시 오차가 있을 수 있다. approx는 근삿값이다.
+# 개별 재실행: /function <namespace>:test_compute_arithmetic 등
+# 전체 재실행: /function <namespace>:run_compute_tests
+# 맵 생성 코드는 test.planet에 있으며 이 파일은 연산 테스트만 실행한다.
+# ============================================================
+
+def test_compute_arithmetic(){
+    print("=== integer binary: signs, zero, boundaries, precedence ===")
+    print("[A01] 7 + 3 | expected=10 | actual=", 7 + 3)
+    print("[A02] -7 + 3 | expected=-4 | actual=", -7 + 3)
+    print("[A03] 0 + 0 | expected=0 | actual=", 0 + 0)
+    print("[A04] 7 - 10 | expected=-3 | actual=", 7 - 10)
+    print("[A05] -7 - -3 | expected=-4 | actual=", -7 - -3)
+    print("[A06] -7 * -3 | expected=21 | actual=", -7 * -3)
+    print("[A07] -7 * 0 | expected=0 | actual=", -7 * 0)
+    print("[A08] 7 / 3 | expected=2 | actual=", 7 / 3)
+    print("[A09] -7 / 3 | expected=-3 | actual=", -7 / 3)
+    print("[A10] 7 / -3 | expected=-3 | actual=", 7 / -3)
+    print("[A11] -7 / -3 | expected=2 | actual=", -7 / -3)
+    print("[A12] 0 / 3 | expected=0 | actual=", 0 / 3)
+    print("[A13] 7 % 3 | expected=1 | actual=", 7 % 3)
+    print("[A14] -7 % 3 | expected=2 | actual=", -7 % 3)
+    print("[A15] 7 % -3 | expected=-2 | actual=", 7 % -3)
+    print("[A16] -7 % -3 | expected=-1 | actual=", -7 % -3)
+    print("[A17] 0 % 3 | expected=0 | actual=", 0 % 3)
+    print("[A18] 2147483646 + 1 | expected=2147483647 | actual=", 2147483646 + 1)
+    print("[A19] -2147483647 - 1 | expected=-2147483648 | actual=", -2147483647 - 1)
+    print("[A20] 46340 * 46340 | expected=2147395600 | actual=", 46340 * 46340)
+    print("[A21] 2 + 3 * 4 | expected=14 | actual=", 2 + 3 * 4)
+    print("[A22] (2 + 3) * (7 - 4) | expected=15 | actual=", (2 + 3) * (7 - 4))
+    # 이항 산술은 각 피연산자를 먼저 정수로 내린다. 실수 연산 함수와 비교한다.
+    print("[A23] 2.9 + 1.9 | expected=3 | actual=", 2.9 + 1.9)
+    print("[A24] -2.5 + 0 | expected=-3 | actual=", -2.5 + 0)
+    var negative_integer = -7
+    print("[A25] -variable(-7) | expected=7 | actual=", -negative_integer)
+}
+
+def test_compute_comparisons(){
+    print("=== comparison and logical regression: true=1, false=0 ===")
+    print("[C01] 3 == 3 | expected=1 | actual=", 3 == 3)
+    print("[C02] 3 != 3 | expected=0 | actual=", 3 != 3)
+    print("[C03] -1 < 0 | expected=1 | actual=", -1 < 0)
+    print("[C04] 0 > -1 | expected=1 | actual=", 0 > -1)
+    print("[C05] 3 <= 3 | expected=1 | actual=", 3 <= 3)
+    print("[C06] 3 >= 3 | expected=1 | actual=", 3 >= 3)
+    print("[C07] 3 < 3 | expected=0 | actual=", 3 < 3)
+    print("[C08] 3 > 3 | expected=0 | actual=", 3 > 3)
+    print("[C09] 1 and 0 | expected=0 | actual=", 1 and 0)
+    print("[C10] 0 or 1 | expected=1 | actual=", 0 or 1)
+    print("[C11] 1 and 1 | expected=1 | actual=", 1 and 1)
+    print("[C12] 0 or 0 | expected=0 | actual=", 0 or 0)
+}
+
+def test_compute_aggregates(){
+    print("=== abs, negate, avg, min, max, add, mul, length ===")
+    print("[G01] abs(-2.5) | expected=2.5 | actual=", abs(-2.5))
+    print("[G02] abs(0) | expected=0 | actual=", abs(0))
+    print("[G03] abs(2.5) | expected=2.5 | actual=", abs(2.5))
+    print("[G04] negate(-2.5) | expected=2.5 | actual=", negate(-2.5))
+    print("[G05] negate(2.5) | expected=-2.5 | actual=", negate(2.5))
+    print("[G06] negate(0) | expected=0 (signed zero allowed) | actual=", negate(0))
+    print("[G07] avg(1, 2) | expected=1.5 | actual=", avg(1, 2))
+    print("[G08] avg(-2.5) | expected=-2.5 | actual=", avg(-2.5))
+    print("[G09] avg(-4, 0, 4) | expected=0 | actual=", avg(-4, 0, 4))
+    print("[G10] min(3, -2.5, -2.5, 0) | expected=-2.5 | actual=", min(3, -2.5, -2.5, 0))
+    print("[G11] min(7) | expected=7 | actual=", min(7))
+    print("[G12] max(-9, -2.5, -2.5) | expected=-2.5 | actual=", max(-9, -2.5, -2.5))
+    print("[G13] max(7) | expected=7 | actual=", max(7))
+    print("[G14] add(2.5, -2.5, 0) | expected=0 | actual=", add(2.5, -2.5, 0))
+    print("[G15] add(2.5) | expected=2.5 | actual=", add(2.5))
+    print("[G16] mul(-2, -3, 0.5) | expected=3 | actual=", mul(-2, -3, 0.5))
+    print("[G17] mul(2.5, 0) | expected=0 | actual=", mul(2.5, 0))
+    print("[G18] mul(-2.5) | expected=-2.5 | actual=", mul(-2.5))
+    print("[G19] length(3, 4) | expected=5 | actual=", length(3, 4))
+    print("[G20] length(-3, -4) | expected=5 | actual=", length(-3, -4))
+    print("[G21] length(-2.5) | expected=2.5 | actual=", length(-2.5))
+    print("[G22] length(0, 0, 0) | expected=0 | actual=", length(0, 0, 0))
+    # 2^24를 넘으면 float가 모든 정수를 구별하지 못한다.
+    print("[G23] add(16777216, 1) | expected=16777216 (float precision) | actual=", add(16777216, 1))
+    print("[G24] add(0.1, 0.2) | expected=approx 0.3 | actual=", add(0.1, 0.2))
+}
+
+def test_compute_numeric_pairs(){
+    print("=== sub, div, mod, pow, floor_div, floor_mod ===")
+    print("[P01] sub(2.5, 5) | expected=-2.5 | actual=", sub(2.5, 5))
+    print("[P02] sub(-2.5, -2.5) | expected=0 | actual=", sub(-2.5, -2.5))
+    print("[P03] div(5, 2) | expected=2.5 | actual=", div(5, 2))
+    print("[P04] div(-7, 3) | expected=approx -2.333333 | actual=", div(-7, 3))
+    print("[P05] div(0, 2) | expected=0 | actual=", div(0, 2))
+    print("[P06] mod(5.5, 2) | expected=1.5 | actual=", mod(5.5, 2))
+    print("[P07] mod(-5.5, 2) | expected=-1.5 | actual=", mod(-5.5, 2))
+    print("[P08] mod(5.5, -2) | expected=1.5 | actual=", mod(5.5, -2))
+    print("[P09] pow(2, 0) | expected=1 | actual=", pow(2, 0))
+    print("[P10] pow(2, -3) | expected=0.125 | actual=", pow(2, -3))
+    print("[P11] pow(-2, 3) | expected=-8 | actual=", pow(-2, 3))
+    print("[P12] pow(9, 0.5) | expected=3 | actual=", pow(9, 0.5))
+    print("[P13] pow(0, 2) | expected=0 | actual=", pow(0, 2))
+    print("[P14] floor_div(-7, 3) | expected=-3 | actual=", floor_div(-7, 3))
+    print("[P15] floor_div(7, -3) | expected=-3 | actual=", floor_div(7, -3))
+    print("[P16] floor_div(-7, -3) | expected=2 | actual=", floor_div(-7, -3))
+    print("[P17] floor_mod(-7, 3) | expected=2 | actual=", floor_mod(-7, 3))
+    print("[P18] floor_mod(7, -3) | expected=-2 | actual=", floor_mod(7, -3))
+    print("[P19] floor_mod(-7, -3) | expected=-1 | actual=", floor_mod(-7, -3))
+    print("[P20] floor_div(-2147483648, 1) | expected=-2147483648 | actual=", floor_div(-2147483648, 1))
+}
+
+def test_compute_rounding(){
+    print("=== floor, ceil, truncate, round: negative and halfway ===")
+    print("[R01] floor(2.5) | expected=2 | actual=", floor(2.5))
+    print("[R02] floor(-2.5) | expected=-3 | actual=", floor(-2.5))
+    print("[R03] ceil(2.5) | expected=3 | actual=", ceil(2.5))
+    print("[R04] ceil(-2.5) | expected=-2 | actual=", ceil(-2.5))
+    print("[R05] truncate(2.5) | expected=2 | actual=", truncate(2.5))
+    print("[R06] truncate(-2.5) | expected=-2 | actual=", truncate(-2.5))
+    print("[R07] round(2.5) | expected=3 | actual=", round(2.5))
+    print("[R08] round(-2.5) | expected=-2 | actual=", round(-2.5))
+    print("[R09] round(2.49) | expected=2 | actual=", round(2.49))
+    print("[R10] round(-2.51) | expected=-3 | actual=", round(-2.51))
+    print("[R11] floor(0) | expected=0 | actual=", floor(0))
+    print("[R12] ceil(0) | expected=0 | actual=", ceil(0))
+    print("[R13] truncate(0) | expected=0 | actual=", truncate(0))
+    print("[R14] round(0) | expected=0 | actual=", round(0))
+}
+
+def test_compute_trigonometry(){
+    print("=== sqrt, sin, cos: radians, zero, fractions ===")
+    print("[T01] sqrt(0) | expected=0 | actual=", sqrt(0))
+    print("[T02] sqrt(0.25) | expected=0.5 | actual=", sqrt(0.25))
+    print("[T03] sqrt(2) | expected=approx 1.414214 | actual=", sqrt(2))
+    print("[T04] sin(0) | expected=0 | actual=", sin(0))
+    print("[T05] cos(0) | expected=1 | actual=", cos(0))
+    print("[T06] sin(pi/2) | expected=approx 1 | actual=", sin(1.57079632679))
+    print("[T07] sin(-pi/2) | expected=approx -1 | actual=", sin(-1.57079632679))
+    print("[T08] cos(pi) | expected=approx -1 | actual=", cos(3.14159265359))
+}
+
+def test_compute_random(){
+    print("=== uniform, binomial: bounds and deterministic endpoints ===")
+    print("[D01] uniform(5, 5) | expected=5 | actual=", uniform(5, 5))
+    print("[D02] uniform(-1, 1) | expected=within -1..1 | actual=", uniform(-1, 1))
+    print("[D03] uniform(0, 1) | expected=within 0..1 | actual=", uniform(0, 1))
+    print("[D04] binomial(10, 0) | expected=0 | actual=", binomial(10, 0))
+    print("[D05] binomial(10, 1) | expected=10 | actual=", binomial(10, 1))
+    print("[D06] binomial(0, 0.5) | expected=0 | actual=", binomial(0, 0.5))
+    print("[D07] binomial(10, 0.5) | expected=integer 0..10 | actual=", binomial(10, 0.5))
+}
+
+# 동일 함수의 반환 storage를 재사용할 때 먼저 계산한 인자가 보존되는지 검사한다.
+def compute_test_identity(var input_value){
+    return input_value
+}
+
+def test_compute_nested(){
+    print("=== variables, nested calls, reused return storage ===")
+    var decimal_value = -2.5
+    print("[N01] abs(variable -2.5) | expected=2.5 | actual=", abs(decimal_value))
+    print("[N02] avg(abs(v), sqrt(9), 5) | expected=3.5 | actual=", avg(abs(decimal_value), sqrt(9), 5))
+    print("[N03] sqrt(add(pow(3,2),pow(4,2))) | expected=5 | actual=", sqrt(add(pow(3, 2), pow(4, 2))))
+    print("[N04] avg(identity(2),identity(8)) | expected=5 | actual=", avg(compute_test_identity(2), compute_test_identity(8)))
+    print("[N05] identity(2)+identity(8) | expected=10 | actual=", compute_test_identity(2) + compute_test_identity(8))
+    print("[N06] (2+3)*(7-4) | expected=15 | actual=", (2 + 3) * (7 - 4))
+    print("[N07] avg(1.5f,2.5d,3) | expected=2.333333 approx | actual=", avg(1.5f, 2.5d, 3))
+    var integer_value = -7
+    print("[N08] floor_div(variable -7,3) | expected=-3 | actual=", floor_div(integer_value, 3))
+    print("[N09] avg(1,2)+1 | expected=2 (integer binary) | actual=", avg(1, 2) + 1)
+    print("[N10] add(avg(1,2),1) | expected=2.5 (float function) | actual=", add(avg(1, 2), 1))
+}
+
+# 선택 실행: 아래 함수들은 정상 테스트에서 호출하지 않는다.
+# /function <namespace>:test_compute_integer_failures
+# 게임 로그/생성 mcfunction에서 명령 실패를 확인한다.
+# 실패 결과는 정상 숫자로 보장되지 않으며 재사용된 temp의 이전 값이 보일 수도 있다.
+def test_compute_integer_failures(){
+    print("[E01] integer 1/0: expect compute command failure")
+    var failed_division = 1 / 0
+    print("[E02] integer 1%0: expect compute command failure")
+    var failed_modulo = 1 % 0
+    print("[E03] INT_MAX+1: expect compute overflow failure")
+    var failed_addition = 2147483647 + 1
+    print("[E04] 46341*46341: expect compute overflow failure")
+    var failed_product = 46341 * 46341
+    print("[E05] floor_div(INT_MIN,-1): expect compute overflow failure")
+    var failed_floor_division = floor_div(-2147483648, -1)
+    print("[E06] floor_mod(1,0): expect compute command failure")
+    var failed_floor_modulo = floor_mod(1, 0)
+}
+
+# /function <namespace>:test_compute_float_domains
+# NaN/Infinity/정의역 밖 결과는 게임 규칙상 미정이므로 PASS 예상값을 두지 않는다.
+def test_compute_float_domains(){
+    print("[E07] div(1,0): undefined/non-finite result or command failure")
+    var undefined_division = div(1, 0)
+    print("[E08] sqrt(-1): undefined/non-finite result or command failure")
+    var undefined_root = sqrt(-1)
+    print("[E09] pow(-2,0.5): undefined/non-finite result or command failure")
+    var undefined_power = pow(-2, 0.5)
+    print("[E10] mod(1,0): undefined/non-finite result or command failure")
+    var undefined_modulo = mod(1, 0)
+}
+
+# 컴파일 오류 검증: 한 번에 한 줄씩 주석을 해제해 컴파일한다.
+# var invalid_empty_avg = avg()
+# var invalid_empty_min = min()
+# var invalid_empty_length = length()
+# var invalid_unary_arity = abs(1, 2)
+# var invalid_binary_arity = pow(2)
+# var invalid_string = sqrt("text")
+# var invalid_undefined = abs(compute_missing_variable)
+# var invalid_integer = floor_div(1.5, 2)
+# var invalid_integer_range = floor_mod(2147483648, 2)
+# 버전 제한: 이 파일을 26.2로 컴파일하면 새 compute 함수에서 VersionError가 나야 한다.
+
+def test_compute_conversions(){
+    print("=== int / float casts: truncate toward zero, preserve int boundaries ===")
+    print("[V01] int(2.9) | expected=2 | actual=", int(2.9))
+    print("[V02] int(-2.9) | expected=-2 | actual=", int(-2.9))
+    print("[V03] int(-0.9) | expected=0 | actual=", int(-0.9))
+    print("[V04] float(7) | expected=7.0f | actual=", float(7))
+    print("[V05] float(-7) | expected=-7.0f | actual=", float(-7))
+    print("[V06] float(2.5) | expected=2.5f | actual=", float(2.5))
+    print("[V07] int(INT_MAX) | expected=2147483647 | actual=", int(2147483647))
+    print("[V08] int(INT_MIN) | expected=-2147483648 | actual=", int(-2147483648))
+    var cast_integer = 2147483647
+    var cast_fraction = -2.9
+    print("[V09] int(variable INT_MAX) | expected=2147483647 | actual=", int(cast_integer))
+    print("[V10] int(variable -2.9) | expected=-2 | actual=", int(cast_fraction))
+    print("[V11] float(variable -2.9) | expected=approx -2.9f | actual=", float(cast_fraction))
+    print("[V12] float(int(avg(1,2))) | expected=1.0f | actual=", float(int(avg(1, 2))))
+    print("[V13] int numeric string | expected=-2 | actual=", int("-2.9"))
+    print("[V14] float numeric string | expected=2.5f | actual=", float("2.5"))
+    print("[V15] float(16777217) | expected=16777216f (float precision) | actual=", float(16777217))
+    var cast_small_integer = 7
+    print("[V16] float(variable 7) | expected=7.0f | actual=", float(cast_small_integer))
+}
+
+def run_compute_tests(){
+    test_compute_arithmetic()
+    test_compute_comparisons()
+    test_compute_aggregates()
+    test_compute_numeric_pairs()
+    test_compute_rounding()
+    test_compute_trigonometry()
+    test_compute_random()
+    test_compute_nested()
+    test_compute_conversions()
+    print("=== compute edge cases finished: compare expected / actual above ===")
+}
+
+run_compute_tests()

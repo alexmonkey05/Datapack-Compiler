@@ -4,6 +4,7 @@ import shutil
 from transform import DatapackGenerater, error_as_txt, modify_file_data, filedata
 from consts import planet_parser, NEW_LINE
 import datetime
+import json
 import sys
 
   
@@ -13,23 +14,37 @@ existing_functions = {}
 
 
 datapack_versions = {
-    "1.20.4": "26",
-    "1.20.6": "41",
-    "1.21": "48",
-    "1.21.1": "48",
-    "1.21.2": "57",
-    "1.21.3": "57",
-    "1.21.4": "61",
-    "1.21.5": "71",
-    "1.21.6": "71",
-    "1.21.7": "80",
-    "1.21.8": "80",
-    "1.21.9": "88.0",
-    "1.21.10": "88.0",
-    "1.21.11": "94.1",
-    "26.1": "101.1",
-    "26.1.1": "101.1"
+    "1.20.4": 26,
+    "1.20.6": 41,
+    "1.21": 48,
+    "1.21.1": 48,
+    "1.21.2": 57,
+    "1.21.3": 57,
+    "1.21.4": 61,
+    "1.21.5": 71,
+    "1.21.6": 71,
+    "1.21.7": 80,
+    "1.21.8": 80,
+    "1.21.9": [88, 0],
+    "1.21.10": [88, 0],
+    "1.21.11": [94, 1],
+    "26.1": [101, 1],
+    "26.1.1": [101, 1],
+    "26.2": [107, 1],
+    "26.3": [121, 0]
 }
+
+
+def make_pack_mcmeta(version):
+    pack_version = datapack_versions[version]
+    pack = {"description": "by 40planet"}
+    if isinstance(pack_version, list):
+        pack["min_format"] = pack_version
+        pack["max_format"] = pack_version
+    else:
+        pack["pack_format"] = pack_version
+    return {"pack": pack}
+
 
 def search_functions(function_folder_dir):
     global existing_functions
@@ -82,10 +97,8 @@ def make_basic_files(version, file_dir, namespace = "pack"):
     if not os.path.isfile(tick_mcfunction):
         file = open(tick_mcfunction, "w+")
         file.close()
-    if not os.path.isfile(pack_mcmeta):
-        file = open(pack_mcmeta, "w+")
-        file.write('{ "pack": {"pack_format": ' + datapack_versions[version] + ', "description": "by 40planet"} }')
-        file.close()
+    with open(pack_mcmeta, "w+", encoding="utf-8") as file:
+        json.dump(make_pack_mcmeta(version), file, ensure_ascii=False, indent=2)
 
 
 def generate_datapack(filename, version, result_dir = "./", namespace = "pack"):
@@ -147,7 +160,7 @@ def write_all_files():
     logger.debug("write_datapack", f"Took {logger.prYello(int((datetime.datetime.now() - now).total_seconds() * 1000) / 1000)}s")
 
 import argparse
-values = ["1.20.4", "1.20.6", "1.21", "1.21.1", "1.21.2", "1.21.3", "1.21.4", "1.21.5", "1.21.6", "1.21.7", "1.21.8", "1.21.9", "1.21.10", "26.1", "26.1.1"]
+values = list(datapack_versions)
 if __name__ == "__main__":
     
     # if os.path.isfile(COMET_CACHE_FILE):

@@ -12,7 +12,19 @@ DIGITS = '0123456789'
 
 INTERPRETE_THESE = ("operator", "call_function", "make_array", "make_nbt", "make_selector", "define_var")
 
-BUILT_IN_FUNCTION = ("print", "random", "type", "get_score", "get_data", "set_score", "set_data", "round", "del", "append", "is_module", "len", "divide", "multiply") + TYPES
+# Provider argument fields; inputs accepts one or more positional arguments.
+COMPUTE_FUNCTIONS = {
+    **{name: ("float", ("input",)) for name in
+       ("abs", "negate", "floor", "ceil", "truncate", "round", "sin", "cos", "sqrt")},
+    **{name: ("float", ("inputs",)) for name in ("avg", "min", "max", "length", "add", "mul")},
+    **{name: ("float", ("left", "right")) for name in ("sub", "div", "mod")},
+    "pow": ("float", ("base", "exponent")),
+    "uniform": ("float", ("min", "max")),
+    "floor_div": ("integer", ("left", "right")),
+    "floor_mod": ("integer", ("left", "right")),
+    "binomial": ("integer", ("n", "p")),
+}
+BUILT_IN_FUNCTION = ("print", "random", "type", "get_score", "get_data", "set_score", "set_data", "del", "append", "is_module", "len", "divide", "multiply") + TYPES + tuple(COMPUTE_FUNCTIONS)
 
 OPERATOR_ID = {
     "+":1,

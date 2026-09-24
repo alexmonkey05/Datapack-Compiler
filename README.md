@@ -555,7 +555,7 @@ print(multiply(2, 3))
 ```
 ### int(any a)
 `a`를 `int` 자료형으로 변환해준다   
-`float` 또는 `double`의 경우엔 `round(a)`와 같다
+26.3 이상에서는 `compute`의 `from_float`로 소수 부분을 0 방향으로 절삭한다. 예: `int(-2.9)`는 `-2`이며, `round(-2.9)`와는 다르다. 정수 입력은 float를 거치지 않아 32비트 정수 경계값도 보존한다. 이전 버전에서는 기존 `round(a)` 기반 구현을 사용한다.
 ```
 print(int(1.2))
 print(int("3"))
@@ -565,8 +565,36 @@ print(int("3"))
 1
 3
 ```
+### compute 수치 함수 (Minecraft 26.3 이상)
+
+26.3 이상을 선택하면 다음 함수들이 `data modify ... set compute`로 컴파일됩니다. 새 함수는 이전 버전에서 컴파일 오류를 냅니다. 기존 `round`는 이전 버전의 구현도 유지합니다.
+
+| 호출 | 설명 |
+| --- | --- |
+| `abs(x)`, `negate(x)` | 절댓값, 부호 반전 |
+| `avg(x, ...)`, `min(x, ...)`, `max(x, ...)` | 평균, 최솟값, 최댓값 (인자 1개 이상) |
+| `add(x, ...)`, `mul(x, ...)`, `length(x, ...)` | 합, 곱, 제곱합의 제곱근 (인자 1개 이상) |
+| `sub(a, b)`, `div(a, b)`, `mod(a, b)`, `pow(base, exponent)` | 빼기, 나누기, 나머지, 거듭제곱 |
+| `floor(x)`, `ceil(x)`, `truncate(x)`, `round(x)` | 내림, 올림, 0 방향 절삭, 반올림 (동률은 양의 무한대 방향) |
+| `sin(x)`, `cos(x)`, `sqrt(x)` | 라디안 단위 사인·코사인, 제곱근 |
+| `uniform(min, max)` | 범위 내 실수 난수 |
+| `floor_div(a, b)`, `floor_mod(a, b)` | 정수 내림 나눗셈과 나머지 |
+| `binomial(n, p)` | `n`회 시행, 성공 확률 `p`인 이항분포 난수 |
+
+기본 반환값은 단정밀도 `float`입니다. `floor_div`, `floor_mod`, `binomial`은 정수를 반환하며, 각각 `a`·`b` 또는 `n`에 32비트 정수를 받습니다. `p`는 0~1 범위입니다. 기존 이항 `/` 연산은 정수 내림 나눗셈이므로 실수 나눗셈에는 `div`를 사용하세요. 실행 중 0 나눗셈·정의역 오류 등은 Minecraft의 compute 규칙을 따릅니다.
+
+```text
+var average = avg(1, 2)       // 1.5f
+var magnitude = length(3, 4) // 5.0f
+var root = sqrt(abs(-9))     // 3.0f
+var quotient = div(5, 2)     // 2.5f
+```
+
+전체 예제 및 엣지케이스: `example/compute.planet`. 26.3으로 컴파일한 뒤 `/reload`하면 예상값과 실제값을 출력한다. 개별 형변환 테스트는 `/function <namespace>:test_compute_conversions`로 재실행할 수 있다. 명령 문법과 연산 정의: [Minecraft 26.3 공식 변경 사항](https://www.minecraft.net/en-us/article/minecraft-java-edition-26-3).
+
 ### float(any a)
 `a`를 `float`로 변환해준다
+26.3 이상에서는 정수 입력에 `compute`의 `from_int`를 사용한다. 실수 입력의 소수 부분은 유지한다. `int()`와 `float()`는 숫자 문자열도 지원하며, float는 단정밀도이므로 큰 정수의 정밀도가 줄어들 수 있다. 범위를 벗어난 실수→정수 변환은 Minecraft의 계산 실패 규칙을 따른다. `compute`에 double provider가 없으므로 `double()`은 기존 구현과 버전 제한을 유지한다.
 ```
 print(float(1))
 ```

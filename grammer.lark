@@ -105,10 +105,10 @@ start: statement*
 ?declaration: function_def | import_statement
 
 
-// minecraft_command: /\/[^\$][^\n]*/
+// 일반 마크 명령어는 modify_file_data에서 "/"를 "㊙"로 바꿔 나눗셈과 구분한다.
 command_macro: "/$" ( ESCAPED_DOLOR | ESCAPED_MACRO | macro_ | NO_DOLOR_WORD )+ "䗻"
-minecraft_command.-1: "/" /[^䗻]+/ "䗻"
-// minecraft_command.10: "/" (macro | word)+ eol
+MINECRAFT_COMMAND.10: "㊙" /[^䗻]+/ "䗻"
+minecraft_command: MINECRAFT_COMMAND
 ESCAPED_DOLOR.100: "\$"
 ESCAPED_MACRO.100: ESCAPED_DOLOR "(" CNAME ")"
 macro_: "$(" CNAME ")"

@@ -290,7 +290,7 @@ execute(if function {
 | `print(any ...)` | Prints values to chat. |
 | `random()` | Returns a random float between 0 and 1. |
 | `type(any)` | Returns the data type as a string. |
-| `round(float|double)` | Rounds a number to an integer. |
+| `round(float|double)` | Rounds a number. On 26.3+, returns a float with ties rounded toward positive infinity. |
 | `get_score(player, objective)` | Gets a player's scoreboard value. |
 | `set_score(player, objective, value)` | Sets a scoreboard value. |
 | `get_data(from, name, dir)` | Reads NBT data. |
@@ -307,7 +307,54 @@ execute(if function {
 | `bool(a)` | Converts to boolean. |
 | `string(a)` | Converts to string. |
 
+### Compute numeric functions (Minecraft 26.3+)
+
+When targeting Minecraft 26.3 or later, the following functions compile to `data modify ... set compute`. New functions report a compilation error on older versions. The existing `round` function retains its previous implementation on older versions.
+
+| Call | Description |
+| --- | --- |
+| `abs(x)`, `negate(x)` | Absolute value and sign reversal. |
+| `avg(x, ...)`, `min(x, ...)`, `max(x, ...)` | Mean, minimum, and maximum; require at least one argument. |
+| `add(x, ...)`, `mul(x, ...)`, `length(x, ...)` | Sum, product, and square root of the sum of squares; require at least one argument. |
+| `sub(a, b)`, `div(a, b)`, `mod(a, b)`, `pow(base, exponent)` | Subtraction, division, remainder, and exponentiation. |
+| `floor(x)`, `ceil(x)`, `truncate(x)`, `round(x)` | Round down, round up, truncate toward zero, and round to nearest (ties toward positive infinity). |
+| `sin(x)`, `cos(x)`, `sqrt(x)` | Sine and cosine in radians, and square root. |
+| `uniform(min, max)` | Random float within the specified range. |
+| `floor_div(a, b)`, `floor_mod(a, b)` | Floored integer division and its remainder. |
+| `binomial(n, p)` | Binomial random value from `n` trials with success probability `p`. |
+
+The default return type is a single-precision `float`. `floor_div`, `floor_mod`, and `binomial` return integers and require 32-bit integers for `a` and `b`, or `n`, respectively. `p` must be between 0 and 1. The binary `/` operator performs floored integer division; use `div` for floating-point division. Division by zero and domain errors follow Minecraft's compute rules at runtime.
+
+```text
+var average = avg(1, 2)       // 1.5f
+var magnitude = length(3, 4) // 5.0f
+var root = sqrt(abs(-9))     // 3.0f
+var quotient = div(5, 2)     // 2.5f
+```
+
+Examples and edge cases are in `example/compute.planet`. Compile it for 26.3 and run `/reload` to display expected and actual results. To rerun only the conversion tests, use `/function <namespace>:test_compute_conversions`. Command syntax and provider definitions are documented in the [official Minecraft 26.3 release notes](https://www.minecraft.net/en-us/article/minecraft-java-edition-26-3).
+
+### `int(a)` on Minecraft 26.3+
+
+Uses compute's `from_float` provider to truncate fractional values toward zero. For example, `int(-2.9)` returns `-2`, unlike `round(-2.9)`. Integer inputs do not pass through float, preserving the full 32-bit integer range. Older versions retain the previous implementation based on `round(a)`.
+
+```text
+print(int(1.2))    // 1
+print(int(-2.9))   // -2
+print(int("3"))    // 3
+```
+
+### `float(a)` on Minecraft 26.3+
+
+Uses compute's `from_int` provider for integer inputs and preserves the fractional part of floating-point inputs. Both `int()` and `float()` also accept numeric strings. Floats use single precision, so converting large integers can lose precision. Out-of-range float-to-integer conversions follow Minecraft's calculation failure rules.
+
+```text
+print(float(1))    // 1.0f
+print(float(2.5))  // 2.5f
+```
+
+Compute has no double provider, so `double()` retains its existing implementation and version restrictions.
+
 ---
 
 This document is the English version of the project README. For detailed examples and updates, refer to the [official repository](https://github.com/alexmonkey05/Datapack-Compiler).
-
